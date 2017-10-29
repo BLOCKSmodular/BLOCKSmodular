@@ -1,0 +1,202 @@
+/*
+<metadata description="BLOCKS modular prototype." details="proto one" target="Lightpad" tags="MIDI;Controller;">
+    <groups>
+      <group name="colours" displayName="Colours" />
+    </groups>
+
+    <variables>
+      <variable name="channel" displayName="MIDI Channel" type="int" min="1" max="16" value="1" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
+      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xffff0000" />
+      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xff00ff00" />
+      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xff0000ff" />
+      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xffffffff" />
+    </variables>
+</metadata>
+*/
+
+#heapsize: 8 * 4
+/*
+heap description
+(int)0~3: Recorded(0/1)
+(int)4~7: Playing(0/1)
+Littlefoot does not has setHeapBits(). So I store boolean as int.
+*/
+
+int padWidth, padSpacing;
+int gridSize;
+int playedPad;
+int state;
+
+/*
+state
+0: Session View
+1: XYZ
+*/
+
+bool isRecorded(int padIndex)
+{
+    int recorded = getHeapInt(padIndex * 4);
+    return recorded == 1 ? true : false;
+}
+
+bool isPlayed(int padIndex)
+{
+    int playing = getHeapInt((padIndex + 4) * 4);
+    return playing == 1 ? true : false;
+}
+
+void record(int padIndex)
+{
+    setHeapInt(padIndex * 4, 1);
+}
+
+void clear(int padIndex)
+{
+    setHeapInt(padIndex * 4, 0);
+}
+
+void play(int padIndex)
+{
+    //It will be added code that checking other pads transport.
+    setHeapInt((padIndex + 4) * 4, 1);
+}
+
+void stop(int padIndex)
+{
+    setHeapInt((padIndex + 4) * 4, 0);
+}
+
+//==============================================================================
+int getPadColour (int padIndex)
+{
+    if (padIndex == 0)  return padColour1;
+    if (padIndex == 1)  return padColour2;
+    if (padIndex == 2)  return padColour3;
+    if (padIndex == 3)  return padColour4;
+    return 0xffffffff;
+}
+
+//==============================================================================
+int getPadIndex (float x, float y)
+{
+    /*
+    0: top left
+    1: bottom left
+    2: top right
+    3: bottom right
+    */
+    int row = int (y * (0.95 / 2.0) * float (gridSize));
+    int col = int (x * (0.95 / 2.0) * float (gridSize));
+
+	return (gridSize * col) + row;
+}
+
+//==============================================================================
+void drawPads()
+{
+    for (int padIndex = 0; padIndex < gridSize * gridSize; ++padIndex)
+    {
+        int overlayColour = isRecorded(padIndex) ? 0x00FFFFFF : 0xDE000000;
+        int x = padIndex / 2;
+        int y = padIndex % 2;
+        int w = padWidth - padSpacing;
+        blendRect(blendARGB(getPadColour(padIndex), overlayColour), x * padWidth, y * padWidth, w, w);
+    }
+}
+
+void initialise()
+{
+    state = 0;
+    gridSize = 2;
+    playedPad = 0;
+	padWidth = 15 / gridSize;
+	padSpacing = gridSize > 1 ? (15 - gridSize * padWidth) / (gridSize - 1) : 0;
+	padWidth += padSpacing;
+	
+	for (int i = 0; i < 8; ++i)
+    {
+        setHeapInt(i * 4, 0);
+    }
+
+	for (int i = 0; i < 32; ++i)
+        setLocalConfigActiveState (i, false, false);
+}
+
+//==============================================================================
+void repaint()
+{
+//It will be added deleting records function by the Controller BLOCK.
+//      for (int i = 0; i < 4; ++i)
+//      {
+//          clear(i);
+//      }
+    
+	clearDisplay();
+	fadePressureMap();
+
+    if (state == 0)
+    {
+        if (isConnectedToHost())
+        drawPads();
+    } 
+    else
+    {
+        drawPressureMap();
+    }
+}
+
+//==============================================================================
+void touchStart (int touchIndex, float x, float y, float z, float vz)
+{
+    if (state == 0)
+    {
+        if (touchIndex == 1)
+        {
+            playedPad = getPadIndex (x, y);
+        }
+    }
+    else
+    {
+        if (touchIndex == 1)
+        {
+            record(playedPad);
+            int note = playedPad + 60;
+            sendNoteOn((channel - 1), note, 127);
+            addPressurePoint (0xFFFFFFFF, x, y, z * 15.0);
+        }
+    }
+}
+
+void touchMove (int touchIndex, float x, float y, float z, float vz)
+{
+    if (state == 0)
+    {
+    }
+    else
+    {
+        addPressurePoint (0xFFFFFFFF, x, y, z * 5.0);
+    }
+}
+
+void touchEnd (int touchIndex, float x, float y, float z, float vz)
+{
+    if (state == 0)
+    {
+        if (touchIndex == 1)
+        {
+            int note = 60 + playedPad;
+            int velocity = clamp (0, 127, int (vz * 127.0));
+            sendNoteOff ((channel - 1), note, velocity);
+            state = 1;
+        }
+    }
+    else
+    {
+        if (touchIndex == 1)
+        {
+            int note = playedPad + 60;
+            sendNoteOff((channel - 1), note, 0);
+            state = 0;
+        }
+    }
+}

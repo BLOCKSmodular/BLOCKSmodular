@@ -170,6 +170,20 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
         if (touchIndex == 1)
         {
             playedPad = getPadIndex (x, y);
+            if (isRecorded(playedPad))
+            {
+                if(isPlayed(playedPad))
+                {
+                    stop(playedPad);
+                }
+                else
+                {
+                    play(playedPad);
+                }
+            }
+            else
+            {
+            }
         }
     }
     else
@@ -205,10 +219,13 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
         // Session view
         if (touchIndex == 1)
         {
-            int note = 60 + playedPad;
-            int velocity = clamp (0, 127, int (vz * 127.0));
-            sendNoteOff ((channel - 1), note, velocity);
-            state = 1;
+            if (isRecorded(playedPad))
+            {
+            }
+            else
+            {
+                state = 1;//change to xyz pad
+            }
         }
     }
     else

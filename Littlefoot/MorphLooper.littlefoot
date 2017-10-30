@@ -239,3 +239,9 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
         }
     }
 }
+
+
+void handleMIDI	(int byte0, int byte1, int byte2)
+{
+//It will be added receive MIDI note for clear recordings
+}

@@ -22,10 +22,23 @@ heap description
 Littlefoot does not has setHeapBits(). So I store boolean as int.
 */
 
+
+/*
+MIDI rule
+
+note:
+recordFlagBaseNote = 24
+24: pad1 will record flag
+25: pad2 will record flag
+26: pad3 will record flag
+27: pad4 will record flag
+*/
+int recordFlagBaseNote;
 int padWidth, padSpacing;
 int gridSize;
 int playedPad;
 int state;
+
 
 /*
 state
@@ -106,6 +119,7 @@ void drawPads()
 
 void initialise()
 {
+    recordFlagBaseNote = 24;
     state = 0;
     gridSize = 2;
     playedPad = 0;
@@ -160,7 +174,7 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
         if (touchIndex == 1)
         {
             record(playedPad);
-            int note = playedPad + 60;
+            int note = playedPad + recordFlagBaseNote;
             sendNoteOn((channel - 1), note, 127);
             addPressurePoint (0xFFFFFFFF, x, y, z * 15.0);
         }
@@ -194,7 +208,7 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
     {
         if (touchIndex == 1)
         {
-            int note = playedPad + 60;
+            int note = playedPad + recordFlagBaseNote;
             sendNoteOff((channel - 1), note, 0);
             state = 0;
         }

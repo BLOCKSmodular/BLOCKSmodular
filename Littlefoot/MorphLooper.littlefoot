@@ -150,11 +150,13 @@ void repaint()
 
     if (state == 0)
     {
+        // Session view
         if (isConnectedToHost())
         drawPads();
     } 
     else
     {
+        // XYZ pad
         drawPressureMap();
     }
 }
@@ -164,6 +166,7 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
     if (state == 0)
     {
+        // Session view
         if (touchIndex == 1)
         {
             playedPad = getPadIndex (x, y);
@@ -171,6 +174,7 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
     }
     else
     {
+        // XYZ pad
         if (touchIndex == 1)
         {
             record(playedPad);
@@ -185,9 +189,11 @@ void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
     if (state == 0)
     {
+        // Session view
     }
     else
     {
+        // XYZ pad
         addPressurePoint (0xFFFFFFFF, x, y, z * 5.0);
     }
 }
@@ -196,6 +202,7 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
     if (state == 0)
     {
+        // Session view
         if (touchIndex == 1)
         {
             int note = 60 + playedPad;
@@ -206,11 +213,12 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
     }
     else
     {
+        // XYZ pad
         if (touchIndex == 1)
         {
             int note = playedPad + recordFlagBaseNote;
             sendNoteOff((channel - 1), note, 0);
-            state = 0;
+            state = 0;//change to session view
         }
     }
 }

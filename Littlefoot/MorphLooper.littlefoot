@@ -33,7 +33,8 @@ recordFlagBaseNote = 24
 26: pad3 will record flag
 27: pad4 will record flag
 */
-int recordFlagBaseNote;
+int recordFlagBaseNote;//24
+int playFlagBaseNote;//36
 int padWidth, padSpacing;
 int gridSize;
 int playedPad;
@@ -58,9 +59,23 @@ bool isPlayed(int padIndex)
     return playing == 1 ? true : false;
 }
 
-void record(int padIndex)
+void recordBegin(int padIndex)
 {
-    setHeapInt(padIndex * 4, 1);
+    if(!isRecorded(padIndex))
+    {
+        int note = padIndex + recordFlagBaseNote;
+        sendNoteOn(channel, note, 127);
+        setHeapInt(padIndex * 4, 1);
+    }
+}
+
+void recordEnd(int padIndex)
+{
+    if(isRecorded(padIndex))
+    {
+        int note = padIndex + recordFlagBaseNote;
+        sendNoteOff(channel, note, 0);
+    }
 }
 
 void clear(int padIndex)
@@ -70,13 +85,43 @@ void clear(int padIndex)
 
 void play(int padIndex)
 {
-    //It will be added code that checking other pads transport.
-    setHeapInt((padIndex + 4) * 4, 1);
+    if(!isPlayed(padIndex))
+    {
+        int anotherScene = padIndex % 2 == 0 ? padIndex + 1 : padIndex -1;
+        if(isPlayed(anotherScene))
+        {
+            stop(anotherScene);
+        }
+        int note = padIndex + playFlagBaseNote;
+        sendNoteOn(channel, note, 127);
+        setHeapInt((padIndex + 4) * 4, 1);
+    }
 }
 
 void stop(int padIndex)
 {
-    setHeapInt((padIndex + 4) * 4, 0);
+    if(isPlayed(padIndex))
+    {
+        int note = padIndex + playFlagBaseNote;
+        sendNoteOff(channel, note, 0);
+        setHeapInt((padIndex + 4) * 4, 0);
+    }
+}
+
+//==============================================================================
+void sendXYZCC(float x, float y, float z)
+{
+    /*
+       x:12
+       y:13
+       z:14
+    */
+    int ccX = int(map(x, 0.07, 1.93, 0.0, 127.0));
+    int ccY = int(map(y, 1.93, 0.07, 0.0, 127.0));
+    int ccZ = int(map(z, 0.0, 1.0, 0.0, 127.0));
+    sendCC (channel, 12, ccX);
+    sendCC (channel, 13, ccY);
+    sendCC (channel, 14, ccZ);
 }
 
 //==============================================================================
@@ -120,6 +165,7 @@ void drawPads()
 void initialise()
 {
     recordFlagBaseNote = 24;
+    playFlagBaseNote = 36;
     state = 0;
     gridSize = 2;
     playedPad = 0;
@@ -191,10 +237,9 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
         // XYZ pad
         if (touchIndex == 1)
         {
-            record(playedPad);
-            int note = playedPad + recordFlagBaseNote;
-            sendNoteOn((channel - 1), note, 127);
+            recordBegin(playedPad);
             addPressurePoint (0xFFFFFFFF, x, y, z * 15.0);
+            sendXYZCC(x, y, z);
         }
     }
 }
@@ -209,6 +254,7 @@ void touchMove (int touchIndex, float x, float y, float z, float vz)
     {
         // XYZ pad
         addPressurePoint (0xFFFFFFFF, x, y, z * 5.0);
+        sendXYZCC(x, y, z);
     }
 }
 
@@ -233,8 +279,7 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
         // XYZ pad
         if (touchIndex == 1)
         {
-            int note = playedPad + recordFlagBaseNote;
-            sendNoteOff((channel - 1), note, 0);
+            recordEnd(playedPad);
             state = 0;//change to session view
         }
     }

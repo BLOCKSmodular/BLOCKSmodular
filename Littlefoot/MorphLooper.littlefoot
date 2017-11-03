@@ -5,7 +5,7 @@
     </groups>
 
     <variables>
-      <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="1" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
+      <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="0" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
       <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xffff0000" />
       <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xff00ff00" />
       <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xff0000ff" />
@@ -28,10 +28,16 @@ MIDI rule
 
 note:
 recordFlagBaseNote = 24
-24: pad1 will record flag
-25: pad2 will record flag
-26: pad3 will record flag
-27: pad4 will record flag
+24: pad1 is recording or recorded
+25: pad2 is recording or recorded
+26: pad3 is recording or recorded
+27: pad4 is recording or recorded
+
+playFlagBaseNote = 36
+36: pad1 is playing
+37: pad2 is playing
+38: pad3 is playing
+39: pad4 is playing
 */
 int recordFlagBaseNote;//24
 int playFlagBaseNote;//36

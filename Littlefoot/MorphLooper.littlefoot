@@ -6,10 +6,10 @@
 
     <variables>
       <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="0" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
-      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xffff0000" />
-      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xff00ff00" />
-      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xff0000ff" />
-      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xffffffff" />
+      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
+      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
     </variables>
 </metadata>
 */
@@ -45,6 +45,13 @@ int padWidth, padSpacing;
 int gridSize;
 int playedPad;
 int state;
+
+float Ax;
+float Ay;
+float Az;
+float Bx;
+float By;
+float Bz;
 
 
 /*
@@ -205,6 +212,7 @@ void repaint()
         // Session view
         if (isConnectedToHost())
         drawPads();
+        drawPressureMap();
     } 
     else
     {
@@ -291,8 +299,63 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
     }
 }
 
+void addPressure_looper(bool isTrackA)
+{
+    if(isTrackA == 1)
+    {
+        addPressurePoint(0xFFFF0000, Ax, Ay, Az * 5.0);
+    }
+    else
+    {
+        addPressurePoint(0xFF00FF00, Bx, By, Bz * 5.0);
+    }
+}
 
 void handleMIDI	(int byte0, int byte1, int byte2)
 {
-//It will be added receive MIDI note for clear recordings
+    /*
+    MIDIchannel: byte0 - 175
+    CCnumber: byte1
+    CCvalue: byte2
+    */
+    
+    if(state == 0)
+    {
+    
+        if (byte1 == 84)
+        {
+            Ax = map(float(byte2), 0.0, 127.0, 0.07, 1.93);
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 85)
+        {
+            Ay = map(float(byte2), 0.0, 127.0, 1.93, 0.07);
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 86)
+        {
+            Az = float(byte2) / 127.0;
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 87)
+        {
+            Bx = map(float(byte2), 0.0, 127.0, 0.07, 1.93);
+            addPressure_looper(false);
+        }
+    
+        if (byte1 == 88)
+        {
+            By = map(float(byte2), 0.0, 127.0, 1.93, 0.07);
+            addPressure_looper(false);
+        }
+    
+        if (byte1 == 89)
+        {
+            Bz = float(byte2) / 127.0;
+            addPressure_looper(false);
+        }
+    }
 }

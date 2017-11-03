@@ -5,7 +5,7 @@
     </groups>
 
     <variables>
-      <variable name="channel" displayName="MIDI Channel" type="int" min="1" max="16" value="1" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
+      <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="1" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
       <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xffff0000" />
       <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xff00ff00" />
       <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xff0000ff" />

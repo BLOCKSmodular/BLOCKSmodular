@@ -93,6 +93,7 @@ void recordEnd(int padIndex)
 
 void clear(int padIndex)
 {
+    stop(padIndex);
     setHeapInt(padIndex * 4, 0);
 }
 
@@ -318,6 +319,11 @@ void handleMIDI	(int byte0, int byte1, int byte2)
     CCnumber: byte1
     CCvalue: byte2
     */
+    
+    if (72 <= byte1 && byte1 <= 75)
+    {
+        clear(byte1 - 72);
+    }
     
     if(state == 0)
     {

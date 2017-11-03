@@ -39,32 +39,6 @@
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
 				"box" : 				{
-					"id" : "obj-2",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 9,
-					"outlettype" : [ "int", "int", "float", "float", "float", "", "int", "float", "" ],
-					"patching_rect" : [ 171.0, 706.0, 103.0, 22.0 ],
-					"style" : "",
-					"text" : "transport"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-1",
-					"maxclass" : "newobj",
-					"numinlets" : 1,
-					"numoutlets" : 2,
-					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 223.0, 201.0, 48.0, 22.0 ],
-					"style" : "",
-					"text" : "buffer~"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-55",
 					"maxclass" : "newobj",
 					"numinlets" : 3,
@@ -185,7 +159,7 @@
 				"box" : 				{
 					"comment" : "LoopSync(0.~1.)",
 					"id" : "obj-20",
-					"index" : 0,
+					"index" : 5,
 					"maxclass" : "outlet",
 					"numinlets" : 1,
 					"numoutlets" : 0,
@@ -198,7 +172,7 @@
 				"box" : 				{
 					"comment" : "4ch",
 					"id" : "obj-18",
-					"index" : 0,
+					"index" : 4,
 					"maxclass" : "outlet",
 					"numinlets" : 1,
 					"numoutlets" : 0,
@@ -211,7 +185,7 @@
 				"box" : 				{
 					"comment" : "3ch",
 					"id" : "obj-19",
-					"index" : 0,
+					"index" : 3,
 					"maxclass" : "outlet",
 					"numinlets" : 1,
 					"numoutlets" : 0,
@@ -224,7 +198,7 @@
 				"box" : 				{
 					"comment" : "2ch",
 					"id" : "obj-17",
-					"index" : 0,
+					"index" : 2,
 					"maxclass" : "outlet",
 					"numinlets" : 1,
 					"numoutlets" : 0,
@@ -237,7 +211,7 @@
 				"box" : 				{
 					"comment" : "1ch",
 					"id" : "obj-16",
-					"index" : 0,
+					"index" : 1,
 					"maxclass" : "outlet",
 					"numinlets" : 1,
 					"numoutlets" : 0,
@@ -250,7 +224,7 @@
 				"box" : 				{
 					"comment" : "pressure",
 					"id" : "obj-15",
-					"index" : 0,
+					"index" : 4,
 					"maxclass" : "inlet",
 					"numinlets" : 0,
 					"numoutlets" : 1,
@@ -264,7 +238,7 @@
 				"box" : 				{
 					"comment" : "posY",
 					"id" : "obj-14",
-					"index" : 0,
+					"index" : 3,
 					"maxclass" : "inlet",
 					"numinlets" : 0,
 					"numoutlets" : 1,
@@ -278,7 +252,7 @@
 				"box" : 				{
 					"comment" : "posX",
 					"id" : "obj-13",
-					"index" : 0,
+					"index" : 2,
 					"maxclass" : "inlet",
 					"numinlets" : 0,
 					"numoutlets" : 1,
@@ -292,7 +266,7 @@
 				"box" : 				{
 					"comment" : "noteOn",
 					"id" : "obj-12",
-					"index" : 0,
+					"index" : 1,
 					"maxclass" : "inlet",
 					"numinlets" : 0,
 					"numoutlets" : 1,
@@ -401,9 +375,7 @@
 				}
 
 			}
- ],
-		"dependency_cache" : [  ],
-		"autosave" : 0
+ ]
 	}
 
 }

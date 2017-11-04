@@ -1,15 +1,17 @@
-int cs = 11; //4922の3pinにつなぐ
-int cs2 = 18; //別の4922の3pin
-int sck = 12;//4922の4pin
-int sdi = 13; //4922の5pin
-int ldac = 19; //4922の16pin
+// int cs = 11; //4922の3pinにつなぐ
+// int cs2 = 18; //別の4922の3pin
+int cs = [11, 18, 17, 16];
+const sck = 12;//4922の4pin
+const sdi = 13; //4922の5pin
+const ldac = 19; //4922の16pin
+const LED_PIN = 10;
 
 void setup() {
   // put your setup code here, to run once:
   delay(100);
-  Serial.begin(9600);
-  pinMode(cs, OUTPUT);
-  pinMode(cs2, OUTPUT);  
+  Serial.begin(15200);
+  for()
+  pinMode(cs[i], OUTPUT);
   pinMode(sck, OUTPUT);
   pinMode(sdi, OUTPUT);
   pinMode(ldac, OUTPUT);  
@@ -17,56 +19,36 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if(Serial.available() > 2){
-    int order = Serial.read();
-    if(order ==97 || order == 98 || order == 99 || order ==100){
-      
-      uint8_t value_high = Serial.read();
-      uint8_t value_low = Serial.read();
-      
-      int concat_value = value_high << 8;
-      concat_value = concat_value + value_low; 
-      
-//      concat_value = constrain(concat_value, 1, 5000);
-      int da_value = map(concat_value, 0, 5000, 0, 4000);
-      concat_value = map(concat_value, 0, 5000, 0, 255);
-      
-      
-      analogWrite(10, concat_value);
-      Serial.write(concat_value);
-      
-      if(order == 97){
-        //CV1
-//        analogWrite(3, concat_value);
-        
+  if(Serial.available() > 16){
+    char head = Serial.read();
+    if(order =='H'){
+      for(int i = 0; i < 8; i++){
+        int channel = 0;
+        if(i >3){channel = 1;}
+        uint8_t value_high = Serial.read();
+        uint8_t value_low = Serial.read();
+        int concat_value = concatValues(value_high, value_low);
+        int da_value = map(concat_value, 0, 65536, 0, 4095);
+       
+        int cs_id = i;
+        if(channel == 1){
+          cs_id = i -4;
+        }
         digitalWrite(ldac, HIGH);
-        digitalWrite(cs, LOW);
+        digitalWrite(cs[cs_id], LOW);
         DACout(sdi, sck, 0, da_value);
-        digitalWrite(cs, HIGH);
+        digitalWrite(cs[cs_id], HIGH);
         digitalWrite(ldac,LOW);
-        
+
       }
-      else if (order ==98){
-        //CV2
-//        analogWrite(5, concat_value);
-        digitalWrite(ldac, HIGH);
-        digitalWrite(cs2, LOW);
-        DACout(sdi, sck, 0, da_value);
-        digitalWrite(cs2, HIGH);
-        digitalWrite(ldac,LOW);
-      }
-      else if (order == 99){
-        //CV3
-        analogWrite(6, concat_value);
-        
-      }
-      else if (order == 100){
-        //CV4
-        analogWrite(9, concat_value);
-      }
-    }
-  }
+
   delay(10);
+}
+
+int concatValues( int value_high, int value_low){
+  int concat_value = value_high << 8;
+  concat_value = concat_value + value_low; 
+  return concat_value;
 }
 
 

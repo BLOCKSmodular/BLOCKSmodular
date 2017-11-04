@@ -5,11 +5,11 @@
     </groups>
 
     <variables>
-      <variable name="channel" displayName="MIDI Channel" type="int" min="1" max="16" value="1" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
-      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xffff0000" />
-      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xff00ff00" />
-      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xff0000ff" />
-      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xffffffff" />
+      <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="0" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
+      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
+      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
     </variables>
 </metadata>
 */
@@ -22,10 +22,37 @@ heap description
 Littlefoot does not has setHeapBits(). So I store boolean as int.
 */
 
+
+/*
+MIDI rule
+
+note:
+recordFlagBaseNote = 24
+24: pad1 is recording or recorded
+25: pad2 is recording or recorded
+26: pad3 is recording or recorded
+27: pad4 is recording or recorded
+
+playFlagBaseNote = 36
+36: pad1 is playing
+37: pad2 is playing
+38: pad3 is playing
+39: pad4 is playing
+*/
+int recordFlagBaseNote;//24
+int playFlagBaseNote;//36
 int padWidth, padSpacing;
 int gridSize;
 int playedPad;
 int state;
+
+float Ax;
+float Ay;
+float Az;
+float Bx;
+float By;
+float Bz;
+
 
 /*
 state
@@ -45,25 +72,70 @@ bool isPlayed(int padIndex)
     return playing == 1 ? true : false;
 }
 
-void record(int padIndex)
+void recordBegin(int padIndex)
 {
-    setHeapInt(padIndex * 4, 1);
+    if(!isRecorded(padIndex))
+    {
+        int note = padIndex + recordFlagBaseNote;
+        sendNoteOn(channel, note, 127);
+        setHeapInt(padIndex * 4, 1);
+    }
+}
+
+void recordEnd(int padIndex)
+{
+    if(isRecorded(padIndex))
+    {
+        int note = padIndex + recordFlagBaseNote;
+        sendNoteOff(channel, note, 0);
+    }
 }
 
 void clear(int padIndex)
 {
+    stop(padIndex);
     setHeapInt(padIndex * 4, 0);
 }
 
 void play(int padIndex)
 {
-    //It will be added code that checking other pads transport.
-    setHeapInt((padIndex + 4) * 4, 1);
+    if(!isPlayed(padIndex))
+    {
+        int anotherScene = padIndex % 2 == 0 ? padIndex + 1 : padIndex -1;
+        if(isPlayed(anotherScene))
+        {
+            stop(anotherScene);
+        }
+        int note = padIndex + playFlagBaseNote;
+        sendNoteOn(channel, note, 127);
+        setHeapInt((padIndex + 4) * 4, 1);
+    }
 }
 
 void stop(int padIndex)
 {
-    setHeapInt((padIndex + 4) * 4, 0);
+    if(isPlayed(padIndex))
+    {
+        int note = padIndex + playFlagBaseNote;
+        sendNoteOff(channel, note, 0);
+        setHeapInt((padIndex + 4) * 4, 0);
+    }
+}
+
+//==============================================================================
+void sendXYZCC(float x, float y, float z)
+{
+    /*
+       x:12
+       y:13
+       z:14
+    */
+    int ccX = int(map(x, 0.07, 1.93, 0.0, 127.0));
+    int ccY = int(map(y, 1.93, 0.07, 0.0, 127.0));
+    int ccZ = int(map(z, 0.0, 1.0, 0.0, 127.0));
+    sendCC (channel, 12, ccX);
+    sendCC (channel, 13, ccY);
+    sendCC (channel, 14, ccZ);
 }
 
 //==============================================================================
@@ -106,6 +178,8 @@ void drawPads()
 
 void initialise()
 {
+    recordFlagBaseNote = 24;
+    playFlagBaseNote = 36;
     state = 0;
     gridSize = 2;
     playedPad = 0;
@@ -136,11 +210,14 @@ void repaint()
 
     if (state == 0)
     {
+        // Session view
         if (isConnectedToHost())
         drawPads();
+        drawPressureMap();
     } 
     else
     {
+        // XYZ pad
         drawPressureMap();
     }
 }
@@ -150,19 +227,34 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
     if (state == 0)
     {
+        // Session view
         if (touchIndex == 1)
         {
             playedPad = getPadIndex (x, y);
+            if (isRecorded(playedPad))
+            {
+                if(isPlayed(playedPad))
+                {
+                    stop(playedPad);
+                }
+                else
+                {
+                    play(playedPad);
+                }
+            }
+            else
+            {
+            }
         }
     }
     else
     {
+        // XYZ pad
         if (touchIndex == 1)
         {
-            record(playedPad);
-            int note = playedPad + 60;
-            sendNoteOn((channel - 1), note, 127);
+            recordBegin(playedPad);
             addPressurePoint (0xFFFFFFFF, x, y, z * 15.0);
+            sendXYZCC(x, y, z);
         }
     }
 }
@@ -171,10 +263,13 @@ void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
     if (state == 0)
     {
+        // Session view
     }
     else
     {
+        // XYZ pad
         addPressurePoint (0xFFFFFFFF, x, y, z * 5.0);
+        sendXYZCC(x, y, z);
     }
 }
 
@@ -182,21 +277,91 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
     if (state == 0)
     {
+        // Session view
         if (touchIndex == 1)
         {
-            int note = 60 + playedPad;
-            int velocity = clamp (0, 127, int (vz * 127.0));
-            sendNoteOff ((channel - 1), note, velocity);
-            state = 1;
+            if (isRecorded(playedPad))
+            {
+            }
+            else
+            {
+                state = 1;//change to xyz pad
+            }
         }
     }
     else
     {
+        // XYZ pad
         if (touchIndex == 1)
         {
-            int note = playedPad + 60;
-            sendNoteOff((channel - 1), note, 0);
-            state = 0;
+            recordEnd(playedPad);
+            state = 0;//change to session view
+        }
+    }
+}
+
+void addPressure_looper(bool isTrackA)
+{
+    if(isTrackA == 1)
+    {
+        addPressurePoint(0xFFFF0000, Ax, Ay, Az * 5.0);
+    }
+    else
+    {
+        addPressurePoint(0xFF00FF00, Bx, By, Bz * 5.0);
+    }
+}
+
+void handleMIDI	(int byte0, int byte1, int byte2)
+{
+    /*
+    MIDIchannel: byte0 - 175
+    CCnumber: byte1
+    CCvalue: byte2
+    */
+    
+    if (72 <= byte1 && byte1 <= 75)
+    {
+        clear(byte1 - 72);
+    }
+    
+    if(state == 0)
+    {
+    
+        if (byte1 == 84)
+        {
+            Ax = map(float(byte2), 0.0, 127.0, 0.07, 1.93);
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 85)
+        {
+            Ay = map(float(byte2), 0.0, 127.0, 1.93, 0.07);
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 86)
+        {
+            Az = float(byte2) / 127.0;
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 87)
+        {
+            Bx = map(float(byte2), 0.0, 127.0, 0.07, 1.93);
+            addPressure_looper(false);
+        }
+    
+        if (byte1 == 88)
+        {
+            By = map(float(byte2), 0.0, 127.0, 1.93, 0.07);
+            addPressure_looper(false);
+        }
+    
+        if (byte1 == 89)
+        {
+            Bz = float(byte2) / 127.0;
+            addPressure_looper(false);
         }
     }
 }

@@ -1,5 +1,15 @@
 /*
 <metadata description="BLOCKS modular prototype." details="proto one" target="Lightpad" tags="MIDI;Controller;">
+<modes>
+<mode name="Default">
+  <variable name="channel" value="0"/>
+  <variable name="padColour1" value="0xFFC6F5F5"/>
+  <variable name="padColour2" value="0xFFC6F5F5"/>
+  <variable name="padColour3" value="0xFFC6FFFF"/>
+  <variable name="padColour4" value="0xFFC6F5F5"/>
+</mode>
+
+</modes>
     <groups>
       <group name="colours" displayName="Colours" />
     </groups>
@@ -304,11 +314,11 @@ void addPressure_looper(bool isTrackA)
 {
     if(isTrackA == 1)
     {
-        addPressurePoint(0xFFFF0000, Ax, Ay, Az * 5.0);
+        addPressurePoint(0xFFFF0000, Ax, Ay, Az * 8.0);
     }
     else
     {
-        addPressurePoint(0xFF00FF00, Bx, By, Bz * 5.0);
+        addPressurePoint(0xFF00FF00, Bx, By, Bz * 8.0);
     }
 }
 

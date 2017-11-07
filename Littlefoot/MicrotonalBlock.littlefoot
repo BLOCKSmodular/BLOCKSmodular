@@ -25,8 +25,9 @@ void sendXYZCC(int index, bool isNoteOn, float x, float y, float z)
     if (isNoteOn)
     {
         int XYCC_Value = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 127.0));
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 127.0));
         sendCC (channel, XYCC_Number, XYCC_Value);
-        sendCC (channel, pressureCC_Number, 127);
+        sendCC (channel, pressureCC_Number, pressure);
     }
     else
     {

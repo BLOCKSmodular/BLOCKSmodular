@@ -1,54 +1,34 @@
 // int cs = 11; //4922の3pinにつなぐ
 // int cs2 = 18; //別の4922の3pin
-int cs = [11, 18, 17, 16];
-const sck = 12;//4922の4pin
-const sdi = 13; //4922の5pin
-const ldac = 19; //4922の16pin
-const LED_PIN = 10;
+int cs[] = {11, 18, 17, 16};
+int sck = 12;//4922の4pin
+int sdi = 13; //4922の5pin
+int ldac = 19; //4922の16pin
+int LED_PIN = 10;
 
 void setup() {
   // put your setup code here, to run once:
   delay(100);
-  Serial.begin(15200);
-  for()
-  pinMode(cs[i], OUTPUT);
+  Serial.begin(115200);
+  for(int i = 0; i < 4; i++){
+    pinMode(cs[i], OUTPUT);
+//    Serial.println(i);
+  }
   pinMode(sck, OUTPUT);
   pinMode(sdi, OUTPUT);
-  pinMode(ldac, OUTPUT);  
+  pinMode(ldac, OUTPUT); 
+  Serial.println("Block modular !");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  if(Serial.available() > 16){
-    char head = Serial.read();
-    if(order =='H'){
-      for(int i = 0; i < 8; i++){
-        int channel = 0;
-        if(i >3){channel = 1;}
-        uint8_t value_high = Serial.read();
-        uint8_t value_low = Serial.read();
-        int concat_value = concatValues(value_high, value_low);
-        int da_value = map(concat_value, 0, 65536, 0, 4095);
-       
-        int cs_id = i;
-        if(channel == 1){
-          cs_id = i -4;
-        }
-        digitalWrite(ldac, HIGH);
-        digitalWrite(cs[cs_id], LOW);
-        DACout(sdi, sck, 0, da_value);
-        digitalWrite(cs[cs_id], HIGH);
-        digitalWrite(ldac,LOW);
-
-      }
-
-  delay(10);
+  testCV( 0, cs[0]);
+  testCV( 1, cs[0]);
 }
 
-int concatValues( int value_high, int value_low){
-  int concat_value = value_high << 8;
-  concat_value = concat_value + value_low; 
-  return concat_value;
+uint16_t concatValues( uint8_t value_high, uint8_t value_low)
+{
+  uint16_t val = (value_high << 8) | (value_low & 0b11111111);
+  return val;
 }
 
 
@@ -77,3 +57,22 @@ void DACout(int dataPin,int clockPin,int destination,int value)
           digitalWrite(clockPin,LOW) ;
      }
 }
+
+void testCV(int channel, int cs){
+  
+        digitalWrite(ldac, HIGH);
+        digitalWrite(cs, LOW);
+        DACout(sdi, sck, channel, 4095);
+        digitalWrite(cs, HIGH);
+        digitalWrite(ldac,LOW);
+        delay(500);
+        
+        digitalWrite(ldac, HIGH);
+        digitalWrite(cs, LOW);
+        DACout(sdi, sck, channel, 0);
+        digitalWrite(cs, HIGH);
+        digitalWrite(ldac,LOW);
+        delay(500);
+}
+
+

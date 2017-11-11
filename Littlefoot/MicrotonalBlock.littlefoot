@@ -1,0 +1,94 @@
+/*
+<metadata description="XYZ Pad controller." details="XY pad with the addition of pressure (Z), sending out MIDI CC. You can set MIDI CC number and channel."
+          target="Lightpad" 
+          tags="MIDI;Controller;">
+    <variables>
+        <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="0" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
+    </variables>
+</metadata>
+*/
+
+int CCBaseNumber;
+
+void initialise()
+{
+    CCBaseNumber = 96;
+	for (int i = 0; i < 32; ++i)
+        setLocalConfigActiveState (i, false, false);
+}
+
+void sendXYZCC(int index, bool isNoteOn, float x, float y, float z)
+{
+    int XYCC_Number = (index - 1) * 2 + CCBaseNumber;
+    int pressureCC_Number = (index - 1) * 2 + 1 + CCBaseNumber;
+    
+    if (isNoteOn)
+    {
+        int XYCC_Value = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 127.0));
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 127.0));
+        sendCC (channel, XYCC_Number, XYCC_Value);
+        sendCC (channel, pressureCC_Number, pressure);
+    }
+    else
+    {
+        sendCC(channel, XYCC_Number, 0);
+        sendCC(channel, pressureCC_Number, 0);
+    }
+}
+
+int getIndexColour(int index)
+{
+    int colour = 0xFFFFFFFF;
+    if(index == 1)
+    {
+        colour = 0xFFFF0000;
+    }
+    if(index == 2)
+    {
+        colour = 0xFF00FF00;
+        
+    }
+    if(index == 3)
+    {
+        colour = 0xFF0000FF;
+    }
+    if(index == 4)
+    {
+        colour = 0xFFFFFFFF;
+    }
+    
+    return colour;
+}
+
+void touchStart (int index, float x, float y, float z, float vz)
+{
+    if(index <= 4)
+    {
+        addPressurePoint (getIndexColour(index), x, y, z * 50.0);
+        sendXYZCC(index, true, x, y, z);
+    }
+}
+
+void touchMove (int index, float x, float y, float z, float vz)
+{
+    if (index <= 4)
+    {
+        addPressurePoint (getIndexColour(index), x, y, z * 30.0);
+        sendXYZCC(index, true, x, y, z);
+    }
+}
+
+void touchEnd (int index, float x, float y, float z, float vz)
+{
+    if (index <= 4)
+    {
+        sendXYZCC(index, false, x, y, z);
+    }
+}
+
+void repaint()
+{
+    clearDisplay();
+    drawPressureMap();
+    fadePressureMap(); 
+}

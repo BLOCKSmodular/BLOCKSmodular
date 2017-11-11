@@ -5,6 +5,7 @@ int sck = 7;//4922の4pin
 int sdi = 6; //4922の5pin
 int ldac = 5; //4922の16pin
 int LED_PIN = 10;
+int cvBoardCount = 4;
 
 void setup() {
   // put your setup code here, to run once:
@@ -21,8 +22,40 @@ void setup() {
 }
 
 void loop() {
-  testCV( 0, cs[0]);
-  testCV( 1, cs[0]);
+  if(Serial.available() > 16){
+    char head = Serial.read();
+    if(head == 104)
+    {
+      Serial.println("NM");
+      for(int i = 0; i < cvBoardCount; i++)
+      {
+         Serial.print("-B:");
+          Serial.print(i);
+          cvOut2channel(cs[i]);
+      }
+    }
+  }
+}
+
+void cvOut2channel(int cspin)
+{
+  for(int channel = 0 ; channel < 2; channel ++){
+     delay(50);
+     Serial.print("-c:");
+     Serial.print(channel);
+     Serial.print("-d:");
+     uint8_t value_high = Serial.read();
+     uint8_t value_low = Serial.read();
+     uint16_t concat_value = concatValues(value_high, value_low);
+     Serial.print(concat_value);
+     uint16_t da_value = map(concat_value, 0, 65535, 0, 4095);
+     digitalWrite(ldac, HIGH);
+     digitalWrite(cspin, LOW);
+     DACout(sdi, sck, channel, da_value);
+     digitalWrite(cspin, HIGH);
+     digitalWrite(ldac,LOW);
+  }
+  Serial.println("-");
 }
 
 uint16_t concatValues( uint8_t value_high, uint8_t value_low)

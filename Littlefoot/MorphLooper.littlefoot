@@ -1,0 +1,371 @@
+/*
+<metadata description="BLOCKS modular prototype." details="proto one" target="Lightpad" tags="MIDI;Controller;">
+<modes>
+<mode name="Default">
+  <variable name="channel" value="0"/>
+  <variable name="padColour1" value="0xFFC6F5F5"/>
+  <variable name="padColour2" value="0xFFC6F5F5"/>
+  <variable name="padColour3" value="0xFFC6FFFF"/>
+  <variable name="padColour4" value="0xFFC6F5F5"/>
+</mode>
+
+</modes>
+    <groups>
+      <group name="colours" displayName="Colours" />
+    </groups>
+
+    <variables>
+      <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="0" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
+      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
+      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    </variables>
+</metadata>
+*/
+
+#heapsize: 8 * 4
+/*
+heap description
+(int)0~3: Recorded(0/1)
+(int)4~7: Playing(0/1)
+Littlefoot does not has setHeapBits(). So I store boolean as int.
+*/
+
+
+/*
+MIDI rule
+
+note:
+recordFlagBaseNote = 24
+24: pad1 is recording or recorded
+25: pad2 is recording or recorded
+26: pad3 is recording or recorded
+27: pad4 is recording or recorded
+
+playFlagBaseNote = 36
+36: pad1 is playing
+37: pad2 is playing
+38: pad3 is playing
+39: pad4 is playing
+*/
+int recordFlagBaseNote;//24
+int playFlagBaseNote;//36
+int padWidth, padSpacing;
+int gridSize;
+int playedPad;
+int state;
+
+float Ax;
+float Ay;
+float Az;
+float Bx;
+float By;
+float Bz;
+
+
+/*
+state
+0: Session View
+1: XYZ
+*/
+
+bool isRecorded(int padIndex)
+{
+    int recorded = getHeapInt(padIndex * 4);
+    return recorded == 1 ? true : false;
+}
+
+bool isPlayed(int padIndex)
+{
+    int playing = getHeapInt((padIndex + 4) * 4);
+    return playing == 1 ? true : false;
+}
+
+void recordBegin(int padIndex)
+{
+    if(!isRecorded(padIndex))
+    {
+        int note = padIndex + recordFlagBaseNote;
+        sendNoteOn(channel, note, 127);
+        setHeapInt(padIndex * 4, 1);
+    }
+}
+
+void recordEnd(int padIndex)
+{
+    if(isRecorded(padIndex))
+    {
+        int note = padIndex + recordFlagBaseNote;
+        sendNoteOff(channel, note, 0);
+    }
+}
+
+void clear(int padIndex)
+{
+    stop(padIndex);
+    setHeapInt(padIndex * 4, 0);
+}
+
+void play(int padIndex)
+{
+    if(!isPlayed(padIndex))
+    {
+        int anotherScene = padIndex % 2 == 0 ? padIndex + 1 : padIndex -1;
+        if(isPlayed(anotherScene))
+        {
+            stop(anotherScene);
+        }
+        int note = padIndex + playFlagBaseNote;
+        sendNoteOn(channel, note, 127);
+        setHeapInt((padIndex + 4) * 4, 1);
+    }
+}
+
+void stop(int padIndex)
+{
+    if(isPlayed(padIndex))
+    {
+        int note = padIndex + playFlagBaseNote;
+        sendNoteOff(channel, note, 0);
+        setHeapInt((padIndex + 4) * 4, 0);
+    }
+}
+
+//==============================================================================
+void sendXYZCC(float x, float y, float z)
+{
+    /*
+       x:12
+       y:13
+       z:14
+    */
+    int ccX = int(map(x, 0.07, 1.93, 0.0, 127.0));
+    int ccY = int(map(y, 1.93, 0.07, 0.0, 127.0));
+    int ccZ = int(map(z, 0.0, 1.0, 0.0, 127.0));
+    sendCC (channel, 12, ccX);
+    sendCC (channel, 13, ccY);
+    sendCC (channel, 14, ccZ);
+}
+
+//==============================================================================
+int getPadColour (int padIndex)
+{
+    if (padIndex == 0)  return padColour1;
+    if (padIndex == 1)  return padColour2;
+    if (padIndex == 2)  return padColour3;
+    if (padIndex == 3)  return padColour4;
+    return 0xffffffff;
+}
+
+//==============================================================================
+int getPadIndex (float x, float y)
+{
+    /*
+    0: top left
+    1: bottom left
+    2: top right
+    3: bottom right
+    */
+    int row = int (y * (0.95 / 2.0) * float (gridSize));
+    int col = int (x * (0.95 / 2.0) * float (gridSize));
+
+	return (gridSize * col) + row;
+}
+
+//==============================================================================
+void drawPads()
+{
+    for (int padIndex = 0; padIndex < gridSize * gridSize; ++padIndex)
+    {
+        int overlayColour = isRecorded(padIndex) ? 0x00FFFFFF : 0xDE000000;
+        int x = padIndex / 2;
+        int y = padIndex % 2;
+        int w = padWidth - padSpacing;
+        blendRect(blendARGB(getPadColour(padIndex), overlayColour), x * padWidth, y * padWidth, w, w);
+    }
+}
+
+void initialise()
+{
+    recordFlagBaseNote = 24;
+    playFlagBaseNote = 36;
+    state = 0;
+    gridSize = 2;
+    playedPad = 0;
+	padWidth = 15 / gridSize;
+	padSpacing = gridSize > 1 ? (15 - gridSize * padWidth) / (gridSize - 1) : 0;
+	padWidth += padSpacing;
+	
+	for (int i = 0; i < 8; ++i)
+    {
+        setHeapInt(i * 4, 0);
+    }
+
+	for (int i = 0; i < 32; ++i)
+        setLocalConfigActiveState (i, false, false);
+}
+
+//==============================================================================
+void repaint()
+{   
+	clearDisplay();
+	fadePressureMap();
+
+    if (state == 0)
+    {
+        // Session view
+        if (isConnectedToHost())
+        drawPads();
+        drawPressureMap();
+    } 
+    else
+    {
+        // XYZ pad
+        drawPressureMap();
+    }
+}
+
+//==============================================================================
+void touchStart (int touchIndex, float x, float y, float z, float vz)
+{
+    if (state == 0)
+    {
+        // Session view
+        if (touchIndex == 1)
+        {
+            playedPad = getPadIndex (x, y);
+            if (isRecorded(playedPad))
+            {
+                if(isPlayed(playedPad))
+                {
+                    stop(playedPad);
+                }
+                else
+                {
+                    play(playedPad);
+                }
+            }
+            else
+            {
+            }
+        }
+    }
+    else
+    {
+        // XYZ pad
+        if (touchIndex == 1)
+        {
+            recordBegin(playedPad);
+            addPressurePoint (0xFFFFFFFF, x, y, z * 15.0);
+            sendXYZCC(x, y, z);
+        }
+    }
+}
+
+void touchMove (int touchIndex, float x, float y, float z, float vz)
+{
+    if (state == 0)
+    {
+        // Session view
+    }
+    else
+    {
+        // XYZ pad
+        addPressurePoint (0xFFFFFFFF, x, y, z * 5.0);
+        sendXYZCC(x, y, z);
+    }
+}
+
+void touchEnd (int touchIndex, float x, float y, float z, float vz)
+{
+    if (state == 0)
+    {
+        // Session view
+        if (touchIndex == 1)
+        {
+            if (isRecorded(playedPad))
+            {
+            }
+            else
+            {
+                state = 1;//change to xyz pad
+            }
+        }
+    }
+    else
+    {
+        // XYZ pad
+        if (touchIndex == 1)
+        {
+            recordEnd(playedPad);
+            state = 0;//change to session view
+        }
+    }
+}
+
+void addPressure_looper(bool isTrackA)
+{
+    if(isTrackA == 1)
+    {
+        addPressurePoint(0xFFFF0000, Ax, Ay, Az * 8.0);
+    }
+    else
+    {
+        addPressurePoint(0xFF00FF00, Bx, By, Bz * 8.0);
+    }
+}
+
+void handleMIDI	(int byte0, int byte1, int byte2)
+{
+    /*
+    MIDIchannel: byte0 - 175
+    CCnumber: byte1
+    CCvalue: byte2
+    */
+    
+    if (72 <= byte1 && byte1 <= 75)
+    {
+        clear(byte1 - 72);
+    }
+    
+    if(state == 0)
+    {
+    
+        if (byte1 == 84)
+        {
+            Ax = map(float(byte2), 0.0, 127.0, 0.07, 1.93);
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 85)
+        {
+            Ay = map(float(byte2), 0.0, 127.0, 1.93, 0.07);
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 86)
+        {
+            Az = float(byte2) / 127.0;
+            addPressure_looper(true);
+        }
+    
+        if (byte1 == 87)
+        {
+            Bx = map(float(byte2), 0.0, 127.0, 0.07, 1.93);
+            addPressure_looper(false);
+        }
+    
+        if (byte1 == 88)
+        {
+            By = map(float(byte2), 0.0, 127.0, 1.93, 0.07);
+            addPressure_looper(false);
+        }
+    
+        if (byte1 == 89)
+        {
+            Bz = float(byte2) / 127.0;
+            addPressure_looper(false);
+        }
+    }
+}

@@ -1,10 +1,9 @@
 // int cs = 11; //4922の3pinにつなぐ
 // int cs2 = 18; //別の4922の3pin
-int cs[] = {11, 18, 17, 16};
+int cs[] = {11, A5, A4, A3};
 int sck = 7;//4922の4pin
 int sdi = 6; //4922の5pin
 int ldac = 5; //4922の16pin
-int LED_PIN = 10;
 int cvBoardCount = 4;
 
 void setup() {
@@ -26,11 +25,8 @@ void loop() {
     char head = Serial.read();
     if(head == 104)
     {
-      Serial.println("NM");
       for(int i = 0; i < cvBoardCount; i++)
       {
-         Serial.print("-B:");
-          Serial.print(i);
           cvOut2channel(cs[i]);
       }
     }
@@ -40,25 +36,18 @@ void loop() {
 void cvOut2channel(int cspin)
 {
   for(int channel = 0 ; channel < 2; channel ++){
-     delay(50);
-     Serial.print("-c:");
-     Serial.print(channel);
-     Serial.print("-d:");
+
      uint8_t value_high = Serial.read();
      uint8_t value_low = Serial.read();
      uint16_t concat_value = concatValues(value_high, value_low);
-     
      uint16_t da_value = map(concat_value, 0, 65535, 0, 4095);
-
-     Serial.print(da_value);
- 
      digitalWrite(ldac, HIGH);
      digitalWrite(cspin, LOW);
      DACout(sdi, sck, channel, da_value);
      digitalWrite(cspin, HIGH);
      digitalWrite(ldac,LOW);
+     delay(3);
   }
-  Serial.println("-");
 }
 
 uint16_t concatValues( uint8_t value_high, uint8_t value_low)
@@ -92,23 +81,6 @@ void DACout(int dataPin,int clockPin,int destination,int value)
           digitalWrite(clockPin,HIGH) ;
           digitalWrite(clockPin,LOW) ;
      }
-}
-
-void testCV(int channel, int cs){
-  
-        digitalWrite(ldac, HIGH);
-        digitalWrite(cs, LOW);
-        DACout(sdi, sck, channel, 4095);
-        digitalWrite(cs, HIGH);
-        digitalWrite(ldac,LOW);
-        delay(500);
-        
-        digitalWrite(ldac, HIGH);
-        digitalWrite(cs, LOW);
-        DACout(sdi, sck, channel, 0);
-        digitalWrite(cs, HIGH);
-        digitalWrite(ldac,LOW);
-        delay(500);
 }
 
 

@@ -1,13 +1,13 @@
 // int cs = 11; //4922の3pinにつなぐ
 // int cs2 = 18; //別の4922の3pin
-int cs[] = {11, 18, 17, 16};
+int cs[] = {11, A5, A4, A3};
 int sck = 7;//4922の4pin
 int sdi = 6; //4922の5pin
 int ldac = 5; //4922の16pin
 int LED_PIN = 10;
 
 void setup() {
-  // put your setup code here, to run once:
+  // put your setup code here, to run once:                                            
   delay(100);
   Serial.begin(115200);
   for(int i = 0; i < 4; i++){
@@ -21,8 +21,10 @@ void setup() {
 }
 
 void loop() {
-  testCV( 0, cs[0]);
-  testCV( 1, cs[0]);
+  testCV( 0, cs[3]);
+  Serial.println("1");
+  testCV( 1, cs[3]);
+  Serial.println("2");
 }
 
 uint16_t concatValues( uint8_t value_high, uint8_t value_low)

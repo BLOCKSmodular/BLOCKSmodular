@@ -208,13 +208,7 @@ void initialise()
 
 //==============================================================================
 void repaint()
-{
-//It will be added deleting records function by the Controller BLOCK.
-//      for (int i = 0; i < 4; ++i)
-//      {
-//          clear(i);
-//      }
-    
+{   
 	clearDisplay();
 	fadePressureMap();
 

@@ -3721,9 +3721,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "int", "" ],
-					"patching_rect" : [ 270.0, 815.666687, 92.0, 22.0 ],
+					"patching_rect" : [ 270.0, 815.666687, 86.0, 22.0 ],
 					"style" : "",
-					"text" : "serial a 115200"
+					"text" : "serial a 57600"
 				}
 
 			}

@@ -9,7 +9,7 @@ int cvBoardCount = 4;
 void setup() {
   // put your setup code here, to run once:
   delay(100);
-  Serial.begin(115200);
+  Serial.begin(57600);//74800 115200
   for(int i = 0; i < 4; i++){
     pinMode(cs[i], OUTPUT);
 //    Serial.println(i);

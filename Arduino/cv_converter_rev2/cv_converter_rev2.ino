@@ -21,7 +21,7 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available() > 1) //more than 2bytes
+  while (Serial.available() > 1) //more than 2bytes
   {
     byte twobytes[];
     Serial.readBytes(twobytes, 2);

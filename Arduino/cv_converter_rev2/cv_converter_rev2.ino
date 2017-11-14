@@ -5,6 +5,8 @@ int sck = 7;//4922の4pin
 int sdi = 6; //4922の5pin
 int ldac = 5; //4922の16pin
 int cvBoardCount = 4;
+const float a = 0.9;
+float last[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 void setup() {
   // put your setup code here, to run once:
@@ -27,14 +29,18 @@ void loop() {
     Serial.readBytes(twobytes, 2);
     uint8_t boardIndex = twobytes[0] >> 6 & B00000011;
     uint8_t channel = bitRead(twobytes[0], 5);
+    uint8_t cvindex = boardIndex * 2 + channel;
     word da_value =  word(twobyte[0] & B00001111, twobyte[1]);
-    if (0 <= da_value && da_value < 4096)
+    last[cvindex] = last[cvindex] * a + (1.0 - a) * float(da_value);//Lowpass
+    if (0.0 <= last[cvindex] && last[cvindex] < 4096.0)
     {
+      da_value = word(last[cvindex]);
       digitalWrite(ldac, HIGH);
       digitalWrite(cs[boardIndex], LOW);
       DACout(sdi, sck, channel, da_value);
       digitalWrite(cs[boardIndex], HIGH);
       digitalWrite(ldac, LOW);
+      delay(3);//delay 0.003ms
     }
   }
 }

@@ -26,39 +26,43 @@ void loop() {
   while (Serial.available() > 1) //more than 2bytes
   {
     uint8_t upperByte = Serial.read();
+    if (upperByte & 128 != 128) //上位バイトフラグの判定
+    {
+      continue;
+    }
     uint8_t header = (upperByte >> 4) & 15;
     uint8_t boardIndex;
     uint8_t channel;
     switch (header) {
-      case 6:
+      case 8://CV1
         boardIndex = 0;
         channel = 0;
         break;
-      case 7:
+      case 9://CV2
         boardIndex = 0;
         channel = 1;
         break;
-      case 8:
+      case 10://CV3
         boardIndex = 1;
-        channel = 0;
-        break;
-      case 9:
-        boardIndex = 1;
-        channel = 1;
-        break;
-      case 10:
-        boardIndex = 2;
         channel = 0;
         break;
       case 11:
-        boardIndex = 2;
+        boardIndex = 1;
         channel = 1;
         break;
       case 12:
-        boardIndex = 3;
+        boardIndex = 2;
         channel = 0;
         break;
       case 13:
+        boardIndex = 2;
+        channel = 1;
+        break;
+      case 14:
+        boardIndex = 3;
+        channel = 0;
+        break;
+      case 15:
         boardIndex = 3;
         channel = 1;
         break;
@@ -67,17 +71,22 @@ void loop() {
         break;
     }
     uint8_t lowerByte = Serial.read();
-    uint16_t upperData = upperByte & 15;
-    uint16_t da_value = (upperData << 8) | (lowerByte & 255);
-    const uint8_t cvOutIndex = boardIndex * 2 + channel; ）
+    uint16_t uData = upperByte & 15;
+    uint16_t lData = lowerByte & 127;
+    uint16_t da_value = (uData << 8) | (lData & 255);
+    da_value = da_value * 2;//データが11bitできているので12bit相当に変換
+    const uint8_t cvOutIndex = boardIndex * 2 + channel;
     filtered[cvOutIndex] = lowpass * filtered[cvOutIndex]  + (1.0 - lowpass) * (float)da_value;//Lowpass filter
-    da_value = (uint16_t)constrain(filtered, 0.0, 4095.0);
-    digitalWrite(ldac, HIGH);
-    digitalWrite(cs[boardIndex], LOW);
-    DACout(sdi, sck, channel, da_value);
-    digitalWrite(cs[boardIndex], HIGH);
-    digitalWrite(ldac, LOW);
-    delay(3);//delay 0.003ms
+    if (0.0 <= filtered[cvOutIndex] && filtered[cvOutIndex] < 4096.0)
+    {
+      da_value = (uint16_t)filtered[cvOutIndex];
+      digitalWrite(ldac, HIGH);
+      digitalWrite(cs[boardIndex], LOW);
+      DACout(sdi, sck, channel, da_value);
+      digitalWrite(cs[boardIndex], HIGH);
+      digitalWrite(ldac, LOW);
+      delay(3);//delay 0.003ms
+    }
   }
   delay(3);//delay 0.003ms
 }
@@ -107,5 +116,3 @@ void DACout(int dataPin, int clockPin, int destination, int value)
     digitalWrite(clockPin, LOW) ;
   }
 }
-
-

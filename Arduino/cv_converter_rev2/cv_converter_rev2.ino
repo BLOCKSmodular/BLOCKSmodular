@@ -5,13 +5,13 @@ int sck = 7;//4922の4pin
 int sdi = 6; //4922の5pin
 int ldac = 5; //4922の16pin
 int cvBoardCount = 4;
-const float a = 0.9;
-float last[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+const float lowpass = 0.85;
+float filtered[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 void setup() {
   // put your setup code here, to run once:
   delay(100);
-  Serial.begin(57600);//74800 115200
+  Serial.begin(115200);//74800 115200
   for (int i = 0; i < 4; i++) {
     pinMode(cs[i], OUTPUT);
     //    Serial.println(i);
@@ -25,24 +25,61 @@ void setup() {
 void loop() {
   while (Serial.available() > 1) //more than 2bytes
   {
-    byte twobytes[];
-    Serial.readBytes(twobytes, 2);
-    uint8_t boardIndex = twobytes[0] >> 6 & B00000011;
-    uint8_t channel = bitRead(twobytes[0], 5);
-    uint8_t cvindex = boardIndex * 2 + channel;
-    word da_value =  word(twobyte[0] & B00001111, twobyte[1]);
-    last[cvindex] = last[cvindex] * a + (1.0 - a) * float(da_value);//Lowpass
-    if (0.0 <= last[cvindex] && last[cvindex] < 4096.0)
-    {
-      da_value = word(last[cvindex]);
-      digitalWrite(ldac, HIGH);
-      digitalWrite(cs[boardIndex], LOW);
-      DACout(sdi, sck, channel, da_value);
-      digitalWrite(cs[boardIndex], HIGH);
-      digitalWrite(ldac, LOW);
-      delay(3);//delay 0.003ms
+    uint8_t upperByte = Serial.read();
+    uint8_t header = (upperByte >> 4) & 15;
+    uint8_t boardIndex;
+    uint8_t channel;
+    switch (header) {
+      case 6:
+        boardIndex = 0;
+        channel = 0;
+        break;
+      case 7:
+        boardIndex = 0;
+        channel = 1;
+        break;
+      case 8:
+        boardIndex = 1;
+        channel = 0;
+        break;
+      case 9:
+        boardIndex = 1;
+        channel = 1;
+        break;
+      case 10:
+        boardIndex = 2;
+        channel = 0;
+        break;
+      case 11:
+        boardIndex = 2;
+        channel = 1;
+        break;
+      case 12:
+        boardIndex = 3;
+        channel = 0;
+        break;
+      case 13:
+        boardIndex = 3;
+        channel = 1;
+        break;
+      default:
+        continue;
+        break;
     }
+    uint8_t lowerByte = Serial.read();
+    uint16_t upperData = upperByte & 15;
+    uint16_t da_value = (upperData << 8) | (lowerByte & 255);
+    const uint8_t cvOutIndex = boardIndex * 2 + channel; ）
+    filtered[cvOutIndex] = lowpass * filtered[cvOutIndex]  + (1.0 - lowpass) * (float)da_value;//Lowpass filter
+    da_value = (uint16_t)constrain(filtered, 0.0, 4095.0);
+    digitalWrite(ldac, HIGH);
+    digitalWrite(cs[boardIndex], LOW);
+    DACout(sdi, sck, channel, da_value);
+    digitalWrite(cs[boardIndex], HIGH);
+    digitalWrite(ldac, LOW);
+    delay(3);//delay 0.003ms
   }
+  delay(3);//delay 0.003ms
 }
 
 void DACout(int dataPin, int clockPin, int destination, int value)

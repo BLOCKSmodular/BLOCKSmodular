@@ -50,6 +50,14 @@
 - pad3: 74
 - pad4: 75
 
+##### モード切り替え
+
+- MorphLooper: 96
+
+- MicrotonalBlock: 97
+
+  ​
+
 ### CC
 
 ##### XYZ

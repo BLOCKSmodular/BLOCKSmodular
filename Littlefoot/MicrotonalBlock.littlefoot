@@ -19,20 +19,30 @@ void initialise()
 
 void sendXYZCC(int index, bool isNoteOn, float x, float y, float z)
 {
-    int XYCC_Number = (index - 1) * 2 + CCBaseNumber;
-    int pressureCC_Number = (index - 1) * 2 + 1 + CCBaseNumber;
+    int upperDistCCNum = (index - 1) * 4 + CCBaseNumber;
+    int lowerDistCCNum = upperDistCCNum + 1;
+    int upperPressureCCNum = upperDistCCNum + 2;
+    int lowerPressureCCNum = upperDistCCNum + 3;
     
     if (isNoteOn)
     {
-        int XYCC_Value = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 127.0));
-        int pressure = int(map(z, 0.0, 1.0, 0.0, 127.0));
-        sendCC (channel, XYCC_Number, XYCC_Value);
-        sendCC (channel, pressureCC_Number, pressure);
+        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+        int upperDistValue = (distance >> 7) & 127;
+        int lowerDistValue = distance & 127;
+        sendCC(channel, upperDistCCNum, upperDistValue);
+        sendCC(channel, lowerDistCCNum, lowerDistValue);   
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+        int upperPressureValue = (pressure >> 7) & 127;
+        int lowerPressureValue = pressure & 127;
+        sendCC(channel, upperPressureCCNum, upperPressureValue);
+        sendCC(channel, lowerPressureCCNum, lowerPressureValue);
     }
     else
     {
-        sendCC(channel, XYCC_Number, 0);
-        sendCC(channel, pressureCC_Number, 0);
+        sendCC(channel, upperDistCCNum, 0);
+        sendCC(channel, lowerDistCCNum, 0);
+        sendCC(channel, upperPressureCCNum, 0);
+        sendCC(channel, lowerPressureCCNum, 0);
     }
 }
 

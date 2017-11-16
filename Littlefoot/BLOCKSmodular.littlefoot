@@ -49,8 +49,10 @@ playFlagBaseNote = 36
 38: pad3 is playing
 39: pad4 is playing
 */
+int mode;//0:morphLooper 1:microtonalBlock
 int recordFlagBaseNote;//24
 int playFlagBaseNote;//36
+int microtonalCCBaseNumber;
 int padWidth, padSpacing;
 int gridSize;
 int playedPad;
@@ -69,6 +71,18 @@ state
 0: Session View
 1: XYZ
 */
+
+void modeChange(int newMode)
+{
+    if (newMode == 1)
+    {
+        for(int i = 0; i < 4; ++i)
+        {
+            stop(i);
+        }
+    }
+    mode = newMode;
+}
 
 bool isRecorded(int padIndex)
 {
@@ -157,6 +171,83 @@ void sendXYZCC(float x, float y, float z)
     sendCC (channel, 17, lowerZvalue);
 }
 
+int getMicrotonalIndexColour(int index)
+{
+    int colour = 0xFFFFFFFF;
+    if(index == 1)
+    {
+        colour = 0xFFFF0000;
+    }
+    if(index == 2)
+    {
+        colour = 0xFF00FF00;
+        
+    }
+    if(index == 3)
+    {
+        colour = 0xFF0000FF;
+    }
+    if(index == 4)
+    {
+        colour = 0xFFFFFFFF;
+    }
+    
+    return colour;
+}
+
+void sendMicrotonalCC(int index, bool isNoteOn, float x, float y, float z)
+{
+    int upperDistCCNum = (index - 1) * 4 + microtonalCCBaseNumber;
+    int lowerDistCCNum = upperDistCCNum + 1;
+    int upperPressureCCNum = upperDistCCNum + 2;
+    int lowerPressureCCNum = upperDistCCNum + 3;
+    
+    if (isNoteOn)
+    {
+        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+        int upperDistValue = (distance >> 7) & 127;
+        int lowerDistValue = distance & 127;
+        sendCC(channel, upperDistCCNum, upperDistValue);
+        sendCC(channel, lowerDistCCNum, lowerDistValue);   
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+        int upperPressureValue = (pressure >> 7) & 127;
+        int lowerPressureValue = pressure & 127;
+        sendCC(channel, upperPressureCCNum, upperPressureValue);
+        sendCC(channel, lowerPressureCCNum, lowerPressureValue);
+    }
+    else
+    {
+        sendCC(channel, upperDistCCNum, 0);
+        sendCC(channel, lowerDistCCNum, 0);
+        sendCC(channel, upperPressureCCNum, 0);
+        sendCC(channel, lowerPressureCCNum, 0);
+    }
+}
+
+int getMirotonalIndexColour(int index)
+{
+    int colour = 0xFFFFFFFF;
+    if(index == 1)
+    {
+        colour = 0xFFFF0000;
+    }
+    if(index == 2)
+    {
+        colour = 0xFF00FF00;
+        
+    }
+    if(index == 3)
+    {
+        colour = 0xFF0000FF;
+    }
+    if(index == 4)
+    {
+        colour = 0xFFFFFFFF;
+    }
+    
+    return colour;
+}
+
 //==============================================================================
 int getPadColour (int padIndex)
 {
@@ -197,6 +288,8 @@ void drawPads()
 
 void initialise()
 {
+    mode = 0;//morphLooper
+    microtonalCCBaseNumber = 96;
     recordFlagBaseNote = 24;
     playFlagBaseNote = 36;
     state = 0;
@@ -218,98 +311,133 @@ void initialise()
 //==============================================================================
 void repaint()
 {   
-	clearDisplay();
-	fadePressureMap();
-
-    if (state == 0)
+    clearDisplay();
+    fadePressureMap();
+	if(mode == 0)//morphLooper
     {
-        // Session view
-        if (isConnectedToHost())
-        drawPads();
-        drawPressureMap();
-    } 
-    else
+        if (state == 0)
+        {
+            // Session view
+            if (isConnectedToHost())
+            drawPads();
+            drawPressureMap();
+        } 
+        else
+        {
+            // XYZ pad
+            drawPressureMap();
+        }
+    }
+    else//microtonal
     {
-        // XYZ pad
-        drawPressureMap();
+        drawPressureMap(); 
     }
 }
 
 //==============================================================================
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
-    if (state == 0)
+    if(mode == 0)//morphLooper
     {
-        // Session view
-        if (touchIndex == 1)
+        if (state == 0)
         {
-            playedPad = getPadIndex (x, y);
-            if (isRecorded(playedPad))
+        // Session view
+            if (touchIndex == 1)
             {
-                if(isPlayed(playedPad))
+                playedPad = getPadIndex (x, y);
+                if (isRecorded(playedPad))
                 {
-                    stop(playedPad);
+                    if(isPlayed(playedPad))
+                    {
+                        stop(playedPad);
+                    }
+                    else
+                    {
+                        play(playedPad);
+                    }
                 }
                 else
                 {
-                    play(playedPad);
                 }
             }
-            else
+        }
+        else
+        {
+            // XYZ pad
+            if (touchIndex == 1)
             {
+                recordBegin(playedPad);
+                addPressurePoint (0xFFFFFFFF, x, y, z * 15.0);
+                sendXYZCC(x, y, z);
             }
         }
     }
-    else
+    else//microtonal
     {
-        // XYZ pad
-        if (touchIndex == 1)
+        if(touchIndex <= 4)
         {
-            recordBegin(playedPad);
-            addPressurePoint (0xFFFFFFFF, x, y, z * 15.0);
-            sendXYZCC(x, y, z);
+            addPressurePoint (getMicrotonalIndexColour(touchIndex), x, y, z * 50.0);
+            sendMicrotonalCC(touchIndex, true, x, y, z);
         }
     }
 }
 
 void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
-    if (state == 0)
+    if(mode == 0)//morphLooper
     {
-        // Session view
+        if (state == 0)
+        {
+            // Session view
+        }
+        else
+        {
+            // XYZ pad
+            addPressurePoint (0xFFFFFFFF, x, y, z * 5.0);
+            sendXYZCC(x, y, z);
+        }
     }
-    else
+    else//microtonal
     {
-        // XYZ pad
-        addPressurePoint (0xFFFFFFFF, x, y, z * 5.0);
-        sendXYZCC(x, y, z);
+        if(touchIndex <= 4)
+        {
+            addPressurePoint (getMicrotonalIndexColour(touchIndex), x, y, z * 30.0);
+            sendMicrotonalCC(touchIndex, true, x, y, z);
+        }
     }
 }
 
 void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
-    if (state == 0)
+    if(mode == 0)//morphLooper
     {
-        // Session view
-        if (touchIndex == 1)
+        if (state == 0)
         {
-            if (isRecorded(playedPad))
+            // Session view
+            if (touchIndex == 1)
             {
+                if (isRecorded(playedPad))
+                {
+                }
+                else
+                {
+                    state = 1;//change to xyz pad
+                }
             }
-            else
+        }
+        else
+        {
+            // XYZ pad
+            if (touchIndex == 1)
             {
-                state = 1;//change to xyz pad
+                recordEnd(playedPad);
+                state = 0;//change to session view
             }
         }
     }
-    else
+    else//microtonal
     {
-        // XYZ pad
-        if (touchIndex == 1)
-        {
-            recordEnd(playedPad);
-            state = 0;//change to session view
-        }
+        sendMicrotonalCC(touchIndex, false, x, y, z);
     }
 }
 
@@ -332,6 +460,19 @@ void handleMIDI	(int byte0, int byte1, int byte2)
     CCnumber: byte1
     CCvalue: byte2
     */
+    
+    if(byte1 == 96)
+    {
+        mode = 0;
+    }
+    if(byte1 == 97)
+    {
+        for(int i = 0; i < 4; ++i)
+        {
+            stop(i);
+        }
+        mode = 1;
+    }
     
     if (72 <= byte1 && byte1 <= 75)
     {

@@ -71,6 +71,10 @@ void loop() {
         break;
     }
     uint8_t lowerByte = Serial.read();
+    if (lowerByte & 128 == 128) //下位バイトフラグの判定
+    {
+      continue;
+    }
     uint16_t uData = upperByte & 15;
     uint16_t lData = lowerByte & 127;
     uint16_t da_value = (uData << 8) | (lData & 255);

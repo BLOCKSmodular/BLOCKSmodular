@@ -41,7 +41,7 @@
 
 ## Input(from Max7)
 
-### Note
+### CC
 
 ##### 録音クリアー
 
@@ -49,16 +49,6 @@
 - pad2: 73
 - pad3: 74
 - pad4: 75
-
-##### モード切り替え
-
-- MorphLooper: 96
-
-- MicrotonalBlock: 97
-
-  ​
-
-### CC
 
 ##### XYZ
 
@@ -70,3 +60,9 @@
 - トラック2X: 87
 - トラック2Y: 88
 - トラック2Z: 89
+
+##### モード切り替え
+
+- MorphLooper: 96
+- MicrotonalBlock: 97
+

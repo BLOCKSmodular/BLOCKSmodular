@@ -89,10 +89,10 @@ void loop() {
       DACout(sdi, sck, channel, da_value);
       digitalWrite(cs[boardIndex], HIGH);
       digitalWrite(ldac, LOW);
-      delay(3);//delay 0.003ms
+      delay(3);//delay 3ms
 //    }
   }
-  delay(3);//delay 0.003ms
+  delay(3);//delay 3ms
 }
 
 void DACout(int dataPin, int clockPin, int destination, int value)

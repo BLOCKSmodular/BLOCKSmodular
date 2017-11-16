@@ -437,7 +437,7 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
     }
     else//microtonal
     {
-        sendMicrotonalCC(touchIndex, true, x, y, z);
+        sendMicrotonalCC(touchIndex, false, x, y, z);
     }
 }
 

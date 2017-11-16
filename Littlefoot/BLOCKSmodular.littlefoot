@@ -311,9 +311,8 @@ void initialise()
 //==============================================================================
 void repaint()
 {   
-	clearDisplay();
-	fadePressureMap();
-
+    clearDisplay();
+    fadePressureMap();
 	if(mode == 0)//morphLooper
     {
         if (state == 0)
@@ -331,6 +330,7 @@ void repaint()
     }
     else//microtonal
     {
+        drawPressureMap(); 
     }
 }
 

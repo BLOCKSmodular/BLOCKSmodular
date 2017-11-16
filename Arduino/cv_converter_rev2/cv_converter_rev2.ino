@@ -5,7 +5,7 @@ int sck = 7;//4922の4pin
 int sdi = 6; //4922の5pin
 int ldac = 5; //4922の16pin
 int cvBoardCount = 4;
-const float lowpass = 0.85;
+const float lowpass = 0.9;
 float filtered[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 void setup() {
@@ -80,19 +80,19 @@ void loop() {
     uint16_t da_value = (uData << 7) | lData;
     da_value = da_value * 2;//データが11bitできているので12bit相当に変換
     const uint8_t cvOutIndex = boardIndex * 2 + channel;
-    //filtered[cvOutIndex] = lowpass * filtered[cvOutIndex]  + (1.0 - lowpass) * (float)da_value;//Lowpass filter
-//    if (0.0 <= filtered[cvOutIndex] && filtered[cvOutIndex] < 4096.0)
-//    {
-//      da_value = (uint16_t)filtered[cvOutIndex];
+    filtered[cvOutIndex] = lowpass * filtered[cvOutIndex]  + (1.0 - lowpass) * (float)da_value;//Lowpass filter
+    if (0.0 <= filtered[cvOutIndex] && filtered[cvOutIndex] < 4096.0)
+    {
+      da_value = (uint16_t)filtered[cvOutIndex];
       digitalWrite(ldac, HIGH);
       digitalWrite(cs[boardIndex], LOW);
       DACout(sdi, sck, channel, da_value);
       digitalWrite(cs[boardIndex], HIGH);
       digitalWrite(ldac, LOW);
-      delay(3);//delay 3ms
-//    }
+      delay(3);//delay 1ms
+    }
   }
-  delay(3);//delay 3ms
+  delay(3);//delay 1ms
 }
 
 void DACout(int dataPin, int clockPin, int destination, int value)

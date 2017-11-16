@@ -2245,10 +2245,10 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 8,
-					"outlettype" : [ "", "", "", "", "", "", "", "" ],
-					"patching_rect" : [ 39.326454, 234.0, 253.576447, 22.0 ],
+					"outlettype" : [ "bang", "bang", "bang", "bang", "bang", "bang", "bang", "bang" ],
+					"patching_rect" : [ 39.326454, 234.0, 92.5, 22.0 ],
 					"style" : "",
-					"text" : "cycle 8"
+					"text" : "bangbang 8"
 				}
 
 			}

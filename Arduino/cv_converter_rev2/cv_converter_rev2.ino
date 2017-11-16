@@ -23,7 +23,7 @@ void setup() {
 }
 
 void loop() {
-  while (Serial.available() > 1) //more than 2bytes
+  while (Serial.available() > 0) //more than 2bytes
   {
     uint8_t upperByte = Serial.read();
     if (upperByte & 128 != 128) //上位バイトフラグの判定
@@ -71,26 +71,26 @@ void loop() {
         break;
     }
     uint8_t lowerByte = Serial.read();
-    if (lowerByte & 128 == 128) //下位バイトフラグの判定
-    {
-      continue;
-    }
+//    if (lowerByte & 128 == 128) //下位バイトフラグの判定
+//    {
+//      continue;
+//    }
     uint16_t uData = upperByte & 15;
     uint16_t lData = lowerByte & 127;
-    uint16_t da_value = (uData << 8) | (lData & 255);
+    uint16_t da_value = (uData << 7) | lData;
     da_value = da_value * 2;//データが11bitできているので12bit相当に変換
     const uint8_t cvOutIndex = boardIndex * 2 + channel;
-    filtered[cvOutIndex] = lowpass * filtered[cvOutIndex]  + (1.0 - lowpass) * (float)da_value;//Lowpass filter
-    if (0.0 <= filtered[cvOutIndex] && filtered[cvOutIndex] < 4096.0)
-    {
-      da_value = (uint16_t)filtered[cvOutIndex];
+    //filtered[cvOutIndex] = lowpass * filtered[cvOutIndex]  + (1.0 - lowpass) * (float)da_value;//Lowpass filter
+//    if (0.0 <= filtered[cvOutIndex] && filtered[cvOutIndex] < 4096.0)
+//    {
+//      da_value = (uint16_t)filtered[cvOutIndex];
       digitalWrite(ldac, HIGH);
       digitalWrite(cs[boardIndex], LOW);
       DACout(sdi, sck, channel, da_value);
       digitalWrite(cs[boardIndex], HIGH);
       digitalWrite(ldac, LOW);
       delay(3);//delay 0.003ms
-    }
+//    }
   }
   delay(3);//delay 0.003ms
 }

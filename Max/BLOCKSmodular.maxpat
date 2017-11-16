@@ -9,7 +9,7 @@
 			"modernui" : 1
 		}
 ,
-		"rect" : [ 34.0, 79.0, 1852.0, 553.0 ],
+		"rect" : [ 34.0, 79.0, 1612.0, 933.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -44,7 +44,6 @@
 					"numoutlets" : 3,
 					"outlettype" : [ "", "int", "int" ],
 					"patching_rect" : [ 2398.919434, 685.0, 64.0, 22.0 ],
-					"presentation_rect" : [ 1108.679565, 732.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "change -1"
 				}
@@ -58,7 +57,6 @@
 					"numoutlets" : 3,
 					"outlettype" : [ "", "int", "int" ],
 					"patching_rect" : [ 2275.359375, 685.0, 64.0, 22.0 ],
-					"presentation_rect" : [ 985.119629, 732.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "change -1"
 				}
@@ -72,7 +70,6 @@
 					"numoutlets" : 3,
 					"outlettype" : [ "", "int", "int" ],
 					"patching_rect" : [ 2151.799561, 685.0, 64.0, 22.0 ],
-					"presentation_rect" : [ 861.559692, 732.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "change -1"
 				}
@@ -86,7 +83,6 @@
 					"numoutlets" : 3,
 					"outlettype" : [ "", "int", "int" ],
 					"patching_rect" : [ 2028.239746, 685.0, 64.0, 22.0 ],
-					"presentation_rect" : [ 737.999756, 732.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "change -1"
 				}
@@ -100,7 +96,6 @@
 					"numoutlets" : 3,
 					"outlettype" : [ "", "int", "int" ],
 					"patching_rect" : [ 1904.679688, 685.0, 64.0, 22.0 ],
-					"presentation_rect" : [ 614.559692, 732.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "change -1"
 				}
@@ -114,7 +109,6 @@
 					"numoutlets" : 3,
 					"outlettype" : [ "", "int", "int" ],
 					"patching_rect" : [ 1781.119629, 685.0, 64.0, 22.0 ],
-					"presentation_rect" : [ 490.999756, 732.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "change -1"
 				}
@@ -128,7 +122,6 @@
 					"numoutlets" : 3,
 					"outlettype" : [ "", "int", "int" ],
 					"patching_rect" : [ 1657.559692, 685.0, 64.0, 22.0 ],
-					"presentation_rect" : [ 362.999756, 731.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "change -1"
 				}
@@ -4360,10 +4353,10 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 8,
-					"outlettype" : [ "", "", "", "", "", "", "", "" ],
-					"patching_rect" : [ 1305.423584, 559.0, 253.576447, 22.0 ],
+					"outlettype" : [ "bang", "bang", "bang", "bang", "bang", "bang", "bang", "bang" ],
+					"patching_rect" : [ 1305.423584, 559.0, 234.5, 22.0 ],
 					"style" : "",
-					"text" : "cycle 8"
+					"text" : "bangbang 8"
 				}
 
 			}

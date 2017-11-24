@@ -1,6 +1,6 @@
 # BLOCKSmodular
 
-#概要
+
 BLOCKSmodularはROLI BLOCKSをスタンドアローン動作可能なEurorackモジュールにするプロジェクトです。
 また、本プロジェクトはオープンソースで開発を進めており、GNU General Public License version 3（GPL v3）で管理されています。
 3Dデータやプログラム、基板設計など全てがライセンスの範囲内において誰でも自由に利用することが可能です。

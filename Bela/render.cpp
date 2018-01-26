@@ -3,9 +3,12 @@
 #include <stdlib.h>
 #include <cmath>
 #include <atomic>
+#include <vector>
 #include <Smoothing.h>
 
 #define NUMCVOUT 8
+#define NUMMORPHLOOPERTRACK 4
+
 enum class ModeList
 {
     MicrotonalBlock,
@@ -25,6 +28,7 @@ Smoothing CVSmooth[NUMCVOUT];
 float CVOut[NUMCVOUT] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 ModeList mode = ModeList::MicrotonalBlock;
 TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared, TransportState::Cleared, TransportState::Cleared, TransportState::Cleared};
+std::vector<int> morphRecording[NUMMORPHLOOPERTRACK];
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 
@@ -65,7 +69,11 @@ bool setup(BelaContext *context, void *userData)
     for (int i = 0; i < NUMCVOUT; i++) {
         CVSmooth[i].init(1200);
     }
-
+    
+    for (int i = 0; i < NUMMORPHLOOPERTRACK; i++) {
+        morphRecording[i].reserve(14000);
+    }
+    
 	midi.readFrom(gMidiPort0);
 	midi.writeTo(gMidiPort0);
 	midi.enableParser(true);

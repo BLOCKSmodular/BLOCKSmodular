@@ -28,6 +28,7 @@ Smoothing CVSmooth[NUMCVOUT];
 ModeList mode = ModeList::MicrotonalBlock;
 TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared, TransportState::Cleared, TransportState::Cleared, TransportState::Cleared};
 std::vector<int> morphRecording[NUMMORPHLOOPERTRACK];
+int lastSwitchState = 0;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 
@@ -94,17 +95,14 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-    //チャタリングを防止するコードに直すこと!!
-	int status = digitalRead(context, 0, P8_08);
-	if (status == 1)
-	{
-        mode = ModeList::MorphLooper;
-	}else{
-        mode = ModeList::MicrotonalBlock;
-	}
-    
-    midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};
-	midi.writeOutput(bytes, 3);
+ 	int swc = digitalRead(context, 0, P8_08);
+ 	if(lastSwitchState != swc)//モード切り替えスイッチ
+ 	{
+ 		mode = swc == 0 ? ModeList::MorphLooper : ModeList::MicrotonalBlock;
+ 		lastSwitchState = swc;
+ 		midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};
+		midi.writeOutput(bytes, 3);
+ 	}
 
 	for (unsigned int n = 0; n < context->analogFrames; n++)
 	{

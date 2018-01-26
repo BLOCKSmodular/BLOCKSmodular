@@ -51,6 +51,11 @@ bool setup(BelaContext *context, void *userData)
 			CCInput[i][k] = -1;
 		}
 	}
+    
+    for (int i = 0; i < NUMCVOUT; i++)
+    {
+        smooth[i].init(1200);
+    }
 
 	midi.readFrom(gMidiPort0);
 	midi.writeTo(gMidiPort0);

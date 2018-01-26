@@ -1,5 +1,5 @@
 /*
-<metadata description="BLOCKS modular prototype." details="proto one" target="Lightpad" tags="MIDI;Controller;">
+<metadata description="BLOCKS modular" details="" target="Lightpad" tags="MIDI;Controller;">
 <modes>
 <mode name="Default">
   <variable name="channel" value="0"/>

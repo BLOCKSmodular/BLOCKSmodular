@@ -21,7 +21,7 @@ enum class TransportState
     Stopped,
     Recording,
     Playing
-}
+};
 
 int CCInput[NUMCVOUT][2];
 Smoothing CVSmooth[NUMCVOUT];
@@ -99,9 +99,9 @@ void render(BelaContext *context, void *userData)
 	int status = digitalRead(context, 0, P8_08);
 	if (status == 1)
 	{
-        mode = ModeList::MorphLooper
+        mode = ModeList::MorphLooper;
 	}else{
-        mode = ModeList::MicrotonalBlock
+        mode = ModeList::MicrotonalBlock;
 	}
     
     midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};

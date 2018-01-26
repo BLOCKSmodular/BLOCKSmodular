@@ -25,7 +25,6 @@ enum class TransportState
 
 int CCInput[NUMCVOUT][2];
 Smoothing CVSmooth[NUMCVOUT];
-float CVOut[NUMCVOUT] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 ModeList mode = ModeList::MicrotonalBlock;
 TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared, TransportState::Cleared, TransportState::Cleared, TransportState::Cleared};
 std::vector<int> morphRecording[NUMMORPHLOOPERTRACK];
@@ -111,8 +110,8 @@ void render(BelaContext *context, void *userData)
 	{
 		for (unsigned int i = 0; i < NUMCVOUT; i++)
 		{
-			CVOut[i] = CVSmooth[i].getNextValue();
-			analogWrite(context, n, i, CVOut[i]);
+			float v = CVSmooth[i].getNextValue();
+			analogWrite(context, n, i, v);
 		}
 	}
 }

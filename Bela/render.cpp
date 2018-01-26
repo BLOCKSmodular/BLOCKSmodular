@@ -57,6 +57,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 bool setup(BelaContext *context, void *userData)
 {
 	// Set the mode of digital pins
+	pinMode(context, 0, P8_07, INPUT);
 	pinMode(context, 0, P8_08, INPUT);
 
 	for (int i = 0; i < 2; i++)
@@ -102,6 +103,15 @@ void render(BelaContext *context, void *userData)
  		lastSwitchState = swc;
  		midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};
 		midi.writeOutput(bytes, 3);
+ 	}
+ 	
+ 	if(digitalRead(context, 0, P8_07) == 0)//録音クリアースイッチ
+ 	{
+ 		for (int i = 0; i < 4; i++)
+ 		{
+ 			midi_byte_t bytes[3] = {176, (midi_byte_t)(72 + i), 127};
+			midi.writeOutput(bytes, 3);
+ 		}
  	}
 
 	for (unsigned int n = 0; n < context->analogFrames; n++)

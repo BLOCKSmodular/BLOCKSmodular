@@ -6,11 +6,27 @@
 #include <Smoothing.h>
 
 #define NUMCVOUT 8
+enum class ModeList
+{
+    MicrotonalBlock,
+    MorphLooper
+};
+
+enum class TransportState
+{
+    Cleared,
+    Stopped,
+    Recording,
+    Playing
+}
 
 int CCInput[NUMCVOUT][2];
-Smoothing smooth[NUMCVOUT];
+Smoothing CVSmooth[NUMCVOUT];
 float CVOut[NUMCVOUT] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-bool isMicrotonalMode = false;
+ModeList mode = ModeList::MicrotonalBlock;
+TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared, TransportState::Cleared, TransportState::Cleared, TransportState::Cleared};
+Midi midi;
+const char *gMidiPort0 = "hw:1,0,0";
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -26,7 +42,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 			if (CCInput[cvOutputChannel][0] >= 0 && CCInput[cvOutputChannel][1] >= 0)
 			{
 				float v = ((CCInput[cvOutputChannel][0] << 7) | (CCInput[cvOutputChannel][1] & 0b1111111)) / 16383.0;
-				smooth[cvOutputChannel].set(v);
+				CVSmooth[cvOutputChannel].set(v);
 				CCInput[cvOutputChannel][0] = -1;
 				CCInput[cvOutputChannel][1] = -1;
 			}
@@ -34,27 +50,20 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 	}
 }
 
-Midi midi;
-
-const char *gMidiPort0 = "hw:1,0,0";
-
 bool setup(BelaContext *context, void *userData)
 {
 	// Set the mode of digital pins
 	pinMode(context, 0, P8_08, INPUT);
-	pinMode(context, 0, P8_07, OUTPUT);
 
 	for (int i = 0; i < 2; i++)
-	{
-		for (int k = 0; k < 8; k++)
-		{
+    {
+		for (int k = 0; k < 8; k++) {
 			CCInput[i][k] = -1;
 		}
 	}
     
-    for (int i = 0; i < NUMCVOUT; i++)
-    {
-        smooth[i].init(1200);
+    for (int i = 0; i < NUMCVOUT; i++) {
+        CVSmooth[i].init(1200);
     }
 
 	midi.readFrom(gMidiPort0);
@@ -78,23 +87,23 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-	int status = digitalRead(context, 0, P8_08); //read the value of the button
-	if (status == 1)							 //read the value of the button
+    //チャタリングを防止するコードに直すこと!!
+	int status = digitalRead(context, 0, P8_08);
+	if (status == 1)
 	{
-		isMicrotonalMode = false;
+        mode = ModeList::MorphLooper
+	}else{
+        mode = ModeList::MicrotonalBlock
 	}
-	else
-	{
-		isMicrotonalMode = true;
-	}
-	midi_byte_t bytes[3] = {176, (midi_byte_t)(isMicrotonalMode == false ? 96 : 97), 127};
+    
+    midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};
 	midi.writeOutput(bytes, 3);
 
-	for (unsigned int n = 0; n < context->audioFrames; n++)
+	for (unsigned int n = 0; n < context->analogFrames; n++)
 	{
 		for (unsigned int i = 0; i < NUMCVOUT; i++)
 		{
-			CVOut[i] = smooth[i].getNextValue();
+			CVOut[i] = CVSmooth[i].getNextValue();
 			analogWrite(context, n, i, CVOut[i]);
 		}
 	}

@@ -4,7 +4,9 @@
 #include <cmath>
 #include <atomic>
 #include <vector>
+#include <random>
 #include <Smoothing.h>
+#include <SampleBuffer.h>
 
 #define NUMCVOUT 8
 #define NUMMORPHLOOPERTRACK 4
@@ -31,6 +33,7 @@ std::vector<int> morphRecording[NUMMORPHLOOPERTRACK];
 int lastSwitchState = 0;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
+SampleBuffer buffer(128);
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -90,6 +93,8 @@ bool setup(BelaContext *context, void *userData)
 		printf("Error: for this project, you need at least 2 analog and audio output channels.\n");
 		return false;
 	}
+	
+	buffer.resize(context->audioFrames);
 
 	return true;
 }
@@ -113,6 +118,25 @@ void render(BelaContext *context, void *userData)
 			midi.writeOutput(bytes, 3);
  		}
  	}
+ 	
+ 	/*SampleBuffer test code
+ 	std::random_device rd;
+ 	std::mt19937 mt(rd());
+	std::uniform_real_distribution<float> wnoise(-1.0f, 1.0f);
+	float* buf = buffer.getBuffer();
+	for(int i = 0; i < buffer.getSize(); ++i)
+	{
+		buf[i] = wnoise(mt);
+	}
+	
+	for(unsigned int n = 0; n < context->analogFrames; n++)
+	{
+		for(int channel = 0; channel < 2; ++channel)
+		{
+			audioWrite(context, n, channel, buffer.getBuffer()[n]);
+		}
+	}
+	*/
 
 	for (unsigned int n = 0; n < context->analogFrames; n++)
 	{

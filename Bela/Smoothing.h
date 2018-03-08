@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <atomic>
 
-#define SAMPLERATE 44100
-
 struct Smoothing
 {
 	std::atomic<float> currentValue{0.0f};

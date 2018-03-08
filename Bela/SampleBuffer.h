@@ -3,11 +3,12 @@
 #define SAMPLEBUFFER_H_
 
 #include <Bela.h>
-#include <sndfile.h>				// to load audio files
+#include <sndfile.h>// to load audio files
 #include <string>
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include <Util.h>
 
 class SampleBuffer {
 public:
@@ -15,8 +16,8 @@ public:
 	{
 		buffer.resize(size);
 	}
-	~SampleBuffer(){
-	}
+	
+	~SampleBuffer(){}
 	
 	void resize(const int size)
 	{
@@ -59,7 +60,6 @@ public:
 		}
 	}
 	
-	// Load samples from file
 	void loadSampleFile(std::string file)
 	{
 		SNDFILE *sndfile ;
@@ -78,7 +78,6 @@ public:
 			return;
 		}
     
-    	// int frameLen = endFrame-startFrame;
     	const int frameLen = getNumFrames(file);
     	if(buffer.size() < frameLen) {
     		std::cout << "Warning: SampleBuffer class was resized!!!" << std::endl;
@@ -121,33 +120,6 @@ public:
 
 		sf_close(sndfile);
 	}
-
-	inline int getNumChannels(std::string file) 
-	{
-		SNDFILE *sndfile ;
-		SF_INFO sfinfo ;
-		sfinfo.format = 0;
-		if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo))) 
-		{
-			std::cout << "Couldn't open file " << file << ": " << sf_strerror(sndfile) << std::endl;
-			return -1;
-		}
-		return sfinfo.channels;
-	}
-
-	inline int getNumFrames(std::string file) 
-	{
-		SNDFILE *sndfile ;
-		SF_INFO sfinfo ;
-		sfinfo.format = 0;
-		if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo))) 
-		{
-			std::cout << "Couldn't open file " << file << ": " << sf_strerror(sndfile) << std::endl;
-			return -1;
-		}
-
-		return sfinfo.frames;
-	}
 	
 private:
 	std::vector<float> buffer;
@@ -155,5 +127,3 @@ private:
 };
 
 #endif /* SAMPLEBUFFER_H_ */
-
-

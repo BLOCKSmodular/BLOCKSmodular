@@ -25,7 +25,12 @@ public:
 		buffer.resize(size, 0.0f);
 	}
 	
-	float* getPtr()
+	const float* getReadPtr()
+	{
+		return buffer.data();
+	}
+	
+	float* getWritePtr()
 	{
 		return buffer.data();
 	}

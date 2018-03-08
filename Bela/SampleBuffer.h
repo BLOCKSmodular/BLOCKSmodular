@@ -12,7 +12,8 @@
 
 class SampleBuffer {
 public:
-	SampleBuffer(const int size)
+	SampleBuffer(const int size, bool loopPlaying = false, bool loopRecording = false)
+	:readLoop(loopPlaying), writeLoop(loopRecording)
 	{
 		buffer.resize(size);
 	}
@@ -34,29 +35,56 @@ public:
 		return buffer.size();
 	}
 	
-	unsigned int getItr()
+	const unsigned int getWriteIter()
 	{
-		return iter;
+		return writeIter;
 	}
 	
-	float nextValue() 
+	const unsigned int getReadIter()
 	{
-		float value = buffer[iter];
-		addIter(1);
-		return value;
+		return readIter;
 	}
 	
-	void addIter(const unsigned int add)
+	const float* readNext() 
 	{
-		iter += add;
-		checkIter();
+		const float* p = &buffer.data()[readIter];
+		addReadIter(1);
+		return p;
 	}
 	
-	inline void checkIter()
+	void writeNext(float& value)
+	{
+		buffer[readIter] = value;
+		addWriteIter(1);
+	}
+	
+	void addReadIter(const unsigned int add)
 	{
 		const int bufSize = buffer.size();
-		if(iter >= bufSize) {
-			iter -= bufSize;
+		
+		if(readIter + add >= bufSize && !readLoop) {
+			readIter = bufSize;
+			return;
+		}
+		
+		readIter += add;
+		if(readIter >= bufSize) {
+			readIter -= bufSize;
+		}
+	}
+	
+	void addWriteIter(const unsigned int add)
+	{
+		const int bufSize = buffer.size();
+		
+		if(writeIter + add >= bufSize && !writeLoop) {
+			writeIter = bufSize;
+			return;
+		}
+		
+		writeIter += add;
+		if(writeIter >= bufSize) {
+			writeIter -= bufSize;
 		}
 	}
 	
@@ -123,7 +151,10 @@ public:
 	
 private:
 	std::vector<float> buffer;
-	unsigned int iter;
+	unsigned int readIter = 0;
+	unsigned int writeIter = 0;
+	bool readLoop;
+	bool writeLoop;
 };
 
 #endif /* SAMPLEBUFFER_H_ */

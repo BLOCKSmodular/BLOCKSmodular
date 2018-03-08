@@ -7,9 +7,10 @@
 #include <random>
 #include <Smoothing.h>
 #include <SampleBuffer.h>
+#include <Util.h>
 
 #define NUMCVOUT 8
-#define NUMMORPHLOOPERTRACK 4
+#define NUMMORPHLOOPERTRACK 2
 
 enum class ModeList
 {
@@ -28,8 +29,7 @@ enum class TransportState
 int CCInput[NUMCVOUT][2];
 Smoothing CVSmooth[NUMCVOUT];
 ModeList mode = ModeList::MicrotonalBlock;
-TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared, TransportState::Cleared, TransportState::Cleared, TransportState::Cleared};
-std::vector<int> morphRecording[NUMMORPHLOOPERTRACK];
+TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared, TransportState::Cleared};
 int lastSwitchState = 0;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
@@ -59,9 +59,14 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 
 bool setup(BelaContext *context, void *userData)
 {
-	// Set the mode of digital pins
-	pinMode(context, 0, P8_07, INPUT);
-	pinMode(context, 0, P8_08, INPUT);
+	// // Set the mode of digital pins
+	// pinMode(context, 0, P8_07, INPUT);
+	// pinMode(context, 0, P8_08, INPUT);
+	
+	//Init smoothing class
+    for (int i = 0; i < NUMCVOUT; i++) {
+        CVSmooth[i].init(1200);
+    }
 
 	for (int i = 0; i < 2; i++)
     {
@@ -70,74 +75,41 @@ bool setup(BelaContext *context, void *userData)
 		}
 	}
     
-    for (int i = 0; i < NUMCVOUT; i++) {
-        CVSmooth[i].init(1200);
-    }
-    
-    for (int i = 0; i < NUMMORPHLOOPERTRACK; i++) {
-        morphRecording[i].reserve(14000);
-    }
-    
+    //MIDI
 	midi.readFrom(gMidiPort0);
 	midi.writeTo(gMidiPort0);
 	midi.enableParser(true);
 	midi.setParserCallback(midiMessageCallback, (void *)gMidiPort0);
-	if (context->analogFrames == 0)
-	{
-		rt_printf("Error: this example needs the analog I/O to be enabled\n");
-		return false;
-	}
-
-	if (context->audioOutChannels < 2 || context->analogOutChannels < 2)
-	{
-		printf("Error: for this project, you need at least 2 analog and audio output channels.\n");
-		return false;
-	}
 	
-	buffer.resize(context->audioFrames);
 
 	return true;
 }
 
 void render(BelaContext *context, void *userData)
 {
- 	int swc = digitalRead(context, 0, P8_08);
- 	if(lastSwitchState != swc)//モード切り替えスイッチ
- 	{
- 		mode = swc == 0 ? ModeList::MorphLooper : ModeList::MicrotonalBlock;
- 		lastSwitchState = swc;
- 		midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};
-		midi.writeOutput(bytes, 3);
- 	}
- 	
- 	if(digitalRead(context, 0, P8_07) == 0)//録音クリアースイッチ
- 	{
- 		for (int i = 0; i < 4; i++)
- 		{
- 			midi_byte_t bytes[3] = {176, (midi_byte_t)(72 + i), 127};
-			midi.writeOutput(bytes, 3);
- 		}
- 	}
- 	
- 	/*SampleBuffer test code
- 	std::random_device rd;
- 	std::mt19937 mt(rd());
-	std::uniform_real_distribution<float> wnoise(-1.0f, 1.0f);
-	float* buf = buffer.getBuffer();
-	for(int i = 0; i < buffer.getSize(); ++i)
-	{
-		buf[i] = wnoise(mt);
-	}
-	
-	for(unsigned int n = 0; n < context->analogFrames; n++)
-	{
-		for(int channel = 0; channel < 2; ++channel)
-		{
-			audioWrite(context, n, channel, buffer.getBuffer()[n]);
-		}
-	}
-	*/
+	// for (unsigned int n = 0; n < context->digitalFrames; n++)
+	// {
+	// 	//TODO チャタリング除去
+	// 	int swc = digitalRead(context, n, P8_08);
+	//  	if(lastSwitchState != swc)//モード切り替えスイッチ
+ //		{
+ //			mode = swc == 0 ? ModeList::MorphLooper : ModeList::MicrotonalBlock;
+ //			lastSwitchState = swc;
+ //			midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};
+	// 		midi.writeOutput(bytes, 3);
+ //		}
+ 		
+ //		if(digitalRead(context, 0, P8_07) == 0)//録音クリアースイッチ
+ //		{
+ //			for (int i = 0; i < 4; i++) 
+ //			{
+ //				midi_byte_t bytes[3] = {176, (midi_byte_t)(72 + i), 127};
+	// 			midi.writeOutput(bytes, 3);
+ //			}
+ //		}
+	// }
 
+	// CV/Gate
 	for (unsigned int n = 0; n < context->analogFrames; n++)
 	{
 		for (unsigned int i = 0; i < NUMCVOUT; i++)

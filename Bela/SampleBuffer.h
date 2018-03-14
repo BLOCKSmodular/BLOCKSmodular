@@ -10,15 +10,15 @@
 #include <vector>
 #include <Util.h>
 
-class SampleBuffer {
+class MonoBuffer {
 public:
-	SampleBuffer(const int size, bool loopPlaying = false, bool loopRecording = false)
+	MonoBuffer(const int size, bool loopPlaying = false, bool loopRecording = false)
 	:readLoop(loopPlaying), writeLoop(loopRecording)
 	{
 		buffer.resize(size);
 	}
 	
-	~SampleBuffer(){}
+	~MonoBuffer(){}
 	
 	void resize(const int size)
 	{
@@ -113,7 +113,7 @@ public:
     
     	const int frameLen = getNumFrames(file);
     	if(buffer.size() < frameLen) {
-    		std::cout << "Warning: SampleBuffer class was resized!!!" << std::endl;
+    		std::cout << "Warning: MonoBuffer class was resized!!!" << std::endl;
     		buffer.resize(frameLen, 0.0f);
     	}
     	

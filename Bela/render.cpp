@@ -33,7 +33,8 @@ TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared,
 int lastSwitchState = 0;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
-SampleBuffer buffer(88200, true, false);
+MonoBuffer monoBuffer(88200, true, false);
+StereoBuffer stereoBuffer(88200, true, false);
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -83,7 +84,13 @@ bool setup(BelaContext *context, void *userData)
 	
 	//Load Sample
 	std::string wavFile("vibe.wav");
-	buffer.loadSampleFile(wavFile);
+	monoBuffer.loadSampleFile(wavFile);
+	stereoBuffer.loadSampleFile("test.wav");
+	// const float* hoge = stereoBuffer.getReadChannelPtr(0);
+	// for(int i = 0 ; i < stereoBuffer.getSize(); ++i)
+	// {
+	// 	std::cout<<hoge[i]<<", ";
+	// }
 
 	return true;
 }
@@ -123,11 +130,15 @@ void render(BelaContext *context, void *userData)
 	}
 	
 	// Audio
+	float l = 0.0f;
+	float r = 0.0f;
 	for (unsigned int n = 0; n < context->audioFrames; n++)
 	{
-		float v = *buffer.readNext();
-		audioWrite(context, n, 0, v);
-		audioWrite(context, n, 1, v);
+		float v = *monoBuffer.readNext();
+		stereoBuffer.readNext(l, r);
+		// rt_printf("%f\n", l);
+		audioWrite(context, n, 0, (v + l) * 0.5f);
+		audioWrite(context, n, 1, (v + r) * 0.5f);
 	}
 }
 

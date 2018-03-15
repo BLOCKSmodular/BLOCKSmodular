@@ -8,6 +8,7 @@
 #include <Smoothing.h>
 #include <SampleBuffer.h>
 #include <Util.h>
+#include <GranularSynth.h>
 
 #define NUMCVOUT 8
 #define NUMMORPHLOOPERTRACK 2
@@ -35,6 +36,7 @@ Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 MonoBuffer monoBuffer(88200, true, false);
 StereoBuffer stereoBuffer(88200, true, false);
+GranularSynth granular;
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -60,6 +62,10 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 
 bool setup(BelaContext *context, void *userData)
 {
+	std::cout<<"begin sleep"<<std::endl;
+	sleep(5);
+	std::cout<<"end sleep"<<std::endl;
+	
 	// // Set the mode of digital pins
 	// pinMode(context, 0, P8_07, INPUT);
 	// pinMode(context, 0, P8_08, INPUT);
@@ -83,14 +89,11 @@ bool setup(BelaContext *context, void *userData)
 	midi.setParserCallback(midiMessageCallback, (void *)gMidiPort0);
 	
 	//Load Sample
-	std::string wavFile("vibe.wav");
-	monoBuffer.loadSampleFile(wavFile);
+	monoBuffer.loadSampleFile("vibe.wav");
 	stereoBuffer.loadSampleFile("test.wav");
-	// const float* hoge = stereoBuffer.getReadChannelPtr(0);
-	// for(int i = 0 ; i < stereoBuffer.getSize(); ++i)
-	// {
-	// 	std::cout<<hoge[i]<<", ";
-	// }
+	granular.buffer->loadSampleFile("vibe.wav");
+	granular.setGrainsSizeRange(3000, 9000);
+	granular.setStartSampleRange(0, getNumFrames("vibe.wav") - 9000);
 
 	return true;
 }
@@ -132,13 +135,19 @@ void render(BelaContext *context, void *userData)
 	// Audio
 	float l = 0.0f;
 	float r = 0.0f;
+	const int numAudioFrames = context->audioFrames;
+	float test[numAudioFrames];
+	for(int i = 0; i < numAudioFrames; ++i)
+	{
+		test[i] = 0.0f;
+	}
+	granular.nextBlock(test, numAudioFrames);
 	for (unsigned int n = 0; n < context->audioFrames; n++)
 	{
 		float v = *monoBuffer.readNext();
 		stereoBuffer.readNext(l, r);
-		// rt_printf("%f\n", l);
-		audioWrite(context, n, 0, (v + l) * 0.5f);
-		audioWrite(context, n, 1, (v + r) * 0.5f);
+		audioWrite(context, n, 0, (v + l + test[n]) * 0.05f);
+		audioWrite(context, n, 1, (v + r + test[n]) * 0.05f);
 	}
 }
 

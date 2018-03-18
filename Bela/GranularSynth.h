@@ -87,7 +87,16 @@ public:
 	
 	void loadBuffer(const float* bufferToRead, const int bufferLength)
 	{
-		//バッファー読み込み
+        if(bufferLength < minSampleLength) {
+            std::cout<<"Error GranularSynth: Too short buffer"<<std::endl;
+        }
+        else {
+            buffer->resize(bufferLength);
+            for(int i = 0; i < bufferLength; ++i) {
+                buffer.writeNext(bufferToRead[i]);
+            }
+            setSampleRange(0, bufferLength - 1);
+        }
 	}
 	
 	std::unique_ptr<MonoBuffer> buffer;

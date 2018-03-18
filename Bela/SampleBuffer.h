@@ -25,6 +25,15 @@ public:
 		buffer.resize(size, 0.0f);
 	}
 	
+	void nextBlock(float* bufferToWrite, const int blockSize)
+	{
+		for(int i = 0; i < blockSize; ++i)
+		{
+			bufferToWrite[i] += buffer[readIter];
+			addReadIter(1);
+		}
+	}
+	
 	const float* getReadPtr()
 	{
 		return buffer.data();
@@ -178,6 +187,16 @@ public:
 	{
 		for(int channel = 0; channel < numBufferChannels; ++channel) {
 			buffer[channel].resize(size, 0.0f);
+		}
+	}
+	
+	void nextBlock(float* LeftBufferToWrite, float* RightBufferToWrite, const int blockSize)
+	{
+		for(int i = 0; i < blockSize; ++i)
+		{
+			LeftBufferToWrite[i] += buffer[0][readIter];
+			RightBufferToWrite[i] += buffer[1][readIter];
+			addReadIter(1);
 		}
 	}
 	

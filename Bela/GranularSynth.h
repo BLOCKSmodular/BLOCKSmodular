@@ -60,6 +60,7 @@ public:
     
     void loadFile(const std::string audioFileName)
     {
+        //TODO 各グレインのwindowPhaseとsampleIndexを変更するのでクリックノイズが発生する可能性がある -> loadFile()直後はフェードインさせる処理を追加
         const int numSamples = getNumFrames(audioFileName);
         if(numSamples < minSampleLength) {
             std::cout<<"Error GranularSynth: Too short sample length"<<std::endl;
@@ -67,11 +68,16 @@ public:
         else {
             buffer->loadSampleFile(audioFileName);
             setSampleRange(0, numSamples - 1);
+            const int s = (numSamples - maxGrainSize) / numGrains;
+            for (int i = 0; i < numGrains; ++i) {
+                grains[i]->init(i * s);
+            }
         }
     }
     
     void loadBuffer(const float* bufferToRead, const int bufferLength)
     {
+        //TODO 各グレインのwindowPhaseとsampleIndexを変更するのでクリックノイズが発生する可能性がある -> loadBuffer()直後はフェードインさせる処理を追加
         if(bufferLength < minSampleLength) {
             std::cout<<"Error GranularSynth: Too short buffer"<<std::endl;
         }
@@ -81,6 +87,10 @@ public:
                 buffer.writeNext(bufferToRead[i]);
             }
             setSampleRange(0, bufferLength - 1);
+            const int s = (numSamples - maxGrainSize) / numGrains;
+            for (int i = 0; i < numGrains; ++i) {
+                grains[i]->init(i * s);
+            }
         }
     }
     
@@ -91,7 +101,7 @@ public:
 private:
     static constexpr int numGrains = 32;
     static constexpr float twoPi = 6.28318530718f;
-    std::atomic<int> grainSize{10000};
+    std::atomic<int> grainSize{maxGrainSize};
     std::unique_ptr<std::mt19937> random;//TODO: シードをdevice_randomで生成する
     std::uniform_int_distribution<> dist{0, 22050};
     

@@ -10,28 +10,19 @@
 #include <Util.h>
 #include <GranularSynth.h>
 
-#define NUMCVOUT 8
-#define NUMMORPHLOOPERTRACK 2
-
-enum class ModeList
-{
-    MicrotonalBlock,
-    MorphLooper
-};
-
-enum class TransportState
-{
-    Cleared,
-    Stopped,
-    Recording,
-    Playing
-};
-
-int CCInput[NUMCVOUT][2];
-Smoothing CVSmooth[NUMCVOUT];
-ModeList mode = ModeList::MicrotonalBlock;
-TransportState morphLooperState[NUMMORPHLOOPERTRACK] = {TransportState::Cleared, TransportState::Cleared};
-int lastSwitchState = 0;
+static constexpr int NUMCVOUT = 8;
+static constexpr unsigned char CVModeONE =   0b00000001;
+static constexpr unsigned char CVModeTWO =   0b00000010;
+static constexpr unsigned char CVModeOFF =   0b00000100;
+static constexpr unsigned char CVModeTHREE = 0b00001000;
+static constexpr unsigned char CVModeFOUR =  0b00010000;
+static constexpr unsigned char AudioModeONE =   0b00000001;
+static constexpr unsigned char AudioModeTWO =   0b00000010;
+static constexpr unsigned char AudioModeOFF =   0b00000100;
+static constexpr unsigned char AudioModeTHREE = 0b00001000;
+static constexpr unsigned char AudioModeFOUR =  0b00010000;
+unsigned char CVmodeFlag;
+unsigned char AudiomodeFlag;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 MonoBuffer monoBuffer(88200, true, false);
@@ -42,21 +33,8 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
 	if (!strcmp(MidiChannelMessage::getTypeText(message.getType()), "control change"))
 	{
-		int ccNumber = message.getDataByte(0);
-		int value = message.getDataByte(1);
-		if (96 <= ccNumber && ccNumber < 112)
-		{
-			int cvOutputChannel = (ccNumber - 96) / 2;
-			bool isLowerBit = (ccNumber - 96) % 2;
-			CCInput[cvOutputChannel][isLowerBit] = value;
-			if (CCInput[cvOutputChannel][0] >= 0 && CCInput[cvOutputChannel][1] >= 0)
-			{
-				float v = ((CCInput[cvOutputChannel][0] << 7) | (CCInput[cvOutputChannel][1] & 0b1111111)) / 16383.0;
-				CVSmooth[cvOutputChannel].set(v);
-				CCInput[cvOutputChannel][0] = -1;
-				CCInput[cvOutputChannel][1] = -1;
-			}
-		}
+		const int ccNumber = message.getDataByte(0);
+		const int value = message.getDataByte(1);
 	}
 }
 
@@ -66,27 +44,31 @@ bool setup(BelaContext *context, void *userData)
 	sleep(5);
 	std::cout<<"end sleep"<<std::endl;
 	
-	// // Set the mode of digital pins
-	// pinMode(context, 0, P8_07, INPUT);
-	// pinMode(context, 0, P8_08, INPUT);
+	CVmodeFlag = CVModeONE;
+	AudiomodeFlag = AudioModeONE;
 	
-	//Init smoothing class
-    for (int i = 0; i < NUMCVOUT; i++) {
-        CVSmooth[i].init(1200);
-    }
-
-	for (int i = 0; i < 2; i++)
-    {
-		for (int k = 0; k < 8; k++) {
-			CCInput[i][k] = -1;
-		}
-	}
+	//Set the mode of digital pins
+	//Audio Mode
+	pinMode(context, 0, P8_07, INPUT);
+	pinMode(context, 0, P8_08, INPUT);
+	pinMode(context, 0, P8_09, INPUT);
+	pinMode(context, 0, P8_10, INPUT);
+	pinMode(context, 0, P8_11, INPUT);
+	//CV Mode
+	pinMode(context, 0, P8_18, INPUT);
+	pinMode(context, 0, P8_27, INPUT);
+	pinMode(context, 0, P8_28, INPUT);
+	pinMode(context, 0, P8_29, INPUT);
+	pinMode(context, 0, P8_30, INPUT);
     
     //MIDI
 	midi.readFrom(gMidiPort0);
 	midi.writeTo(gMidiPort0);
 	midi.enableParser(true);
 	midi.setParserCallback(midiMessageCallback, (void *)gMidiPort0);
+	
+	midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
+	midi.writeOutput(bytes, 3);
 	
 	//Load Sample
 	monoBuffer.loadSampleFile("vibe.wav");
@@ -98,56 +80,193 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-	// for (unsigned int n = 0; n < context->digitalFrames; n++)
-	// {
-	// 	//TODO チャタリング除去
-	// 	int swc = digitalRead(context, n, P8_08);
-	//  	if(lastSwitchState != swc)//モード切り替えスイッチ
- //		{
- //			mode = swc == 0 ? ModeList::MorphLooper : ModeList::MicrotonalBlock;
- //			lastSwitchState = swc;
- //			midi_byte_t bytes[3] = {176, (midi_byte_t)(mode == ModeList::MorphLooper ? 96 : 97), 127};
-	// 		midi.writeOutput(bytes, 3);
- //		}
- 		
- //		if(digitalRead(context, 0, P8_07) == 0)//録音クリアースイッチ
- //		{
- //			for (int i = 0; i < 4; i++) 
- //			{
- //				midi_byte_t bytes[3] = {176, (midi_byte_t)(72 + i), 127};
-	// 			midi.writeOutput(bytes, 3);
- //			}
- //		}
-	// }
-
-	// CV/Gate
-	for (unsigned int n = 0; n < context->analogFrames; n++)
+	unsigned char cvFLG = 0;
+	unsigned char audioFLG = 0;
+	//TODOチャタリング除去
+	if(digitalRead(context, 0, P8_07)) cvFLG = CVModeONE;
+	if(digitalRead(context, 0, P8_08)) cvFLG = CVModeTWO;
+	if(digitalRead(context, 0, P8_09)) cvFLG = CVModeOFF;//P8_09はOFFスイッチ
+	if(digitalRead(context, 0, P8_10)) cvFLG = CVModeTHREE;
+	if(digitalRead(context, 0, P8_11)) cvFLG = CVModeFOUR;
+	if(CVmodeFlag != cvFLG && cvFLG != 0)
 	{
-		for (unsigned int i = 0; i < NUMCVOUT; i++)
+		//TODO CVModeリセット関数を追加
+		//sendMIDItoCVModeReset();
+		
+		if(cvFLG == CVModeONE) {
+			//CVmode1
+			//モード切り替え用CC送信
+			//midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
+			//midi.writeOutput(bytes, 3);
+		}
+		else if(cvFLG == CVModeTWO) {
+			//CVmode2
+			//モード切り替え用CC送信
+		}
+		else if(cvFLG == CVModeOFF) {
+			//CVmode OFF
+			//モード切り替え用CC送信
+		}
+		else if(cvFLG == CVModeTHREE) {
+			//CVmode3
+			//モード切り替え用CC送信
+		}
+		else if(cvFLG == CVModeFOUR) {
+			//CVmode4
+			//モード切り替え用CC送信
+		}
+		CVmodeFlag = cvFLG;
+	}
+	
+	if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeONE;
+	if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeTWO;
+	if(digitalRead(context, 0, P8_28)) audioFLG = AudioModeOFF;//P8_28はOFFスイッチ
+	if(digitalRead(context, 0, P8_29)) audioFLG = AudioModeTHREE;
+	if(digitalRead(context, 0, P8_30)) audioFLG = AudioModeFOUR;
+	if(AudiomodeFlag != audioFLG && audioFLG != 0)
+	{
+		//TODO audioModeリセット関数を追加
+		//sendMIDItoAudioModeReset();
+		
+		if(audioFLG == AudioModeONE) {
+			//Audiomode1
+			//モード切り替え用CC送信
+			//midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
+			//midi.writeOutput(bytes, 3);
+		}
+		else if(audioFLG == AudioModeTWO) {
+			//Audiomode2
+			//モード切り替え用CC送信
+		}
+		else if(audioFLG == AudioModeOFF) {
+			//Audiomode OFF
+			//モード切り替え用CC送信
+		}
+		else if(audioFLG == AudioModeTHREE) {
+			//Audiomode3
+			//モード切り替え用CC送信
+		}
+		else if(audioFLG == AudioModeFOUR) {
+			//Audiomode4
+			//モード切り替え用CC送信
+		}
+		AudiomodeFlag = audioFLG;
+	}
+
+
+	switch(CVmodeFlag)
+	{
+		case CVModeONE:
 		{
-			float v = CVSmooth[i].getNextValue();
-			analogWrite(context, n, i, v);
+			break;
+		}
+		case CVModeTWO:
+		{
+			break;
+		}
+		case CVModeOFF:
+		{
+			break;
+		}
+		case CVModeTHREE:
+		{
+			break;
+		}
+		case CVModeFOUR:
+		{
+			break;
+		}
+		default:
+		{
+			rt_printf("CVMode: %d\n", CVmodeFlag);
+			break;
 		}
 	}
-
-	// Audio
-	const int numAudioFrames = context->audioFrames;
-	float mono = 0.0f;
-	float left = 0.0f;
-	float right = 0.0f;
-	float gr[numAudioFrames];
-	for(int i = 0; i < numAudioFrames; ++i) {
-		gr[i] = 0.0f;
-	}
-	granular.nextBlock(gr, numAudioFrames);
 	
-	for(unsigned int i = 0; i < numAudioFrames; ++i)
+	const int numAudioFrames = context->audioFrames;
+	switch(AudiomodeFlag)
 	{
-		monoBuffer.readNext(mono);
-		stereoBuffer.readNext(left, right);
-		audioWrite(context, i, 0, (gr[i] + mono + left) * 0.1f);
-		audioWrite(context, i, 1, (gr[i] + mono + right) * 0.1f);
+		case AudioModeONE:
+		{
+			//Granular
+			float gr[numAudioFrames];
+			for(unsigned int i = 0; i < numAudioFrames; ++i) {
+				gr[i] = 0.0f;
+			}
+			granular.nextBlock(gr, numAudioFrames);
+	
+			for(unsigned int i = 0; i < numAudioFrames; ++i) {
+				audioWrite(context, i, 0, gr[i] * 0.2f);
+				audioWrite(context, i, 1, gr[i] * 0.2f);
+			}
+			break;
+		}
+		case AudioModeTWO:
+		{
+			//MonoBuffer
+			float mono = 0.0f;
+			for(unsigned int i = 0; i < numAudioFrames; ++i) {
+				monoBuffer.readNext(mono);
+				audioWrite(context, i, 0, mono);
+				audioWrite(context, i, 1, mono);
+			}
+			break;
+		}
+		case AudioModeOFF:
+		{
+			break;
+		}
+		case AudioModeTHREE:
+		{
+			//StereoBuffer
+			float stereo[2] = {0.0f, 0.0f};
+			for(unsigned int i = 0; i < numAudioFrames; ++i) {
+				stereoBuffer.readNext(stereo[0], stereo[1]);
+				audioWrite(context, i, 0, stereo[0]);
+				audioWrite(context, i, 1, stereo[1]);
+			}
+			break;
+		}
+		case AudioModeFOUR:
+		{
+			break;
+		}
+		default:
+		{
+			rt_printf("AudioMode: %d\n", AudiomodeFlag);
+			break;
+		}
 	}
+	
+	
+	// // CV/Gate
+	// for (unsigned int n = 0; n < context->analogFrames; n++)
+	// {
+	// 	for (unsigned int i = 0; i < NUMCVOUT; i++)
+	// 	{
+	// 		// float v = CVSmooth[i].getNextValue();
+	// 		// analogWrite(context, n, i, v);
+	// 	}
+	// }
+
+	// // Audio
+	// const int numAudioFrames = context->audioFrames;
+	// float mono = 0.0f;
+	// float left = 0.0f;
+	// float right = 0.0f;
+	// float gr[numAudioFrames];
+	// for(int i = 0; i < numAudioFrames; ++i) {
+	// 	gr[i] = 0.0f;
+	// }
+	// granular.nextBlock(gr, numAudioFrames);
+	
+	// for(unsigned int i = 0; i < numAudioFrames; ++i)
+	// {
+	// 	monoBuffer.readNext(mono);
+	// 	stereoBuffer.readNext(left, right);
+	// 	audioWrite(context, i, 0, (gr[i] + mono + left) * 0.2f);
+	// 	audioWrite(context, i, 1, (gr[i] + mono + right) * 0.2f);
+	// }
 }
 
 void cleanup(BelaContext *context, void *userData)

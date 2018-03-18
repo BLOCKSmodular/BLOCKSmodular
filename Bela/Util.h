@@ -8,7 +8,7 @@
 #include <iostream>
 #include <cstdlib>
 
-inline int getNumChannels(std::string file) 
+static inline int getNumChannels(std::string file)
 {
 	SNDFILE *sndfile ;
 	SF_INFO sfinfo ;
@@ -21,7 +21,7 @@ inline int getNumChannels(std::string file)
 	return sfinfo.channels;
 }
 
-inline int getNumFrames(std::string file) 
+static inline int getNumFrames(std::string file)
 {
 	SNDFILE *sndfile ;
 	SF_INFO sfinfo ;

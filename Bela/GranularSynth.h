@@ -14,19 +14,15 @@
 class GranularSynth {
 public:
 	GranularSynth() {
-		buffer = std::make_unique<MonoBuffer>(initialBufferLength, false, false);
+		buffer = std::make_unique<MonoBuffer>(44100, false, false);
+		const int initialGrainSize = 2400;
 		for(int i = 0; i < numGrains; ++i)
 		{
-			grains[i].init(1, initialBufferLength / 2 - 1, 0, initialBufferLength / 2);
+			int s = initialGrainSize / numGrains;
+			grains[i].init(0, 10000, initialGrainSize, i * s);
 		}
 	};
 	~GranularSynth(){};
-	
-	// void loadSample(std::string fileName)
-	// {
-	// 	//Wavファイル読み込み
-	// 	buffer->loadSampleFile(fileName);
-	// }
 	
 	void nextBlock(float* bufferToWrite, const int blockSize)
 	{
@@ -37,30 +33,40 @@ public:
 		}
 	}
 	
-	void setGrainsSizeRange(const int min, const int Max)
+	void setGrainsSize(const int grainSizeInSamples)
 	{
 		for(int i = 0; i < numGrains; ++i)
 		{
-			grains[i].grainSizeRange.first = min;
-			grains[i].grainSizeRange.second = Max;
+			grains[i].nextGrainSize.store(grainSizeInSamples);
 		}
 	}
 	
-	void setStartSampleRange(const int min, const int Max)
+	void setSampleRange(const int min, const int Max)
 	{
 		for(int i = 0; i < numGrains; ++i)
 		{
-			grains[i].startSampleRange.first = min;
-			grains[i].startSampleRange.second = Max;
+			grains[i].sampleRange.first = min;
+			grains[i].sampleRange.second = Max;
 		}
+	}
+	
+	void loadFile(const std::string audioFileName)
+	{
+		//ファイル読み込み
+		buffer->loadSampleFile(audioFileName);
+		setSampleRange(0, getNumFrames("vibe.wav") - 1);
+	}
+	
+	void loadBuffer(const float* bufferToRead, const int bufferLength)
+	{
+		//バッファー読み込み
 	}
 	
 	std::unique_ptr<MonoBuffer> buffer;
 	
 private:
-	const int initialBufferLength = 1000;
-	static const int numGrains = 16;
-	static constexpr float twoPi = 6.283185f;
+	static const int numGrains = 32;
+	static constexpr float twoPi = 6.28318530718f;
 	
 	class Grain
 	{
@@ -68,13 +74,27 @@ private:
 		Grain(){};
 		~Grain(){};
 		
-		void init(const int grainSizeMin, const int grainSizeMax, const int startSampleMin, const int startSampleMax)
+		void init(const int sampleRangeMin, const int sampleRangeMax, const int grainSizeInSamples, const int index = 0)
 		{
-			grainSizeRange.first = grainSizeMin;
-			grainSizeRange.second = grainSizeMax;
-			startSampleRange.first = startSampleMin;
-			startSampleRange.second = startSampleMax;
-			parameterUpdate();
+			nextGrainSize.store(grainSizeInSamples);
+			currentGrainSize = grainSizeInSamples;
+			sampleRange.first = sampleRangeMin;
+			sampleRange.second = sampleRangeMax;
+			
+			if(grainSizeInSamples <= index)
+			{
+				//TODO assertion追加
+				std::cout<<"warnig:: invalid index..."<<std::endl;
+				sampleIndex = 0;
+				windowStep = 1.0f / (float)currentGrainSize;
+				windowPhase = 0.0f;
+			}
+			else
+			{
+				sampleIndex = index;
+				windowStep = 1.0f / (float)currentGrainSize;
+				windowPhase = windowStep * (float)index;
+			}
 		}
 		
 		void update(const float* bufferToRead, float* bufferToWrite, const int length){
@@ -82,8 +102,8 @@ private:
 			{
 				bufferToWrite[i] += bufferToRead[startSample + sampleIndex] * window();
 				sampleIndex++;
-				windowPhase += windowStep;
-				if(sampleIndex >= grainSize)
+				windowPhase = std::min(std::max(0.0f, windowPhase + windowStep), 1.0f);//0.0f~1.0fの範囲
+				if(sampleIndex >= currentGrainSize)
 				{
 					parameterUpdate();
 					return;
@@ -91,8 +111,8 @@ private:
 			}
 		}
 		
-		std::pair<int, int> startSampleRange{0, 0};
-		std::pair<int , int> grainSizeRange{0, 0};
+		std::pair<int, int> sampleRange{0, 22500};
+		std::atomic<int> nextGrainSize{10000};
 		
 	private:
 		inline float window()
@@ -102,24 +122,26 @@ private:
 	
 		void parameterUpdate() 
 		{
-			// std::random_device seed;
 			std::mt19937 random(rand());//TODO: シードをdevice_randomで生成する
-			std::uniform_int_distribution<> gsRandom(grainSizeRange.first, grainSizeRange.second);
-			grainSize = gsRandom(random);
-			std::uniform_int_distribution<> ssRandom(startSampleRange.first, startSampleRange.second);
+			currentGrainSize = nextGrainSize.load();
+			
+			//TODO範囲外アクセスしないように調整する
+			if((sampleRange.second - currentGrainSize) <= sampleRange.first)
+			{
+				
+			}
+			std::uniform_int_distribution<> ssRandom(sampleRange.first, sampleRange.second);
 			startSample = ssRandom(random);
-			// std::cout<<"startSample: "<<startSample<<", grainSize: "<<grainSize<<std::endl;
-					
-			windowStep = 1.0f / (float)grainSize;
+			windowStep = 1.0f / (float)currentGrainSize;
 			windowPhase = 0.0f;
 			sampleIndex = 0;
 		}
 	
 		int startSample = 0;
-		int grainSize;
-		int sampleIndex = 0;
-		float windowStep = 0.0f;
-		float windowPhase = 0.0f;//0.0f~1.0f
+		int currentGrainSize = 10000;
+		int sampleIndex;
+		float windowStep;
+		float windowPhase;//0.0f~1.0f
 	};
 	
 	Grain grains[numGrains];

@@ -91,9 +91,8 @@ bool setup(BelaContext *context, void *userData)
 	//Load Sample
 	monoBuffer.loadSampleFile("vibe.wav");
 	stereoBuffer.loadSampleFile("test.wav");
-	granular.buffer->loadSampleFile("vibe.wav");
-	granular.setGrainsSizeRange(3000, 9000);
-	granular.setStartSampleRange(0, getNumFrames("vibe.wav") - 9000);
+	granular.loadFile("vibe.wav");
+	// granular.setStartSampleRange(0, getNumFrames("vibe.wav") - 1); 
 
 	return true;
 }
@@ -146,8 +145,8 @@ void render(BelaContext *context, void *userData)
 	{
 		float v = *monoBuffer.readNext();
 		stereoBuffer.readNext(l, r);
-		audioWrite(context, n, 0, (v + l + test[n]) * 0.05f);
-		audioWrite(context, n, 1, (v + r + test[n]) * 0.05f);
+		audioWrite(context, n, 0, (/*v + l + */test[n]) * 0.25f);
+		audioWrite(context, n, 1, (/*v + r + */test[n]) * 0.25f);
 	}
 }
 

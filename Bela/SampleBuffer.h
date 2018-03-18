@@ -50,11 +50,10 @@ public:
 		return readIter;
 	}
 	
-	const float* readNext() 
+	void readNext(float& value)
 	{
-		const float* p = &buffer.data()[readIter];
+		value = buffer[readIter];
 		addReadIter(1);
-		return p;
 	}
 	
 	void writeNext(float& value)

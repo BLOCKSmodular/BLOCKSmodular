@@ -92,7 +92,6 @@ bool setup(BelaContext *context, void *userData)
 	monoBuffer.loadSampleFile("vibe.wav");
 	stereoBuffer.loadSampleFile("test.wav");
 	granular.loadFile("vibe.wav");
-	// granular.setStartSampleRange(0, getNumFrames("vibe.wav") - 1); 
 
 	return true;
 }

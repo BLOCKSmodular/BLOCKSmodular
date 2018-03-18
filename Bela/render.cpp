@@ -130,23 +130,24 @@ void render(BelaContext *context, void *userData)
 			analogWrite(context, n, i, v);
 		}
 	}
-	
+
 	// Audio
-	float l = 0.0f;
-	float r = 0.0f;
 	const int numAudioFrames = context->audioFrames;
-	float test[numAudioFrames];
-	for(int i = 0; i < numAudioFrames; ++i)
-	{
-		test[i] = 0.0f;
+	float mono = 0.0f;
+	float left = 0.0f;
+	float right = 0.0f;
+	float gr[numAudioFrames];
+	for(int i = 0; i < numAudioFrames; ++i) {
+		gr[i] = 0.0f;
 	}
-	granular.nextBlock(test, numAudioFrames);
-	for (unsigned int n = 0; n < context->audioFrames; n++)
+	granular.nextBlock(gr, numAudioFrames);
+	
+	for(unsigned int i = 0; i < numAudioFrames; ++i)
 	{
-		float v = *monoBuffer.readNext();
-		stereoBuffer.readNext(l, r);
-		audioWrite(context, n, 0, (/*v + l + */test[n]) * 0.25f);
-		audioWrite(context, n, 1, (/*v + r + */test[n]) * 0.25f);
+		monoBuffer.readNext(mono);
+		stereoBuffer.readNext(left, right);
+		audioWrite(context, i, 0, (gr[i] + mono + left) * 0.1f);
+		audioWrite(context, i, 1, (gr[i] + mono + right) * 0.1f);
 	}
 }
 

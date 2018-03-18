@@ -15,6 +15,7 @@ class GranularSynth {
 public:
 	GranularSynth() 
 	{
+		random = std::make_unique<std::mt19937>(rand());
 		
 		for (int i = 0; i < numGrains; ++i)
 		{
@@ -55,12 +56,15 @@ public:
 		}
 	}
 	
-	void setSampleRange(const int min, const int Max)
+	void setSampleRange(const unsigned int& min, const unsigned int& Max)
 	{
-		for(int i = 0; i < numGrains; ++i)
+		if(Max - min < maxGrainSize)
 		{
-			grains[i].sampleRange.first = min;
-			grains[i].sampleRange.second = Max;
+			std::cout<<"Error GranularSynth: Too short SampleRange"<<std::endl;
+		}
+		else
+		{
+			dist.param(std::uniform_int_distribution<>::param_type(min, Max - maxGrainSize));
 		}
 	}
 	
@@ -81,6 +85,9 @@ public:
 private:
 	static const int numGrains = 32;
 	static constexpr float twoPi = 6.28318530718f;
+	std::atomic<int> grainSize{10000};
+	std::unique_ptr<std::mt19937> random;//TODO: シードをdevice_randomで生成する
+	std::uniform_int_distribution<> dist{0, 22050};
 	
 	class Grain
 	{
@@ -124,9 +131,6 @@ private:
 			}
 		}
 		
-		std::pair<int, int> sampleRange{0, 22500};
-		std::atomic<int> nextGrainSize{10000};
-		
 	private:
 		inline float window()
 		{
@@ -135,18 +139,9 @@ private:
 	
 		void parameterUpdate() 
 		{
-			std::mt19937 random(rand());//TODO: シードをdevice_randomで生成する
-			currentGrainSize = nextGrainSize.load();
-			
-			//TODO範囲外アクセスしないように調整する
-			if((sampleRange.second - currentGrainSize) <= sampleRange.first)
-			{
-				
-			}
-			std::uniform_int_distribution<> ssRandom(sampleRange.first, sampleRange.second);
-			startSample = ssRandom(random);
 			windowStep = 1.0f / (float)currentGrainSize;
 			currentGrainSize = granular_.grainSize;
+			startSample = granular_.dist(*granular_.random);
 			windowPhase = 0.0f;
 			sampleIndex = 0;
 		}

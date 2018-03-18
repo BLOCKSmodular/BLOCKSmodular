@@ -13,23 +13,37 @@
 
 class GranularSynth {
 public:
-	GranularSynth() {
+	GranularSynth() 
+	{
+		
+		for (int i = 0; i < numGrains; ++i)
+		{
+			grains[i] = new Grain(*this);
+		}
+		
 		buffer = std::make_unique<MonoBuffer>(44100, false, false);
 		const int initialGrainSize = 2400;
 		for(int i = 0; i < numGrains; ++i)
 		{
 			int s = initialGrainSize / numGrains;
-			grains[i].init(0, 10000, initialGrainSize, i * s);
+			const int s = grainSize.load() / numGrains;
+			grains[i]->init(i * s);
 		}
 	};
-	~GranularSynth(){};
+	
+	~GranularSynth(){
+		for(int i = 0; i < numGrains; ++i)
+		{
+			delete grains[i];
+		}
+	};
 	
 	void nextBlock(float* bufferToWrite, const int blockSize)
 	{
 		const float* ptr = buffer->getReadPtr();
 		for(int i = 0; i < numGrains; ++i)
 		{
-			grains[i].update(ptr, bufferToWrite, blockSize);
+			grains[i]->update(ptr, bufferToWrite, blockSize);
 		}
 	}
 	
@@ -71,17 +85,16 @@ private:
 	class Grain
 	{
 	public:
-		Grain(){};
+		Grain(GranularSynth& g)
+		: granular_(g)
+		{};
 		~Grain(){};
 		
-		void init(const int sampleRangeMin, const int sampleRangeMax, const int grainSizeInSamples, const int index = 0)
+		void init(const unsigned int index)
 		{
-			nextGrainSize.store(grainSizeInSamples);
-			currentGrainSize = grainSizeInSamples;
-			sampleRange.first = sampleRangeMin;
-			sampleRange.second = sampleRangeMax;
+			currentGrainSize = granular_.grainSize;
 			
-			if(grainSizeInSamples <= index)
+			if(currentGrainSize <= index)
 			{
 				//TODO assertion追加
 				std::cout<<"warnig:: invalid index..."<<std::endl;
@@ -133,6 +146,7 @@ private:
 			std::uniform_int_distribution<> ssRandom(sampleRange.first, sampleRange.second);
 			startSample = ssRandom(random);
 			windowStep = 1.0f / (float)currentGrainSize;
+			currentGrainSize = granular_.grainSize;
 			windowPhase = 0.0f;
 			sampleIndex = 0;
 		}
@@ -142,9 +156,10 @@ private:
 		int sampleIndex;
 		float windowStep;
 		float windowPhase;//0.0f~1.0f
+		GranularSynth& granular_;
 	};
 	
-	Grain grains[numGrains];
+	Grain* grains[numGrains];
 };
 
 #endif /* GranularSynth_H_ */

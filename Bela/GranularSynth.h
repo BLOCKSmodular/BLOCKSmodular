@@ -118,13 +118,13 @@ private:
 				//TODO assertion追加
 				std::cout<<"warnig:: invalid index..."<<std::endl;
 				sampleIndex = 0;
-				windowStep = 1.0f / (float)currentGrainSize;
+				windowStep = twoPi / (float)currentGrainSize;
 				windowPhase = 0.0f;
 			}
 			else
 			{
 				sampleIndex = index;
-				windowStep = 1.0f / (float)currentGrainSize;
+				windowStep = twoPi / (float)currentGrainSize;
 				windowPhase = windowStep * (float)index;
 			}
 		}
@@ -134,7 +134,7 @@ private:
 			{
 				bufferToWrite[i] += bufferToRead[startSample + sampleIndex] * window();
 				sampleIndex++;
-				windowPhase = std::min(std::max(0.0f, windowPhase + windowStep), 1.0f);//0.0f~1.0fの範囲
+				windowPhase += windowStep;
 				if(sampleIndex >= currentGrainSize)
 				{
 					parameterUpdate();
@@ -146,14 +146,14 @@ private:
 	private:
 		inline float window()
 		{
-			return 0.5f - 0.5f * cosf_neon(twoPi * windowPhase);
+			return 0.5f - 0.5f * cosf_neon(windowPhase);
 		}
 	
 		void parameterUpdate() 
 		{
-			windowStep = 1.0f / (float)currentGrainSize;
 			currentGrainSize = granular_.grainSize;
 			startSample = granular_.dist(*granular_.random);
+			windowStep = twoPi / (float)currentGrainSize;
 			windowPhase = 0.0f;
 			sampleIndex = 0;
 		}
@@ -162,7 +162,7 @@ private:
 		int currentGrainSize = 10000;
 		int sampleIndex;
 		float windowStep;
-		float windowPhase;//0.0f~1.0f
+		float windowPhase;//0.0f~2pi
 		GranularSynth& granular_;
 	};
 	

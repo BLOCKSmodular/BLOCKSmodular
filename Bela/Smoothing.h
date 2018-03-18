@@ -5,40 +5,33 @@
 #include <stdlib.h>
 #include <atomic>
 
-struct Smoothing
+class Smoothing
 {
-	std::atomic<float> currentValue{0.0f};
-	std::atomic<float> step{0.0f};
-	std::atomic<int> smoothingIndex{0};
-	std::atomic<int> smoothingLength{1200};
+public:
+    Smoothing(){}
+    ~Smoothing(){}
 
-	void init(const int numStep)
+	void set(const float target)
 	{
-		smoothingLength.store(numStep);
-	}
-
-	void reset()
-	{
-		step.store(0.0f);
-		currentValue.store(0.0f);
-		smoothingIndex.store(0);
-	}
-
-	void set(float target)
-	{
-		step.store((target - currentValue.load()) / (float)smoothingLength.load());
-		smoothingIndex.store(0);
+		stepSize = (target - currentValue.load()) / (float)smoothingLength;
+		index = 0;
 	}
 
 	float getNextValue()
 	{
-		if (smoothingIndex.load() < smoothingLength.load())
-		{
-			currentValue.store(currentValue.load() + step.load());
-			++smoothingIndex;
+		if (index.load() < smoothingLength)
+        {
+			currentValue = currentValue.load() + stepSize.load();
+            index++;
 		}
 		return currentValue;
 	}
+    
+private:
+    std::atomic<float> currentValue{0.0f};
+    std::atomic<float> stepSize{0.0f};
+    std::atomic<int> index{0};
+    static constexpr smoothingLength = 1200;
 };
 
 #endif /* SMOOTHING_H_ */

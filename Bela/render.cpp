@@ -11,16 +11,16 @@
 #include <GranularSynth.h>
 
 static constexpr int NUMCVOUT = 8;
-static constexpr unsigned char CVModeONE =   0b00000001;
-static constexpr unsigned char CVModeTWO =   0b00000010;
-static constexpr unsigned char CVModeOFF =   0b00000100;
-static constexpr unsigned char CVModeTHREE = 0b00001000;
-static constexpr unsigned char CVModeFOUR =  0b00010000;
-static constexpr unsigned char AudioModeONE =   0b00000001;
-static constexpr unsigned char AudioModeTWO =   0b00000010;
-static constexpr unsigned char AudioModeOFF =   0b00000100;
-static constexpr unsigned char AudioModeTHREE = 0b00001000;
-static constexpr unsigned char AudioModeFOUR =  0b00010000;
+static constexpr unsigned char CVModeA =   0b00000001;
+static constexpr unsigned char CVModeB =   0b00000010;
+static constexpr unsigned char CVModeOFF = 0b00000100;
+static constexpr unsigned char CVModeC =   0b00001000;
+static constexpr unsigned char CVModeD =   0b00010000;
+static constexpr unsigned char AudioModeA =   0b00000001;
+static constexpr unsigned char AudioModeB =   0b00000010;
+static constexpr unsigned char AudioModeOFF = 0b00000100;
+static constexpr unsigned char AudioModeC =   0b00001000;
+static constexpr unsigned char AudioModeD =   0b00010000;
 unsigned char CVmodeFlag;
 unsigned char AudiomodeFlag;
 Midi midi;
@@ -40,26 +40,25 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 
 bool setup(BelaContext *context, void *userData)
 {
-	std::cout<<"begin sleep"<<std::endl;
+    //Sleep for waiting boot BLOCKS
+	std::cout<<"Begin sleep"<<std::endl;
 	sleep(5);
-	std::cout<<"end sleep"<<std::endl;
+	std::cout<<"End sleep"<<std::endl;
 	
-	CVmodeFlag = CVModeONE;
-	AudiomodeFlag = AudioModeONE;
+	CVmodeFlag = CVModeA;
+	AudiomodeFlag = AudioModeA;
 	
-	//Set the mode of digital pins
-	//Audio Mode
-	pinMode(context, 0, P8_07, INPUT);
-	pinMode(context, 0, P8_08, INPUT);
-	pinMode(context, 0, P8_09, INPUT);
-	pinMode(context, 0, P8_10, INPUT);
-	pinMode(context, 0, P8_11, INPUT);
-	//CV Mode
-	pinMode(context, 0, P8_18, INPUT);
-	pinMode(context, 0, P8_27, INPUT);
-	pinMode(context, 0, P8_28, INPUT);
-	pinMode(context, 0, P8_29, INPUT);
-	pinMode(context, 0, P8_30, INPUT);
+	//Digital pins setup
+	pinMode(context, 0, P8_07, INPUT);//AudioModeA
+	pinMode(context, 0, P8_08, INPUT);//AudioModeB
+	pinMode(context, 0, P8_09, INPUT);//AudioModeOFF
+	pinMode(context, 0, P8_10, INPUT);//AudioModeC
+	pinMode(context, 0, P8_11, INPUT);//AudioModeD
+	pinMode(context, 0, P8_18, INPUT);//CVModeA
+	pinMode(context, 0, P8_27, INPUT);//CVModeB
+	pinMode(context, 0, P8_28, INPUT);//CVModeOFF
+	pinMode(context, 0, P8_29, INPUT);//CVModeC
+	pinMode(context, 0, P8_30, INPUT);//CVModeD
     
     //MIDI
 	midi.readFrom(gMidiPort0);
@@ -83,23 +82,22 @@ void render(BelaContext *context, void *userData)
 	unsigned char cvFLG = 0;
 	unsigned char audioFLG = 0;
 	//TODOチャタリング除去
-	if(digitalRead(context, 0, P8_07)) cvFLG = CVModeONE;
-	if(digitalRead(context, 0, P8_08)) cvFLG = CVModeTWO;
+	if(digitalRead(context, 0, P8_07)) cvFLG = CVModeA;
+	if(digitalRead(context, 0, P8_08)) cvFLG = CVModeB;
 	if(digitalRead(context, 0, P8_09)) cvFLG = CVModeOFF;//P8_09はOFFスイッチ
-	if(digitalRead(context, 0, P8_10)) cvFLG = CVModeTHREE;
-	if(digitalRead(context, 0, P8_11)) cvFLG = CVModeFOUR;
-	if(CVmodeFlag != cvFLG && cvFLG != 0)
-	{
+	if(digitalRead(context, 0, P8_10)) cvFLG = CVModeC;
+	if(digitalRead(context, 0, P8_11)) cvFLG = CVModeD;
+	if(CVmodeFlag != cvFLG && cvFLG != 0) {
 		//TODO CVModeリセット関数を追加
 		//sendMIDItoCVModeReset();
 		
-		if(cvFLG == CVModeONE) {
+		if(cvFLG == CVModeA) {
 			//CVmode1
 			//モード切り替え用CC送信
 			//midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
 			//midi.writeOutput(bytes, 3);
 		}
-		else if(cvFLG == CVModeTWO) {
+		else if(cvFLG == CVModeB) {
 			//CVmode2
 			//モード切り替え用CC送信
 		}
@@ -107,34 +105,33 @@ void render(BelaContext *context, void *userData)
 			//CVmode OFF
 			//モード切り替え用CC送信
 		}
-		else if(cvFLG == CVModeTHREE) {
+		else if(cvFLG == CVModeC) {
 			//CVmode3
 			//モード切り替え用CC送信
 		}
-		else if(cvFLG == CVModeFOUR) {
+		else if(cvFLG == CVModeD) {
 			//CVmode4
 			//モード切り替え用CC送信
 		}
 		CVmodeFlag = cvFLG;
 	}
 	
-	if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeONE;
-	if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeTWO;
+	if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeA;
+	if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeB;
 	if(digitalRead(context, 0, P8_28)) audioFLG = AudioModeOFF;//P8_28はOFFスイッチ
-	if(digitalRead(context, 0, P8_29)) audioFLG = AudioModeTHREE;
-	if(digitalRead(context, 0, P8_30)) audioFLG = AudioModeFOUR;
-	if(AudiomodeFlag != audioFLG && audioFLG != 0)
-	{
+	if(digitalRead(context, 0, P8_29)) audioFLG = AudioModeC;
+	if(digitalRead(context, 0, P8_30)) audioFLG = AudioModeD;
+	if(AudiomodeFlag != audioFLG && audioFLG != 0) {
 		//TODO audioModeリセット関数を追加
 		//sendMIDItoAudioModeReset();
 		
-		if(audioFLG == AudioModeONE) {
+		if(audioFLG == AudioModeA) {
 			//Audiomode1
 			//モード切り替え用CC送信
 			//midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
 			//midi.writeOutput(bytes, 3);
 		}
-		else if(audioFLG == AudioModeTWO) {
+		else if(audioFLG == AudioModeB) {
 			//Audiomode2
 			//モード切り替え用CC送信
 		}
@@ -142,53 +139,50 @@ void render(BelaContext *context, void *userData)
 			//Audiomode OFF
 			//モード切り替え用CC送信
 		}
-		else if(audioFLG == AudioModeTHREE) {
+		else if(audioFLG == AudioModeC) {
 			//Audiomode3
 			//モード切り替え用CC送信
 		}
-		else if(audioFLG == AudioModeFOUR) {
+		else if(audioFLG == AudioModeD) {
 			//Audiomode4
 			//モード切り替え用CC送信
 		}
 		AudiomodeFlag = audioFLG;
 	}
 
-
-	switch(CVmodeFlag)
-	{
-		case CVModeONE:
-		{
+    const int numAnalogueFrames = context->analogFrames;
+	switch(CVmodeFlag) {
+		case CVModeA: {
+            //TODO BLOCKSからの入力に応じた値を出す
+            for (unsigned int n = 0; n < numAnalogueFrames; n++) {
+                for (unsigned int i = 0; i < NUMCVOUT; i++) {
+                    analogWrite(context, n, i, 1.0f);
+                }
+             }
 			break;
 		}
-		case CVModeTWO:
-		{
+		case CVModeB: {
 			break;
 		}
-		case CVModeOFF:
-		{
+		case CVModeOFF: {
 			break;
 		}
-		case CVModeTHREE:
-		{
+		case CVModeC: {
 			break;
 		}
-		case CVModeFOUR:
-		{
+		case CVModeD: {
 			break;
 		}
-		default:
-		{
+		default: {
 			rt_printf("CVMode: %d\n", CVmodeFlag);
 			break;
 		}
 	}
 	
 	const int numAudioFrames = context->audioFrames;
-	switch(AudiomodeFlag)
-	{
-		case AudioModeONE:
-		{
-			//Granular
+	switch(AudiomodeFlag) {
+		case AudioModeA: {
+            //Granular
 			float gr[numAudioFrames];
 			for(unsigned int i = 0; i < numAudioFrames; ++i) {
 				gr[i] = 0.0f;
@@ -201,8 +195,7 @@ void render(BelaContext *context, void *userData)
 			}
 			break;
 		}
-		case AudioModeTWO:
-		{
+		case AudioModeB: {
 			//MonoBuffer
 			float mono = 0.0f;
 			for(unsigned int i = 0; i < numAudioFrames; ++i) {
@@ -212,12 +205,10 @@ void render(BelaContext *context, void *userData)
 			}
 			break;
 		}
-		case AudioModeOFF:
-		{
+		case AudioModeOFF: {
 			break;
 		}
-		case AudioModeTHREE:
-		{
+		case AudioModeC: {
 			//StereoBuffer
 			float stereo[2] = {0.0f, 0.0f};
 			for(unsigned int i = 0; i < numAudioFrames; ++i) {
@@ -227,46 +218,14 @@ void render(BelaContext *context, void *userData)
 			}
 			break;
 		}
-		case AudioModeFOUR:
-		{
+		case AudioModeD: {
 			break;
 		}
-		default:
-		{
+		default: {
 			rt_printf("AudioMode: %d\n", AudiomodeFlag);
 			break;
 		}
 	}
-	
-	
-	// // CV/Gate
-	// for (unsigned int n = 0; n < context->analogFrames; n++)
-	// {
-	// 	for (unsigned int i = 0; i < NUMCVOUT; i++)
-	// 	{
-	// 		// float v = CVSmooth[i].getNextValue();
-	// 		// analogWrite(context, n, i, v);
-	// 	}
-	// }
-
-	// // Audio
-	// const int numAudioFrames = context->audioFrames;
-	// float mono = 0.0f;
-	// float left = 0.0f;
-	// float right = 0.0f;
-	// float gr[numAudioFrames];
-	// for(int i = 0; i < numAudioFrames; ++i) {
-	// 	gr[i] = 0.0f;
-	// }
-	// granular.nextBlock(gr, numAudioFrames);
-	
-	// for(unsigned int i = 0; i < numAudioFrames; ++i)
-	// {
-	// 	monoBuffer.readNext(mono);
-	// 	stereoBuffer.readNext(left, right);
-	// 	audioWrite(context, i, 0, (gr[i] + mono + left) * 0.2f);
-	// 	audioWrite(context, i, 1, (gr[i] + mono + right) * 0.2f);
-	// }
 }
 
 void cleanup(BelaContext *context, void *userData)

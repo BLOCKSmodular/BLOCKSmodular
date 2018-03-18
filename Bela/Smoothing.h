@@ -10,22 +10,22 @@ class Smoothing
 public:
     Smoothing(){}
     ~Smoothing(){}
-
-	void set(const float target)
-	{
-		stepSize = (target - currentValue.load()) / (float)smoothingLength;
-		index = 0;
-	}
-
-	float getNextValue()
-	{
-		if (index.load() < smoothingLength)
+    
+    void set(const float target)
+    {
+        stepSize = (target - currentValue.load()) / (float)smoothingLength;
+        index = 0;
+    }
+    
+    float getNextValue()
+    {
+        if (index.load() < smoothingLength)
         {
-			currentValue = currentValue.load() + stepSize.load();
+            currentValue = currentValue.load() + stepSize.load();
             index++;
-		}
-		return currentValue;
-	}
+        }
+        return currentValue;
+    }
     
 private:
     std::atomic<float> currentValue{0.0f};

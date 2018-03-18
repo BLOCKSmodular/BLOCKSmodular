@@ -10,28 +10,28 @@
 
 static inline int getNumChannels(std::string file)
 {
-	SNDFILE *sndfile ;
-	SF_INFO sfinfo ;
-	sfinfo.format = 0;
-	if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo))) 
-	{
-		std::cout << "Couldn't open file " << file << ": " << sf_strerror(sndfile) << std::endl;
-		return -1;
-	}
-	return sfinfo.channels;
+    SNDFILE *sndfile ;
+    SF_INFO sfinfo ;
+    sfinfo.format = 0;
+    if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo))) 
+    {
+        std::cout << "Couldn't open file " << file << ": " << sf_strerror(sndfile) << std::endl;
+        return -1;
+    }
+    return sfinfo.channels;
 }
 
 static inline int getNumFrames(std::string file)
 {
-	SNDFILE *sndfile ;
-	SF_INFO sfinfo ;
-	sfinfo.format = 0;
-	if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo))) 
-	{
-		std::cout << "Couldn't open file " << file << ": " << sf_strerror(sndfile) << std::endl;
-		return -1;
-	}
-	return sfinfo.frames;
+    SNDFILE *sndfile ;
+    SF_INFO sfinfo ;
+    sfinfo.format = 0;
+    if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo)))
+    {
+        std::cout << "Couldn't open file " << file << ": " << sf_strerror(sndfile) << std::endl;
+        return -1;
+    }
+    return sfinfo.frames;
 }
 
 #endif//Util.h

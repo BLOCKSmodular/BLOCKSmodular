@@ -83,7 +83,7 @@ public:
 	std::unique_ptr<MonoBuffer> buffer;
 	
 private:
-	static const int numGrains = 32;
+	static constexpr int numGrains = 32;
 	static constexpr float twoPi = 6.28318530718f;
 	std::atomic<int> grainSize{10000};
 	std::unique_ptr<std::mt19937> random;//TODO: シードをdevice_randomで生成する

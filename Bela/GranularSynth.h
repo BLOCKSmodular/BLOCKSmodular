@@ -15,24 +15,17 @@ class GranularSynth {
 public:
 	GranularSynth() 
 	{
-		random = std::make_unique<std::mt19937>(rand());
-		
-		for (int i = 0; i < numGrains; ++i)
-		{
+        buffer = std::make_unique<MonoBuffer>(44100, false, false);
+        random = std::make_unique<std::mt19937>(rand());
+        const int s = grainSize.load() / numGrains;
+		for (int i = 0; i < numGrains; ++i) {
 			grains[i] = new Grain(*this);
-		}
-		
-		buffer = std::make_unique<MonoBuffer>(44100, false, false);
-		for(int i = 0; i < numGrains; ++i)
-		{
-			const int s = grainSize.load() / numGrains;
-			grains[i]->init(i * s);
+            grains[i]->init(i * s);
 		}
 	};
 	
 	~GranularSynth(){
-		for(int i = 0; i < numGrains; ++i)
-		{
+		for(int i = 0; i < numGrains; ++i) {
 			delete grains[i];
 		}
 	};
@@ -40,46 +33,38 @@ public:
 	void nextBlock(float* bufferToWrite, const int blockSize)
 	{
 		const float* ptr = buffer->getReadPtr();
-		for(int i = 0; i < numGrains; ++i)
-		{
+		for(int i = 0; i < numGrains; ++i) {
 			grains[i]->update(ptr, bufferToWrite, blockSize);
 		}
 	}
 	
 	void setGrainsSize(const unsigned int& grainSizeInSamples)
 	{
-		if(grainSizeInSamples > maxGrainSize)
-		{
+		if(grainSizeInSamples > maxGrainSize) {
 			std::cout<<"Error GranularSynth: Too long grain size"<<std::endl;
 		}
-		else
-		{
+		else {
 			grainSize = grainSizeInSamples;
 		}
 	}
 	
 	void setSampleRange(const unsigned int& min, const unsigned int& Max)
 	{
-		if(Max - min < maxGrainSize)
-		{
+		if(Max - min < maxGrainSize) {
 			std::cout<<"Error GranularSynth: Too short SampleRange"<<std::endl;
 		}
-		else
-		{
+		else {
 			dist.param(std::uniform_int_distribution<>::param_type(min, Max - maxGrainSize));
 		}
 	}
 	
 	void loadFile(const std::string audioFileName)
 	{
-		//ファイル読み込み
 		const int numSamples = getNumFrames(audioFileName);
-		if(numSamples < minSampleLength)
-		{
+		if(numSamples < minSampleLength) {
 			std::cout<<"Error GranularSynth: Too short sample length"<<std::endl;
 		}
-		else
-		{
+		else {
 			buffer->loadSampleFile(audioFileName);
 			setSampleRange(0, numSamples - 1);
 		}
@@ -122,16 +107,13 @@ private:
 		{
 			currentGrainSize = granular_.grainSize;
 			
-			if(currentGrainSize <= index)
-			{
-				//TODO assertion追加
-				std::cout<<"warnig:: invalid index..."<<std::endl;
+			if(currentGrainSize <= index) {
+                std::cout<<"Error GranularSynth: Invalid index"<<std::endl;
 				sampleIndex = 0;
 				windowStep = twoPi / (float)currentGrainSize;
 				windowPhase = 0.0f;
 			}
-			else
-			{
+			else {
 				sampleIndex = index;
 				windowStep = twoPi / (float)currentGrainSize;
 				windowPhase = windowStep * (float)index;
@@ -139,13 +121,11 @@ private:
 		}
 		
 		void update(const float* bufferToRead, float* bufferToWrite, const int length){
-			for(int i = 0; i < length; ++i)
-			{
+			for(int i = 0; i < length; ++i) {
 				bufferToWrite[i] += bufferToRead[startSample + sampleIndex] * window();
 				sampleIndex++;
 				windowPhase += windowStep;
-				if(sampleIndex >= currentGrainSize)
-				{
+				if(sampleIndex >= currentGrainSize) {
 					parameterUpdate();
 					return;
 				}

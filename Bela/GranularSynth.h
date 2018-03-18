@@ -23,10 +23,8 @@ public:
 		}
 		
 		buffer = std::make_unique<MonoBuffer>(44100, false, false);
-		const int initialGrainSize = 2400;
 		for(int i = 0; i < numGrains; ++i)
 		{
-			int s = initialGrainSize / numGrains;
 			const int s = grainSize.load() / numGrains;
 			grains[i]->init(i * s);
 		}
@@ -48,11 +46,15 @@ public:
 		}
 	}
 	
-	void setGrainsSize(const int grainSizeInSamples)
+	void setGrainsSize(const unsigned int& grainSizeInSamples)
 	{
-		for(int i = 0; i < numGrains; ++i)
+		if(grainSizeInSamples > maxGrainSize)
 		{
-			grains[i].nextGrainSize.store(grainSizeInSamples);
+			std::cout<<"Error GranularSynth: Too long grain size"<<std::endl;
+		}
+		else
+		{
+			grainSize = grainSizeInSamples;
 		}
 	}
 	
@@ -71,8 +73,16 @@ public:
 	void loadFile(const std::string audioFileName)
 	{
 		//ファイル読み込み
-		buffer->loadSampleFile(audioFileName);
-		setSampleRange(0, getNumFrames("vibe.wav") - 1);
+		const int numSamples = getNumFrames(audioFileName);
+		if(numSamples < minSampleLength)
+		{
+			std::cout<<"Error GranularSynth: Too short sample length"<<std::endl;
+		}
+		else
+		{
+			buffer->loadSampleFile(audioFileName);
+			setSampleRange(0, numSamples - 1);
+		}
 	}
 	
 	void loadBuffer(const float* bufferToRead, const int bufferLength)
@@ -81,6 +91,8 @@ public:
 	}
 	
 	std::unique_ptr<MonoBuffer> buffer;
+	static constexpr int maxGrainSize = 22050;//500mS
+	static constexpr int minSampleLength = 35280;//800mS
 	
 private:
 	static constexpr int numGrains = 32;

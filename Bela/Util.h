@@ -34,4 +34,20 @@ static inline int getNumFrames(std::string file)
     return sfinfo.frames;
 }
 
+struct doubleCC {
+    char up = -1;
+    char low = -1;
+    float value = 0.0f;
+    
+    bool update() {
+        if(up < 0 || low < 0) {
+            return false;
+        }
+        
+        value = (float)((up << 7) | (low & 0b1111111)) / 16384.0f;
+        return true;
+    }
+    
+};
+
 #endif//Util.h

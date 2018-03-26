@@ -35,6 +35,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int ccNumber = message.getDataByte(0);
         const int value = message.getDataByte(1);
+        rt_printf("midi: %d, : %d\n", ccNumber, value);
     }
 }
 

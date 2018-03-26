@@ -15,26 +15,35 @@ class GranularSynth {
 public:
     GranularSynth()
     {
+    	for(int i = 0; i < 4; ++i) {
+    		samplePosition[i] = 0;
+    	}
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
         random = std::make_unique<std::mt19937>(rand());
         const int s = grainSize.load() / numGrains;
-        for (int i = 0; i < numGrains; ++i) {
-            grains[i] = new Grain(*this);
-            grains[i]->init(i * s);
+        for(int i = 0; i < 4; ++i) {
+        	for (int k = 0; k < numGrains; ++k) {
+            	grains[i][k] = new Grain(*this, i);
+            	grains[i][k]->init(i * s);
+        	}
         }
     };
     
     ~GranularSynth(){
-        for(int i = 0; i < numGrains; ++i) {
-            delete grains[i];
+    	for(int i = 0; i < 4; ++i) {
+        	for (int k = 0; k < numGrains; ++k) {
+            	delete grains[i][k];
+        	}
         }
     };
     
     void nextBlock(float* bufferToWrite, const int blockSize)
     {
         const float* ptr = buffer->getReadPtr();
-        for(int i = 0; i < numGrains; ++i) {
-            grains[i]->update(ptr, bufferToWrite, blockSize);
+        for(int i = 0; i < 4; ++i) {
+        	for (int k = 0; k < numGrains; ++k) {
+         		grains[i][k]->update(ptr, bufferToWrite, blockSize);
+        	}
         }
     }
     
@@ -48,14 +57,9 @@ public:
         }
     }
     
-    void setSampleRange(const unsigned int& min, const unsigned int& Max)
+    void setSamplePosition(const unsigned int pos, const int id)
     {
-        if(Max - min < maxGrainSize) {
-            std::cout<<"Error GranularSynth: Too short SampleRange"<<std::endl;
-        }
-        else {
-            dist.param(std::uniform_int_distribution<>::param_type(min, Max - maxGrainSize));
-        }
+    	samplePosition[id] = pos;
     }
     
     void loadFile(const std::string audioFileName)
@@ -67,49 +71,33 @@ public:
         }
         else {
             buffer->loadSampleFile(audioFileName);
-            setSampleRange(0, numSamples - 1);
-            const int s = (numSamples - maxGrainSize) / numGrains;
-            for (int i = 0; i < numGrains; ++i) {
-                grains[i]->init(i * s);
-            }
-        }
-    }
-    
-    void loadBuffer(const float* bufferToRead, const int bufferLength)
-    {
-        //TODO 各グレインのwindowPhaseとsampleIndexを変更するのでクリックノイズが発生する可能性がある -> loadBuffer()直後はフェードインさせる処理を追加
-        if(bufferLength < minSampleLength) {
-            std::cout<<"Error GranularSynth: Too short buffer"<<std::endl;
-        }
-        else {
-            buffer->resize(bufferLength);
-            for(int i = 0; i < bufferLength; ++i) {
-                buffer.writeNext(bufferToRead[i]);
-            }
-            setSampleRange(0, bufferLength - 1);
-            const int s = (numSamples - maxGrainSize) / numGrains;
-            for (int i = 0; i < numGrains; ++i) {
-                grains[i]->init(i * s);
-            }
+            const int s = numSamples / numGrains;
+        	for(int i = 0; i < 4; ++i) {
+        		samplePosition[i] = s * i;
+        		for (int k = 0; k < numGrains; ++k) {
+            		grains[i][k]->init(i * s);
+        		}
+        	}
         }
     }
     
     std::unique_ptr<MonoBuffer> buffer;
     static constexpr int maxGrainSize = 22050;//500mS
     static constexpr int minSampleLength = 35280;//800mS
+    int samplePosition[4];//TODO: atomic
     
 private:
-    static constexpr int numGrains = 32;
+    static constexpr int numGrains = 8;
     static constexpr float twoPi = 6.28318530718f;
     std::atomic<int> grainSize{maxGrainSize};
     std::unique_ptr<std::mt19937> random;//TODO: シードをdevice_randomで生成する
-    std::uniform_int_distribution<> dist{0, 22050};
+    std::uniform_real_distribution<float> dist{0.0f, 1.0f};
     
     class Grain
     {
     public:
-        Grain(GranularSynth& g)
-        : granular_(g)
+        Grain(GranularSynth& g, const int id_)
+        : granular_(g), id(id_)
         {};
         ~Grain(){};
         
@@ -151,12 +139,13 @@ private:
         void parameterUpdate()
         {
             currentGrainSize = granular_.grainSize;
-            startSample = granular_.dist(*granular_.random);
+            startSample = granular_.samplePosition[id];
             windowStep = twoPi / (float)currentGrainSize;
             windowPhase = 0.0f;
             sampleIndex = 0;
         }
         
+        int id;
         int startSample = 0;
         int currentGrainSize = 10000;
         int sampleIndex;
@@ -165,7 +154,7 @@ private:
         GranularSynth& granular_;
     };
     
-    Grain* grains[numGrains];
+    Grain* grains[4][numGrains];
 };
 
 #endif /* GranularSynth_H_ */

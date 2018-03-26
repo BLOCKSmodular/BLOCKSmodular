@@ -240,12 +240,12 @@ void sendTestCC(int index, bool isNoteOn, float x, float y, float z)
     int scaledZ = int(map(z, 0.0, 1.0, 0.0, 16383.0));
     int upperZvalue = (scaledZ >> 7) & 127;
     int lowerZvalue = scaledZ & 127;
-    sendCC (1, 1, upperXvalue);
-    sendCC (1, 2, lowerXvalue);
-    sendCC (1, 3, upperYvalue);
-    sendCC (1, 4, lowerYvalue);
-    sendCC (1, 5, upperZvalue);
-    sendCC (1, 6, lowerZvalue);
+    sendCC (0, 1, upperXvalue);
+    sendCC (0, 2, lowerXvalue);
+    sendCC (0, 3, upperYvalue);
+    sendCC (0, 4, lowerYvalue);
+    sendCC (0, 5, upperZvalue);
+    sendCC (0, 6, lowerZvalue);
 }
 
 int getMirotonalIndexColour(int index)

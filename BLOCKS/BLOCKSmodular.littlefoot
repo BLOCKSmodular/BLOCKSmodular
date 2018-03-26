@@ -337,32 +337,33 @@ void repaint()
 {   
     clearDisplay();
     fadePressureMap();
-	if(mode == 0)//morphLooper
-    {
-        if (state == 0)
-        {
-            // Session view
-            if (isConnectedToHost())
-            drawPads();
-            drawPressureMap();
-        } 
-        else
-        {
-            // XYZ pad
-            drawPressureMap();
-        }
-    }
-    else//microtonal
-    {
-        drawPressureMap(); 
-    }
+    drawPressureMap();
+// 	if(mode == 0)//morphLooper
+//     {
+//         if (state == 0)
+//         {
+//             // Session view
+//             if (isConnectedToHost())
+//             drawPads();
+//             drawPressureMap();
+//         } 
+//         else
+//         {
+//             // XYZ pad
+//             drawPressureMap();
+//         }
+//     }
+//     else//microtonal
+//     {
+//         drawPressureMap(); 
+//     }
 }
 
 //==============================================================================
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
-    drawNumber(touchIndex, 0xffff0000, 0, 0);
-    addPressurePoint (getMicrotonalIndexColour(touchIndex), x, y, z * 30.0);
+//    drawNumber(touchIndex, 0xffff0000, 0, 0);
+    addPressurePoint (getMicrotonalIndexColour(touchIndex), x, y, z * 80.0);
     sendTestCC(touchIndex, true, x, y, z);
 //     if(mode == 0)//morphLooper
 //     {
@@ -411,6 +412,7 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
 
 void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
+        addPressurePoint (getMicrotonalIndexColour(touchIndex), x, y, z * 30.0);
     sendTestCC(touchIndex, true, x, y, z);
 //     if(mode == 0)//morphLooper
 //     {
@@ -437,6 +439,7 @@ void touchMove (int touchIndex, float x, float y, float z, float vz)
 
 void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
+        addPressurePoint (getMicrotonalIndexColour(touchIndex), x, y, z * 20.0);
     sendTestCC(touchIndex, false, x, y, z);
 //     if(mode == 0)//morphLooper
 //     {

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <cstdlib>
 
+static constexpr float twoPi = 6.28318530718f;
+
 static inline int getNumChannels(std::string file)
 {
     SNDFILE *sndfile ;

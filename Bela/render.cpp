@@ -39,7 +39,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int ccNumber = message.getDataByte(0);
         const int value = message.getDataByte(1);
-        rt_printf("midi: %d, : %d\n", ccNumber, value);
+        //rt_printf("midi: %d, : %d\n", ccNumber, value);
         
         //TODO モード判定追加
         
@@ -166,6 +166,8 @@ void render(BelaContext *context, void *userData)
         CVmodeFlag = cvFLG;
     }
     
+    //-----------------------------------------------------------
+    //Digital
     if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeA;
     if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeB;
     if(digitalRead(context, 0, P8_28)) audioFLG = AudioModeOFF;//P8_28はOFFスイッチ
@@ -200,6 +202,8 @@ void render(BelaContext *context, void *userData)
         AudiomodeFlag = audioFLG;
     }
     
+    //-----------------------------------------------------------
+    //Analogue
     const int numAnalogueFrames = context->analogFrames;
     switch(CVmodeFlag) {
         case CVModeA: {
@@ -229,6 +233,9 @@ void render(BelaContext *context, void *userData)
         }
     }
     
+    
+    //-----------------------------------------------------------
+    //Audio
     const int numAudioFrames = context->audioFrames;
     switch(AudiomodeFlag) {
         case AudioModeA: {
@@ -240,8 +247,8 @@ void render(BelaContext *context, void *userData)
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                audioWrite(context, i, 0, gr[i] * 0.2f);
-                audioWrite(context, i, 1, gr[i] * 0.2f);
+                audioWrite(context, i, 0, gr[i] * 0.05f);
+                audioWrite(context, i, 1, gr[i] * 0.05f);
             }
             break;
         }

@@ -22,7 +22,7 @@ public:
     	}
     	
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
-        const int s = grainSize.load() / numGrains;
+        const int s = maxGrainSize / numGrains;
         for(int i = 0; i < numVoice; ++i) {
         	for (int k = 0; k < numGrains; ++k) {
             	grains[i][k] = new Grain(*this, i);
@@ -54,9 +54,8 @@ public:
     	grainSize[id_] = (float)maxGrainSize * sizeAmount;
     }
     
-    void setSamplePosition(const unsigned int pos, const int id)
+    void setSamplePosition(const float pos, const int id_)
     {
-    	samplePosition[id] = pos;
     	samplePosition[id_] = (float)buffer->getSize() * pos;
     }
     

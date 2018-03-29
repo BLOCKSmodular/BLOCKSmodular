@@ -130,7 +130,7 @@ private:
     private:
         inline float window()
         {
-            return 0.5f - 0.5f * cosf_neon(windowPhase);
+            return (0.5f - 0.5f * cosf_neon(windowPhase)) * grainAmp;
         }
         
         void parameterUpdate()
@@ -147,6 +147,7 @@ private:
         int startSample = 0;
         int currentGrainSize = 10000;
         int sampleIndex;
+        float grainAmp = 1.0f;
         float windowStep;
         float windowPhase;//0.0f~2pi
         GranularSynth& granular_;

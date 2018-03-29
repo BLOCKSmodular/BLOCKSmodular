@@ -15,13 +15,14 @@ class GranularSynth {
 public:
     GranularSynth()
     {
-    	for(int i = 0; i < 4; ++i) {
+    	for(int i = 0; i < numVoice; ++i) {
     		samplePosition[i] = 0;
     	}
+    	
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
         random = std::make_unique<std::mt19937>(rand());
         const int s = grainSize.load() / numGrains;
-        for(int i = 0; i < 4; ++i) {
+        for(int i = 0; i < numVoice; ++i) {
         	for (int k = 0; k < numGrains; ++k) {
             	grains[i][k] = new Grain(*this, i);
             	grains[i][k]->init(i * s);
@@ -47,14 +48,9 @@ public:
         }
     }
     
-    void setGrainsSize(const unsigned int& grainSizeInSamples)
+    void setGrainSize(const float sizeAmount, const int id_)
     {
-        if(grainSizeInSamples > maxGrainSize) {
-            std::cout<<"Error GranularSynth: Too long grain size"<<std::endl;
-        }
-        else {
-            grainSize = grainSizeInSamples;
-        }
+    	grainSize[id_] = (float)maxGrainSize * sizeAmount;
     }
     
     void setSamplePosition(const unsigned int pos, const int id)
@@ -84,26 +80,29 @@ public:
     std::unique_ptr<MonoBuffer> buffer;
     static constexpr int maxGrainSize = 22050;//500mS
     static constexpr int minSampleLength = 35280;//800mS
-    int samplePosition[4];//TODO: atomic
     
 private:
     static constexpr int numGrains = 8;
+    static constexpr int numVoice = 4;
     static constexpr float twoPi = 6.28318530718f;
     std::atomic<int> grainSize{maxGrainSize};
     std::unique_ptr<std::mt19937> random;//TODO: シードをdevice_randomで生成する
     std::uniform_real_distribution<float> dist{0.0f, 1.0f};
+    int samplePosition[numVoice]{0, 0, 0, 0};//TODO: atomic
+    int grainSize[numVoice]{10000, 10000, 10000, 10000};//TODO: atomic
+    float amp[numVoice]{1.0f, 1.0f, 1.0f, 1.0f};//TODO: atomic
     
     class Grain
     {
     public:
         Grain(GranularSynth& g, const int id_)
-        : granular_(g), id(id_)
+        : granular_(g), voiceID(id_)
         {};
         ~Grain(){};
         
         void init(const unsigned int index)
         {
-            currentGrainSize = granular_.grainSize;
+            currentGrainSize = granular_.grainSize[voiceID];
             
             if(currentGrainSize <= index) {
                 std::cout<<"Error GranularSynth: Invalid index"<<std::endl;
@@ -138,14 +137,15 @@ private:
         
         void parameterUpdate()
         {
-            currentGrainSize = granular_.grainSize;
-            startSample = granular_.samplePosition[id];
+            currentGrainSize = granular_.grainSize[voiceID];
+            startSample = granular_.samplePosition[voiceID];
+            grainAmp = granular_.amp[voiceID];
             windowStep = twoPi / (float)currentGrainSize;
             windowPhase = 0.0f;
             sampleIndex = 0;
         }
         
-        int id;
+        int voiceID;
         int startSample = 0;
         int currentGrainSize = 10000;
         int sampleIndex;
@@ -154,7 +154,7 @@ private:
         GranularSynth& granular_;
     };
     
-    Grain* grains[4][numGrains];
+    Grain* grains[numVoice][numGrains];
 };
 
 #endif /* GranularSynth_H_ */

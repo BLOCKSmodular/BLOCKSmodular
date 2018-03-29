@@ -17,6 +17,8 @@ public:
     {
     	for(int i = 0; i < numVoice; ++i) {
     		samplePosition[i] = 0;
+    		grainSize[i] = 10000;
+    		amp[i] = 1.0f;
     	}
     	
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
@@ -56,6 +58,7 @@ public:
     void setSamplePosition(const unsigned int pos, const int id)
     {
     	samplePosition[id] = pos;
+    	samplePosition[id_] = (float)buffer->getSize() * pos;
     }
     
     void loadFile(const std::string audioFileName)

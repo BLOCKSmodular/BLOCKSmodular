@@ -64,8 +64,27 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         	grA_WindowShape.low = value;
         }
         
-        if(grA_Position.update()) granular.setSamplePosition(grA_Position.value, 0);
-        if(grA_GrainSize.update()) granular.setGrainSize(grA_GrainSize.value, 0);
+        if(grA_Position.update()) {
+        	granular.setSamplePosition(grA_Position.value, 0);
+        	granular.setSamplePosition(grA_Position.value, 1);
+        	granular.setSamplePosition(grA_Position.value, 2);
+        	granular.setSamplePosition(grA_Position.value, 3);
+        }
+        
+        if(grA_GrainSize.update()) {
+        	granular.setGrainSize(grA_GrainSize.value, 0);
+        	granular.setGrainSize(grA_GrainSize.value, 1);
+        	granular.setGrainSize(grA_GrainSize.value, 2);
+        	granular.setGrainSize(grA_GrainSize.value, 3);
+        }
+        
+        if(grA_WindowShape.update()) {
+        	const float g = grA_WindowShape.value * 2.0f;
+        	granular.setWindowShape(g, 0);
+        	granular.setWindowShape(g, 1);
+        	granular.setWindowShape(g, 2);
+        	granular.setWindowShape(g, 3);
+        }
     }
 }
 
@@ -103,7 +122,7 @@ bool setup(BelaContext *context, void *userData)
     //Load Sample
     monoBuffer.loadSampleFile("vibe.wav");
     stereoBuffer.loadSampleFile("test.wav");
-    granular.loadFile("vibe.wav");
+    granular.loadFile("GranularSource.wav");
     
     return true;
 }

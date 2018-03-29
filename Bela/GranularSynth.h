@@ -22,7 +22,6 @@ public:
     	}
     	
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
-        random = std::make_unique<std::mt19937>(rand());
         const int s = grainSize.load() / numGrains;
         for(int i = 0; i < numVoice; ++i) {
         	for (int k = 0; k < numGrains; ++k) {
@@ -88,9 +87,6 @@ private:
     static constexpr int numGrains = 8;
     static constexpr int numVoice = 4;
     static constexpr float twoPi = 6.28318530718f;
-    std::atomic<int> grainSize{maxGrainSize};
-    std::unique_ptr<std::mt19937> random;//TODO: シードをdevice_randomで生成する
-    std::uniform_real_distribution<float> dist{0.0f, 1.0f};
     int samplePosition[numVoice]{0, 0, 0, 0};//TODO: atomic
     int grainSize[numVoice]{10000, 10000, 10000, 10000};//TODO: atomic
     float amp[numVoice]{1.0f, 1.0f, 1.0f, 1.0f};//TODO: atomic

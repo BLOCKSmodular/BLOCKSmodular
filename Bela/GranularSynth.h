@@ -18,7 +18,7 @@ public:
     	for(int i = 0; i < numVoice; ++i) {
     		samplePosition[i] = 0;
     		grainSize[i] = 10000;
-    		amp[i] = 1.0f;
+    		windowShape[i] = 1.0f;
     	}
     	
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
@@ -42,7 +42,7 @@ public:
     void nextBlock(float* bufferToWrite, const int blockSize)
     {
         const float* ptr = buffer->getReadPtr();
-        for(int i = 0; i < 4; ++i) {
+        for(int i = 0; i < numVoice; ++i) {
         	for (int k = 0; k < numGrains; ++k) {
          		grains[i][k]->update(ptr, bufferToWrite, blockSize);
         	}
@@ -59,6 +59,11 @@ public:
     	samplePosition[id_] = (float)buffer->getSize() * pos;
     }
     
+    void setWindowShape(const float amp, const int id_)
+    {
+    	windowShape[id_] = amp;
+    }
+    
     void loadFile(const std::string audioFileName)
     {
         //TODO 各グレインのwindowPhaseとsampleIndexを変更するのでクリックノイズが発生する可能性がある -> loadFile()直後はフェードインさせる処理を追加
@@ -69,7 +74,7 @@ public:
         else {
             buffer->loadSampleFile(audioFileName);
             const int s = numSamples / numGrains;
-        	for(int i = 0; i < 4; ++i) {
+        	for(int i = 0; i < numVoice; ++i) {
         		samplePosition[i] = s * i;
         		for (int k = 0; k < numGrains; ++k) {
             		grains[i][k]->init(i * s);
@@ -85,10 +90,9 @@ public:
 private:
     static constexpr int numGrains = 8;
     static constexpr int numVoice = 4;
-    static constexpr float twoPi = 6.28318530718f;
     int samplePosition[numVoice]{0, 0, 0, 0};//TODO: atomic
     int grainSize[numVoice]{10000, 10000, 10000, 10000};//TODO: atomic
-    float amp[numVoice]{1.0f, 1.0f, 1.0f, 1.0f};//TODO: atomic
+    float windowShape[numVoice]{1.0f, 1.0f, 1.0f, 1.0f};//TODO: atomic
     
     class Grain
     {
@@ -117,7 +121,7 @@ private:
         
         void update(const float* bufferToRead, float* bufferToWrite, const int length){
             for(int i = 0; i < length; ++i) {
-                bufferToWrite[i] += bufferToRead[startSample + sampleIndex] * window();
+                bufferToWrite[i] += tanhf_neon(bufferToRead[startSample + sampleIndex] * window() * twoPi);
                 sampleIndex++;
                 windowPhase += windowStep;
                 if(sampleIndex >= currentGrainSize) {
@@ -137,7 +141,7 @@ private:
         {
             currentGrainSize = granular_.grainSize[voiceID];
             startSample = granular_.samplePosition[voiceID];
-            grainAmp = granular_.amp[voiceID];
+            grainAmp = granular_.windowShape[voiceID];
             windowStep = twoPi / (float)currentGrainSize;
             windowPhase = 0.0f;
             sampleIndex = 0;

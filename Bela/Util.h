@@ -34,7 +34,7 @@ static inline int getNumFrames(std::string file)
     return sfinfo.frames;
 }
 
-struct doubleCC {
+struct HighResolutionCC {
     char up = -1;
     char low = -1;
     float value = 0.0f;

@@ -28,6 +28,10 @@ const char *gMidiPort0 = "hw:1,0,0";
 MonoBuffer monoBuffer(88200, true, false);
 StereoBuffer stereoBuffer(88200, true, false);
 GranularSynth granular;
+HighResolutionCC grA_Position;
+HighResolutionCC grA_GrainSize;
+HighResolutionCC grA_WindowShape;
+
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -36,6 +40,32 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         const int ccNumber = message.getDataByte(0);
         const int value = message.getDataByte(1);
         rt_printf("midi: %d, : %d\n", ccNumber, value);
+        
+        //TODO モード判定追加
+        
+        if(ccNumber == 1) {
+        	grA_Position.up = value;
+        }
+        else if(ccNumber == 2) {
+        	grA_Position.low = value;
+        }
+        
+        if(ccNumber == 3) {
+        	grA_GrainSize.up = value;
+        }
+        else if(ccNumber == 4) {
+        	grA_GrainSize.low = value;
+        }
+        
+        if(ccNumber == 5) {
+        	grA_WindowShape.up = value;
+        }
+        else if(ccNumber == 6) {
+        	grA_WindowShape.low = value;
+        }
+        
+        if(grA_Position.update()) granular.setSamplePosition(grA_Position.value, 0);
+        if(grA_GrainSize.update()) granular.setGrainSize(grA_GrainSize.value, 0);
     }
 }
 

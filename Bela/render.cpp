@@ -44,46 +44,46 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         //TODO モード判定追加
         
         if(ccNumber == 1) {
-        	grA_Position.up = value;
+            grA_Position.up = value;
         }
         else if(ccNumber == 2) {
-        	grA_Position.low = value;
+            grA_Position.low = value;
         }
         
         if(ccNumber == 3) {
-        	grA_GrainSize.up = value;
+            grA_GrainSize.up = value;
         }
         else if(ccNumber == 4) {
-        	grA_GrainSize.low = value;
+            grA_GrainSize.low = value;
         }
         
         if(ccNumber == 5) {
-        	grA_WindowShape.up = value;
+            grA_WindowShape.up = value;
         }
         else if(ccNumber == 6) {
-        	grA_WindowShape.low = value;
+            grA_WindowShape.low = value;
         }
         
         if(grA_Position.update()) {
-        	granular.setSamplePosition(grA_Position.value, 0);
-        	granular.setSamplePosition(grA_Position.value, 1);
-        	granular.setSamplePosition(grA_Position.value, 2);
-        	granular.setSamplePosition(grA_Position.value, 3);
+            granular.setSamplePosition(grA_Position.value, 0);
+            granular.setSamplePosition(grA_Position.value, 1);
+            granular.setSamplePosition(grA_Position.value, 2);
+            granular.setSamplePosition(grA_Position.value, 3);
         }
         
         if(grA_GrainSize.update()) {
-        	granular.setGrainSize(grA_GrainSize.value, 0);
-        	granular.setGrainSize(grA_GrainSize.value, 1);
-        	granular.setGrainSize(grA_GrainSize.value, 2);
-        	granular.setGrainSize(grA_GrainSize.value, 3);
+            granular.setGrainSize(grA_GrainSize.value, 0);
+            granular.setGrainSize(grA_GrainSize.value, 1);
+            granular.setGrainSize(grA_GrainSize.value, 2);
+            granular.setGrainSize(grA_GrainSize.value, 3);
         }
         
         if(grA_WindowShape.update()) {
-        	const float g = grA_WindowShape.value * 2.0f;
-        	granular.setWindowShape(g, 0);
-        	granular.setWindowShape(g, 1);
-        	granular.setWindowShape(g, 2);
-        	granular.setWindowShape(g, 3);
+            const float g = grA_WindowShape.value * 2.0f;
+            granular.setWindowShape(g, 0);
+            granular.setWindowShape(g, 1);
+            granular.setWindowShape(g, 2);
+            granular.setWindowShape(g, 3);
         }
     }
 }

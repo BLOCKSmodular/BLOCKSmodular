@@ -15,27 +15,27 @@ class GranularSynth {
 public:
     GranularSynth()
     {
-    	for(int i = 0; i < numVoice; ++i) {
-    		samplePosition[i] = 0;
-    		grainSize[i] = 10000;
-    		windowShape[i] = 1.0f;
-    	}
-    	
+        for(int i = 0; i < numVoice; ++i) {
+            samplePosition[i] = 0;
+            grainSize[i] = 10000;
+            windowShape[i] = 1.0f;
+        }
+        
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
         const int s = maxGrainSize / numGrains;
         for(int i = 0; i < numVoice; ++i) {
-        	for (int k = 0; k < numGrains; ++k) {
-            	grains[i][k] = new Grain(*this, i);
-            	grains[i][k]->init(i * s);
-        	}
+            for (int k = 0; k < numGrains; ++k) {
+                grains[i][k] = new Grain(*this, i);
+                grains[i][k]->init(i * s);
+            }
         }
     };
     
     ~GranularSynth(){
-    	for(int i = 0; i < 4; ++i) {
-        	for (int k = 0; k < numGrains; ++k) {
-            	delete grains[i][k];
-        	}
+        for(int i = 0; i < 4; ++i) {
+            for (int k = 0; k < numGrains; ++k) {
+                delete grains[i][k];
+            }
         }
     };
     
@@ -43,25 +43,25 @@ public:
     {
         const float* ptr = buffer->getReadPtr();
         for(int i = 0; i < numVoice; ++i) {
-        	for (int k = 0; k < numGrains; ++k) {
-         		grains[i][k]->update(ptr, bufferToWrite, blockSize);
-        	}
+            for (int k = 0; k < numGrains; ++k) {
+                grains[i][k]->update(ptr, bufferToWrite, blockSize);
+            }
         }
     }
     
     void setGrainSize(const float sizeAmount, const int id_)
     {
-    	grainSize[id_] = (float)maxGrainSize * sizeAmount;
+        grainSize[id_] = (float)maxGrainSize * sizeAmount;
     }
     
     void setSamplePosition(const float pos, const int id_)
     {
-    	samplePosition[id_] = (float)buffer->getSize() * pos;
+        samplePosition[id_] = (float)buffer->getSize() * pos;
     }
     
     void setWindowShape(const float amp, const int id_)
     {
-    	windowShape[id_] = amp;
+        windowShape[id_] = amp;
     }
     
     void loadFile(const std::string audioFileName)
@@ -74,12 +74,12 @@ public:
         else {
             buffer->loadSampleFile(audioFileName);
             const int s = numSamples / numGrains;
-        	for(int i = 0; i < numVoice; ++i) {
-        		samplePosition[i] = s * i;
-        		for (int k = 0; k < numGrains; ++k) {
-            		grains[i][k]->init(i * s);
-        		}
-        	}
+            for(int i = 0; i < numVoice; ++i) {
+                samplePosition[i] = s * i;
+                for (int k = 0; k < numGrains; ++k) {
+                    grains[i][k]->init(i * s);
+                }
+            }
         }
     }
     

@@ -147,14 +147,14 @@ private:
         void parameterUpdate()
         {
             bufferPos = granular_.bufferPosition[voiceID];
-            gain = granular_.windowShape[voiceID];
+            windowShape = granular_.windowShape[voiceID];
             windowStep = twoPi / (float)granular_.grainSize[voiceID];
             windowPhase = 0.0f;
         }
         
         int voiceIndex;
         int bufferPos = 0;
-        float gain = 0.0f;
+        float windowShape = 0.0f;
         float windowStep = 0.05f;
         float windowPhase = 0.0f;//0.0f~2pi
         GranularSynth& granular_;

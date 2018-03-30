@@ -19,7 +19,7 @@ public:
         const float s = Pi / (float)numGrains;
         for(int i = 0; i < numVoice; ++i) {
             for (int k = 0; k < numGrains; ++k) {
-                grains[i][k] = new Grain(*this, i);
+                grains[i][k] = new Grain(i, *this);
                 float ph = (float)i * s;
                 grains[i][k]->init(ph);
             }
@@ -95,8 +95,8 @@ private:
     class Grain
     {
     public:
-        Grain(GranularSynth& g, const int id_)
-        : granular_(g), voiceID(id_)
+        Grain(const int id_, GranularSynth& g)
+        : voiceID(id_), granular_(g)
         {};
         ~Grain(){};
         
@@ -133,6 +133,7 @@ private:
             gain = granular_.windowShape[voiceID];
             windowStep = twoPi / (float)currentGrainSize;
             windowPhase = 0.0f;
+            // rt_printf("ID:%d, size:%d, pos:%d, gain:%f\n", voiceID, currentGrainSize, bufferPos, gain);
         }
         
         int voiceID;

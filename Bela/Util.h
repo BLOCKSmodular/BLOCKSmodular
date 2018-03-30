@@ -37,10 +37,15 @@ static inline int getNumFrames(std::string file)
     return sfinfo.frames;
 }
 
-struct HighResolutionCC {
-    char up = -1;
-    char low = -1;
-    float value = 0.0f;
+class HighResolutionControlChange {
+public:
+	void setUpperByte(char v) {
+		up = v;
+	}
+	
+	void setLowerByte(char v) {
+		low = v;
+	}
     
     bool update() {
         if(up < 0 || low < 0) {
@@ -51,6 +56,14 @@ struct HighResolutionCC {
         return true;
     }
     
+    float getValue() {
+    	return value;
+    }
+    
+private:
+    char up = -1;
+    char low = -1;
+    float value = 0.0f;
 };
 
 #endif//Util.h

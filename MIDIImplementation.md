@@ -48,11 +48,11 @@ CC
 ### Mode A (グラニュラー)
 **BLOCKS → Bela**
 CC
-| Description               | MIDI CC | Value        | MIDI Channel |
-| :------------------------ | :------ | :----------- | :----------- |
-| X: Sample start position  | 1, 2    | 0 ~ 2^14     | 1            |
-| Y : Grain size            | 3, 4    | 0 ~ 2 ^14    | 1            |
-| Z : Window function shape | 5, 6    | 0 ~ 2^14     | 1            |
+| Description               | MIDI CC | Value     | MIDI Channel |
+| :------------------------ | :------ | :-------- | :----------- |
+| X: Sample start position  | 1, 2    | 0 ~ 2^14  | 1~4          |
+| Y : Grain size            | 3, 4    | 0 ~ 2 ^14 | 1~4          |
+| Z : Window function shape | 5, 6    | 0 ~ 2^14  | 1~4          |
 
 ### Mode B
 ### Mode C

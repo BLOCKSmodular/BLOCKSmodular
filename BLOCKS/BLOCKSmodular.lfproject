@@ -3,7 +3,10 @@
 <project name="My Project">
   <file file="/Users/akiyuki/BLOCKSmodular/BLOCKS/BLOCKSmodular.littlefoot"
         uuid="801a29fc519847d1a2f264cad4a2e1dd"/>
+  <file file="/Users/akiyuki/Documents/BLOCKSmodular/BLOCKS/BLOCKSmodular.littlefoot"
+        uuid="9e0f334dc1714fdc81beb74a9009c96a"/>
   <openFiles>
     <openFile uuid="801a29fc519847d1a2f264cad4a2e1dd"/>
+    <openFile uuid="9e0f334dc1714fdc81beb74a9009c96a"/>
   </openFiles>
 </project>

@@ -39,7 +39,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int ccNumber = message.getDataByte(0);
         const int value = message.getDataByte(1);
-        //rt_printf("midi: %d, : %d\n", ccNumber, value);
+        // rt_printf("midi: %d, : %d\n", ccNumber, value);
         
         //TODO モード判定追加
         
@@ -65,10 +65,10 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         }
         
         if(grA_Position.update()) {
-            granular.setSamplePosition(grA_Position.value, 0);
-            granular.setSamplePosition(grA_Position.value, 1);
-            granular.setSamplePosition(grA_Position.value, 2);
-            granular.setSamplePosition(grA_Position.value, 3);
+            granular.setBufferPosition(grA_Position.value, 0);
+            granular.setBufferPosition(grA_Position.value, 1);
+            granular.setBufferPosition(grA_Position.value, 2);
+            granular.setBufferPosition(grA_Position.value, 3);
         }
         
         if(grA_GrainSize.update()) {
@@ -92,7 +92,7 @@ bool setup(BelaContext *context, void *userData)
 {
     //Sleep for waiting boot BLOCKS
     std::cout<<"Begin sleep"<<std::endl;
-    sleep(5);
+    sleep(2);
     std::cout<<"End sleep"<<std::endl;
     
     CVmodeFlag = CVModeA;
@@ -247,8 +247,8 @@ void render(BelaContext *context, void *userData)
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                audioWrite(context, i, 0, gr[i] * 0.05f);
-                audioWrite(context, i, 1, gr[i] * 0.05f);
+                audioWrite(context, i, 0, gr[i] * 0.01f);
+                audioWrite(context, i, 1, gr[i] * 0.01f);
             }
             break;
         }

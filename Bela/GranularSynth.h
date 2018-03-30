@@ -103,8 +103,7 @@ private:
         void init(const float phase)
         {
         	if(phase < 0.0f || Pi < phase) std::cout<<"Error GranularSynth: Invalid phase"<<std::endl;
-            currentGrainSize = granular_.grainSize[voiceID];
-            windowStep = twoPi / (float)currentGrainSize;
+            windowStep = twoPi / (float)granular_.grainSize[voiceID];
             windowPhase = phase;
         }
         
@@ -128,17 +127,15 @@ private:
         
         void parameterUpdate()
         {
-            currentGrainSize = granular_.grainSize[voiceID];
             bufferPos = granular_.bufferPosition[voiceID];
             gain = granular_.windowShape[voiceID];
-            windowStep = twoPi / (float)currentGrainSize;
+            windowStep = twoPi / (float)granular_.grainSize[voiceID];
             windowPhase = 0.0f;
             // rt_printf("ID:%d, size:%d, pos:%d, gain:%f\n", voiceID, currentGrainSize, bufferPos, gain);
         }
         
         int voiceID;
         int bufferPos = 0;
-        int currentGrainSize = 10000;
         float gain = 0.0f;
         float windowStep = 0.05f;
         float windowPhase = 0.0f;//0.0f~2pi

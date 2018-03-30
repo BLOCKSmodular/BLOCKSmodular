@@ -28,62 +28,56 @@ const char *gMidiPort0 = "hw:1,0,0";
 MonoBuffer monoBuffer(88200, true, false);
 StereoBuffer stereoBuffer(88200, true, false);
 GranularSynth granular;
-HighResolutionCC grA_Position;
-HighResolutionCC grA_GrainSize;
-HighResolutionCC grA_WindowShape;
+HighResolutionControlChange gr_Position[4];
+HighResolutionControlChange gr_GrainSize[4];
+HighResolutionControlChange gr_WindowShape[4];
 
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
-    if (!strcmp(MidiChannelMessage::getTypeText(message.getType()), "control change"))
+	const int channel = message.getChannel() - 1;//MIDIChannel 0~15
+	
+	//Note On
+	if(message.getType() == kmmNoteOn){
+	}
+	
+	//Note Off
+	if(message.getType() == kmmNoteOff){
+	}
+
+	//Control change
+    if(message.getType() == kmmControlChange)
     {
-        const int ccNumber = message.getDataByte(0);
+        const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
-        //rt_printf("midi: %d, : %d\n", ccNumber, value);
         
         //TODO モード判定追加
         
-        if(ccNumber == 1) {
-            grA_Position.up = value;
+        if(controlNum == 1) {
+        	gr_Position[channel].setUpperByte(value);
+        	if(gr_Position[channel].update()) granular.setBufferPosition(gr_Position[channel].getValue(), channel);
         }
-        else if(ccNumber == 2) {
-            grA_Position.low = value;
-        }
-        
-        if(ccNumber == 3) {
-            grA_GrainSize.up = value;
-        }
-        else if(ccNumber == 4) {
-            grA_GrainSize.low = value;
+        else if(controlNum == 2) {
+        	gr_Position[channel].setLowerByte(value);
+        	if(gr_Position[channel].update()) granular.setBufferPosition(gr_Position[channel].getValue(), channel);
         }
         
-        if(ccNumber == 5) {
-            grA_WindowShape.up = value;
+        if(controlNum == 3) {
+            gr_GrainSize[channel].setUpperByte(value);
+            if(gr_GrainSize[channel].update()) granular.setGrainSize(gr_GrainSize[channel].getValue(), channel);
         }
-        else if(ccNumber == 6) {
-            grA_WindowShape.low = value;
-        }
-        
-        if(grA_Position.update()) {
-            granular.setSamplePosition(grA_Position.value, 0);
-            granular.setSamplePosition(grA_Position.value, 1);
-            granular.setSamplePosition(grA_Position.value, 2);
-            granular.setSamplePosition(grA_Position.value, 3);
+        else if(controlNum == 4) {
+        	gr_GrainSize[channel].setLowerByte(value);
+            if(gr_GrainSize[channel].update()) granular.setGrainSize(gr_GrainSize[channel].getValue(), channel);
         }
         
-        if(grA_GrainSize.update()) {
-            granular.setGrainSize(grA_GrainSize.value, 0);
-            granular.setGrainSize(grA_GrainSize.value, 1);
-            granular.setGrainSize(grA_GrainSize.value, 2);
-            granular.setGrainSize(grA_GrainSize.value, 3);
+        if(controlNum == 5) {
+            gr_WindowShape[channel].setUpperByte(value);
+            if(gr_WindowShape[channel].update()) granular.setWindowShape(gr_WindowShape[channel].getValue() * 2.0f, channel);//TODO対数的にあげる
         }
-        
-        if(grA_WindowShape.update()) {
-            const float g = grA_WindowShape.value * 2.0f;
-            granular.setWindowShape(g, 0);
-            granular.setWindowShape(g, 1);
-            granular.setWindowShape(g, 2);
-            granular.setWindowShape(g, 3);
+        else if(controlNum == 6) {
+            gr_WindowShape[channel].setLowerByte(value);
+            if(gr_WindowShape[channel].update()) granular.setWindowShape(gr_WindowShape[channel].getValue() * 2.0f, channel);//TODO対数的にあげる
         }
     }
 }
@@ -92,7 +86,7 @@ bool setup(BelaContext *context, void *userData)
 {
     //Sleep for waiting boot BLOCKS
     std::cout<<"Begin sleep"<<std::endl;
-    sleep(5);
+    sleep(2);
     std::cout<<"End sleep"<<std::endl;
     
     CVmodeFlag = CVModeA;
@@ -247,8 +241,8 @@ void render(BelaContext *context, void *userData)
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                audioWrite(context, i, 0, gr[i] * 0.05f);
-                audioWrite(context, i, 1, gr[i] * 0.05f);
+                audioWrite(context, i, 0, gr[i] * 0.01f);
+                audioWrite(context, i, 1, gr[i] * 0.01f);
             }
             break;
         }

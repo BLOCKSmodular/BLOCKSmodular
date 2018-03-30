@@ -15,18 +15,13 @@ class GranularSynth {
 public:
     GranularSynth()
     {
-        for(int i = 0; i < numVoice; ++i) {
-            samplePosition[i] = 0;
-            grainSize[i] = 10000;
-            windowShape[i] = 1.0f;
-        }
-        
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
-        const int s = maxGrainSize / numGrains;
+        const float s = Pi / (float)numGrains;
         for(int i = 0; i < numVoice; ++i) {
             for (int k = 0; k < numGrains; ++k) {
-                grains[i][k] = new Grain(*this, i);
-                grains[i][k]->init(i * s);
+                grains[i][k] = new Grain(i, *this);
+                float ph = (float)i * s;
+                grains[i][k]->init(ph);
             }
         }
     };
@@ -49,35 +44,38 @@ public:
         }
     }
     
-    void setGrainSize(const float sizeAmount, const int id_)
+    void setGrainSize(const float size, const int id_)
     {
-        grainSize[id_] = (float)maxGrainSize * sizeAmount;
+    	// size 0.0f~1.0f
+        grainSize[id_] = (float)maxGrainSize * size;
     }
     
-    void setSamplePosition(const float pos, const int id_)
+    void setBufferPosition(const float pos, const int id_)
     {
-        samplePosition[id_] = (float)buffer->getSize() * pos;
+    	// pos 0.0f~1.0f
+        bufferPosition[id_] = (float)(buffer->getSize() - maxGrainSize - 1) * pos;
     }
     
-    void setWindowShape(const float amp, const int id_)
+    void setWindowShape(const float intensity, const int id_)
     {
-        windowShape[id_] = amp;
+    	// intensity 0.0f~1.0f
+        windowShape[id_] = intensity;
     }
     
     void loadFile(const std::string audioFileName)
     {
-        //TODO 各グレインのwindowPhaseとsampleIndexを変更するのでクリックノイズが発生する可能性がある -> loadFile()直後はフェードインさせる処理を追加
         const int numSamples = getNumFrames(audioFileName);
         if(numSamples < minSampleLength) {
             std::cout<<"Error GranularSynth: Too short sample length"<<std::endl;
         }
         else {
             buffer->loadSampleFile(audioFileName);
-            const int s = numSamples / numGrains;
+            const float s = Pi / (float)numGrains;
             for(int i = 0; i < numVoice; ++i) {
-                samplePosition[i] = s * i;
+                bufferPosition[i] = 0;
                 for (int k = 0; k < numGrains; ++k) {
-                    grains[i][k]->init(i * s);
+                	float ph = (float)i * s;
+                    grains[i][k]->init(ph);
                 }
             }
         }
@@ -88,43 +86,34 @@ public:
     static constexpr int minSampleLength = 35280;//800mS
     
 private:
-    static constexpr int numGrains = 8;
+    static constexpr int numGrains = 6;
     static constexpr int numVoice = 4;
-    int samplePosition[numVoice]{0, 0, 0, 0};//TODO: atomic
+    int bufferPosition[numVoice]{0, 0, 0, 0};//TODO: atomic
     int grainSize[numVoice]{10000, 10000, 10000, 10000};//TODO: atomic
-    float windowShape[numVoice]{1.0f, 1.0f, 1.0f, 1.0f};//TODO: atomic
+    float windowShape[numVoice]{0.0f, 0.0f, 0.0f, 0.0f};//TODO: atomic
     
     class Grain
     {
     public:
-        Grain(GranularSynth& g, const int id_)
-        : granular_(g), voiceID(id_)
+        Grain(const int id_, GranularSynth& g)
+        : voiceID(id_), granular_(g)
         {};
         ~Grain(){};
         
-        void init(const unsigned int index)
+        void init(const float phase)
         {
+        	if(phase < 0.0f || Pi < phase) std::cout<<"Error GranularSynth: Invalid phase"<<std::endl;
             currentGrainSize = granular_.grainSize[voiceID];
-            
-            if(currentGrainSize <= index) {
-                std::cout<<"Error GranularSynth: Invalid index"<<std::endl;
-                sampleIndex = 0;
-                windowStep = twoPi / (float)currentGrainSize;
-                windowPhase = 0.0f;
-            }
-            else {
-                sampleIndex = index;
-                windowStep = twoPi / (float)currentGrainSize;
-                windowPhase = windowStep * (float)index;
-            }
+            windowStep = twoPi / (float)currentGrainSize;
+            windowPhase = phase;
         }
         
         void update(const float* bufferToRead, float* bufferToWrite, const int length){
             for(int i = 0; i < length; ++i) {
-                bufferToWrite[i] += tanhf_neon(bufferToRead[startSample + sampleIndex] * window() * twoPi);
-                sampleIndex++;
+                bufferToWrite[i] += tanhf_neon(bufferToRead[bufferPos] * window() * twoPi);
+                bufferPos++;
                 windowPhase += windowStep;
-                if(sampleIndex >= currentGrainSize) {
+                if(windowPhase >= twoPi) {
                     parameterUpdate();
                     return;
                 }
@@ -134,26 +123,25 @@ private:
     private:
         inline float window()
         {
-            return (0.5f - 0.5f * cosf_neon(windowPhase)) * grainAmp;
+            return (0.5f - 0.5f * cosf_neon(windowPhase)) * gain;
         }
         
         void parameterUpdate()
         {
             currentGrainSize = granular_.grainSize[voiceID];
-            startSample = granular_.samplePosition[voiceID];
-            grainAmp = granular_.windowShape[voiceID];
+            bufferPos = granular_.bufferPosition[voiceID];
+            gain = granular_.windowShape[voiceID];
             windowStep = twoPi / (float)currentGrainSize;
             windowPhase = 0.0f;
-            sampleIndex = 0;
+            // rt_printf("ID:%d, size:%d, pos:%d, gain:%f\n", voiceID, currentGrainSize, bufferPos, gain);
         }
         
         int voiceID;
-        int startSample = 0;
+        int bufferPos = 0;
         int currentGrainSize = 10000;
-        int sampleIndex;
-        float grainAmp = 1.0f;
-        float windowStep;
-        float windowPhase;//0.0f~2pi
+        float gain = 0.0f;
+        float windowStep = 0.05f;
+        float windowPhase = 0.0f;//0.0f~2pi
         GranularSynth& granular_;
     };
     

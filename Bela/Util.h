@@ -8,6 +8,8 @@
 #include <iostream>
 #include <cstdlib>
 
+static constexpr float twoPi = 6.28318530718f;
+
 static inline int getNumChannels(std::string file)
 {
     SNDFILE *sndfile ;
@@ -34,7 +36,7 @@ static inline int getNumFrames(std::string file)
     return sfinfo.frames;
 }
 
-struct doubleCC {
+struct HighResolutionCC {
     char up = -1;
     char low = -1;
     float value = 0.0f;

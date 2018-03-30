@@ -1,5 +1,5 @@
 {
-  "fileName": "render.cpp",
+  "fileName": "GranularSynth.h",
   "CLArgs": {
     "-p": "16",
     "-C": "8",

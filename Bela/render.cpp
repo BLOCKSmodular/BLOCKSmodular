@@ -28,6 +28,10 @@ const char *gMidiPort0 = "hw:1,0,0";
 MonoBuffer monoBuffer(88200, true, false);
 StereoBuffer stereoBuffer(88200, true, false);
 GranularSynth granular;
+HighResolutionCC grA_Position;
+HighResolutionCC grA_GrainSize;
+HighResolutionCC grA_WindowShape;
+
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -35,6 +39,52 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int ccNumber = message.getDataByte(0);
         const int value = message.getDataByte(1);
+        //rt_printf("midi: %d, : %d\n", ccNumber, value);
+        
+        //TODO モード判定追加
+        
+        if(ccNumber == 1) {
+            grA_Position.up = value;
+        }
+        else if(ccNumber == 2) {
+            grA_Position.low = value;
+        }
+        
+        if(ccNumber == 3) {
+            grA_GrainSize.up = value;
+        }
+        else if(ccNumber == 4) {
+            grA_GrainSize.low = value;
+        }
+        
+        if(ccNumber == 5) {
+            grA_WindowShape.up = value;
+        }
+        else if(ccNumber == 6) {
+            grA_WindowShape.low = value;
+        }
+        
+        if(grA_Position.update()) {
+            granular.setSamplePosition(grA_Position.value, 0);
+            granular.setSamplePosition(grA_Position.value, 1);
+            granular.setSamplePosition(grA_Position.value, 2);
+            granular.setSamplePosition(grA_Position.value, 3);
+        }
+        
+        if(grA_GrainSize.update()) {
+            granular.setGrainSize(grA_GrainSize.value, 0);
+            granular.setGrainSize(grA_GrainSize.value, 1);
+            granular.setGrainSize(grA_GrainSize.value, 2);
+            granular.setGrainSize(grA_GrainSize.value, 3);
+        }
+        
+        if(grA_WindowShape.update()) {
+            const float g = grA_WindowShape.value * 2.0f;
+            granular.setWindowShape(g, 0);
+            granular.setWindowShape(g, 1);
+            granular.setWindowShape(g, 2);
+            granular.setWindowShape(g, 3);
+        }
     }
 }
 
@@ -72,7 +122,7 @@ bool setup(BelaContext *context, void *userData)
     //Load Sample
     monoBuffer.loadSampleFile("vibe.wav");
     stereoBuffer.loadSampleFile("test.wav");
-    granular.loadFile("vibe.wav");
+    granular.loadFile("GranularSource.wav");
     
     return true;
 }
@@ -116,6 +166,8 @@ void render(BelaContext *context, void *userData)
         CVmodeFlag = cvFLG;
     }
     
+    //-----------------------------------------------------------
+    //Digital
     if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeA;
     if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeB;
     if(digitalRead(context, 0, P8_28)) audioFLG = AudioModeOFF;//P8_28はOFFスイッチ
@@ -150,6 +202,8 @@ void render(BelaContext *context, void *userData)
         AudiomodeFlag = audioFLG;
     }
     
+    //-----------------------------------------------------------
+    //Analogue
     const int numAnalogueFrames = context->analogFrames;
     switch(CVmodeFlag) {
         case CVModeA: {
@@ -179,6 +233,9 @@ void render(BelaContext *context, void *userData)
         }
     }
     
+    
+    //-----------------------------------------------------------
+    //Audio
     const int numAudioFrames = context->audioFrames;
     switch(AudiomodeFlag) {
         case AudioModeA: {
@@ -190,8 +247,8 @@ void render(BelaContext *context, void *userData)
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                audioWrite(context, i, 0, gr[i] * 0.2f);
-                audioWrite(context, i, 1, gr[i] * 0.2f);
+                audioWrite(context, i, 0, gr[i] * 0.05f);
+                audioWrite(context, i, 1, gr[i] * 0.05f);
             }
             break;
         }

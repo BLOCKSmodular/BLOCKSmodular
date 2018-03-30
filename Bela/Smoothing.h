@@ -31,7 +31,7 @@ private:
     std::atomic<float> currentValue{0.0f};
     std::atomic<float> stepSize{0.0f};
     std::atomic<int> index{0};
-    static constexpr smoothingLength = 1200;
+    static constexpr int smoothingLength = 1200;
 };
 
 #endif /* SMOOTHING_H_ */

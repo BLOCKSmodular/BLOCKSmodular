@@ -128,7 +128,7 @@ private:
         
         void update(const float* bufferToRead, float* bufferToWrite, const int length){
             for(int i = 0; i < length; ++i) {
-                bufferToWrite[i] += tanhf_neon(bufferToRead[bufferPos] * window() * twoPi);
+                bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
                 bufferPos++;
                 windowPhase += windowStep;
                 if(windowPhase >= twoPi) {

@@ -139,9 +139,13 @@ private:
         }
         
     private:
-        inline float window()
+        inline float variableWindow()
         {
-            return (0.5f - 0.5f * cosf_neon(windowPhase)) * gain;
+            /*
+            windowShape<=1.0: 0~(Pi * windowShape)の範囲のハン窓
+            windowShape>1,0: windowShapeが大きいほど矩形窓に近づいていく
+            */
+            return tanhf_neon((halfPi - halfPi * cosf_neon(windowPhase)));
         }
         
         void parameterUpdate()

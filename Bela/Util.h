@@ -39,15 +39,15 @@ static inline int getNumFrames(std::string file)
 
 class HighResolutionControlChange {
 public:
-	void setUpperByte(char v) {
-		up = v;
-	}
-	
-	void setLowerByte(char v) {
-		low = v;
+	void set(char v, bool isUpperByte) {
+        if(isUpperByte) {
+            up = v;
+        }else{
+            low = v;
+        }
 	}
     
-    bool update() {
+    bool isPrepared() {
         if(up < 0 || low < 0) {
             return false;
         }

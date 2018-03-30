@@ -56,7 +56,9 @@ public:
         return true;
     }
     
-    float getValue() {
+    float get() {
+        up = -1;
+        low = -1;
     	return value;
     }
     

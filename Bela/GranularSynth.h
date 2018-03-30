@@ -44,29 +44,48 @@ public:
         }
     }
     
-    void setGrainSize(const float size, const int id_)
+    void setGrainSize(const float size, const int voiceIndex)// size 0.0f~1.0f, voiceIndex 0~(numVoice-1)
     {
-    	// size 0.0f~1.0f
-        grainSize[id_] = (float)maxGrainSize * size;
+        if(voiceIndex >= numVoice) {
+            std::cout<<"Error GranularSynth-setGrainSize(): Invalid voiceIndex"<<std::endl;
+            return;
+        }
+        
+        if(size < 0.0 || 1.0 < size) {
+            std::cout<<"Error GranularSynth-setGrainSize(): Invalid grain size"<<std::endl;
+            return;
+        }
+        grainSize[voiceIndex] = (float)maxGrainSize * size;
     }
     
-    void setBufferPosition(const float pos, const int id_)
+    void setBufferPosition(const float position, const int voiceIndex)// position 0.0f~1.0f, voiceIndex 0~(numVoice-1)
     {
-    	// pos 0.0f~1.0f
-        bufferPosition[id_] = (float)(buffer->getSize() - maxGrainSize - 1) * pos;
+        if(voiceIndex >= numVoice) {
+            std::cout<<"Error GranularSynth-setBufferPosition(): Invalid voiceIndex"<<std::endl;
+            return;
+        }
+        
+        if(pos < 0.0 || 1.0 < pos) {
+            std::cout<<"Error GranularSynth-setBufferPosition(): Invalid buffer position"<<std::endl;
+            return;
+        }
+        bufferPosition[voiceIndex] = (float)(buffer->getSize() - maxGrainSize - 1) * position;
     }
     
-    void setWindowShape(const float intensity, const int id_)
+    void setWindowShape(const float intensity, const int voiceIndex)// intensity 0.0f~1.0f, voiceIndex 0~(numVoice-1)
     {
-    	// intensity 0.0f~1.0f
-        windowShape[id_] = intensity;
+        if(voiceIndex >= numVoice) {
+            std::cout<<"Error GranularSynth-setWindowShape(): Invalid voiceIndex"<<std::endl;
+            return;
+        }
+        windowShape[voiceIndex] = intensity;
     }
     
     void loadFile(const std::string audioFileName)
     {
         const int numSamples = getNumFrames(audioFileName);
         if(numSamples < minSampleLength) {
-            std::cout<<"Error GranularSynth: Too short sample length"<<std::endl;
+            std::cout<<"Error GranularSynth-loadFile(): Too short sample length"<<std::endl;
         }
         else {
             buffer->loadSampleFile(audioFileName);
@@ -95,14 +114,14 @@ private:
     class Grain
     {
     public:
-        Grain(const int id_, GranularSynth& g)
-        : voiceID(id_), granular_(g)
+        Grain(const int voiceIndex, GranularSynth& g)
+        : voiceIndex(voiceIndex), granular_(g)
         {};
         ~Grain(){};
         
         void init(const float phase)
         {
-        	if(phase < 0.0f || Pi < phase) std::cout<<"Error GranularSynth: Invalid phase"<<std::endl;
+        	if(phase < 0.0f || Pi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
             windowStep = twoPi / (float)granular_.grainSize[voiceID];
             windowPhase = phase;
         }
@@ -131,10 +150,9 @@ private:
             gain = granular_.windowShape[voiceID];
             windowStep = twoPi / (float)granular_.grainSize[voiceID];
             windowPhase = 0.0f;
-            // rt_printf("ID:%d, size:%d, pos:%d, gain:%f\n", voiceID, currentGrainSize, bufferPos, gain);
         }
         
-        int voiceID;
+        int voiceIndex;
         int bufferPos = 0;
         float gain = 0.0f;
         float windowStep = 0.05f;

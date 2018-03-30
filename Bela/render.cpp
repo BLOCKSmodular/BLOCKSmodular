@@ -52,32 +52,23 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         const int value = message.getDataByte(1);
         
         //TODO モード判定追加
-        
-        if(controlNum == 1) {
-        	gr_Position[channel].setUpperByte(value);
-        	if(gr_Position[channel].update()) granular.setBufferPosition(gr_Position[channel].getValue(), channel);
-        }
-        else if(controlNum == 2) {
-        	gr_Position[channel].setLowerByte(value);
-        	if(gr_Position[channel].update()) granular.setBufferPosition(gr_Position[channel].getValue(), channel);
+
+        if(controlNum == 1 || controlNum == 2) {
+            bool isUpeerByte = controlNum == 1 ? true : false;
+            gr_Position[channel].set(value, isUpeerByte);
+            if(gr_Position[channel].isPrepared()) granular.setBufferPosition(gr_Position[channel].get(), channel);
         }
         
-        if(controlNum == 3) {
-            gr_GrainSize[channel].setUpperByte(value);
-            if(gr_GrainSize[channel].update()) granular.setGrainSize(gr_GrainSize[channel].getValue(), channel);
-        }
-        else if(controlNum == 4) {
-        	gr_GrainSize[channel].setLowerByte(value);
-            if(gr_GrainSize[channel].update()) granular.setGrainSize(gr_GrainSize[channel].getValue(), channel);
+        if(controlNum == 3 || controlNum == 4) {
+            bool isUpeerByte = controlNum == 3 ? true : false;
+            gr_GrainSize[channel].set(value, isUpeerByte);
+            if(gr_GrainSize[channel].isPrepared()) granular.setGrainSize(gr_GrainSize[channel].get(), channel);
         }
         
-        if(controlNum == 5) {
-            gr_WindowShape[channel].setUpperByte(value);
-            if(gr_WindowShape[channel].update()) granular.setWindowShape(gr_WindowShape[channel].getValue() * 2.0f, channel);//TODO対数的にあげる
-        }
-        else if(controlNum == 6) {
-            gr_WindowShape[channel].setLowerByte(value);
-            if(gr_WindowShape[channel].update()) granular.setWindowShape(gr_WindowShape[channel].getValue() * 2.0f, channel);//TODO対数的にあげる
+        if(controlNum == 5 || controlNum == 6) {
+            bool isUpeerByte = controlNum == 5 ? true : false;
+            gr_WindowShape[channel].set(value, isUpeerByte);
+            if(gr_WindowShape[channel].isPrepared()) granular.setWindowShape(gr_WindowShape[channel].get() * 2.0f, channel);//対数的に上げる
         }
     }
 }

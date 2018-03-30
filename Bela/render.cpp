@@ -54,13 +54,13 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         //TODO モード判定追加
 
         if(controlNum == 1 || controlNum == 2) {
-            bool isUpeerByte = (controlNum == 1);
+            bool isUpeerByte{controlNum == 1};
             gr_Position[channel].set(value, isUpeerByte);
             if(gr_Position[channel].isPrepared()) granular.setBufferPosition(gr_Position[channel].get(), channel);
         }
         
         if(controlNum == 3 || controlNum == 4) {
-            bool isUpeerByte = (controlNum == 3);
+            bool isUpeerByte{controlNum == 3};
             gr_GrainSize[channel].set(value, isUpeerByte);
             if(gr_GrainSize[channel].isPrepared()) granular.setGrainSize(gr_GrainSize[channel].get(), channel);
         }

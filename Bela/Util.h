@@ -51,10 +51,11 @@ public:
     bool isPrepared() {
         if(up < 0 || low < 0) {
             return false;
+        } 
+        else {
+        	value = (float)((up << 7) | (low & 0b1111111)) / 16384.0f;
+        	return true;
         }
-        
-        value = (float)((up << 7) | (low & 0b1111111)) / 16384.0f;
-        return true;
     }
     
     float get() {
@@ -64,8 +65,8 @@ public:
     }
     
 private:
-    char up = -1;
-    char low = -1;
+    std::atomic<int> up{-1};
+    std::atomic<int> low{-1};
     float value = 0.0f;
 };
 

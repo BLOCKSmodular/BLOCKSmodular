@@ -236,8 +236,8 @@ void render(BelaContext *context, void *userData)
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                audioWrite(context, i, 0, gr[i] * 0.01f);
-                audioWrite(context, i, 1, gr[i] * 0.01f);
+                audioWrite(context, i, 0, gr[i] * 0.1f);
+                audioWrite(context, i, 1, gr[i] * 0.1f);
             }
             break;
         }

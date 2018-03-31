@@ -28,9 +28,9 @@ const char *gMidiPort0 = "hw:1,0,0";
 MonoBuffer monoBuffer(88200, true, false);
 StereoBuffer stereoBuffer(88200, true, false);
 GranularSynth granular;
-HighResolutionControlChange gr_Position[4];
-HighResolutionControlChange gr_GrainSize[4];
-HighResolutionControlChange gr_WindowShape[4];
+HighResolutionControlChange gr_Position[3];
+HighResolutionControlChange gr_GrainSize[3];
+HighResolutionControlChange gr_WindowShape[3];
 
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)

@@ -172,7 +172,8 @@ private:
             windowShape<=1.0: 0~(Pi * windowShape)の範囲のハン窓
             windowShape>1,0: windowShapeが大きいほど矩形窓に近づいていく
             */
-            return tanhf_neon((halfPi - halfPi * cosf_neon(windowPhase)));
+            //TODO: あとで窓関数をグラフにして確認確認する
+            return tanhf_neon((halfPi - halfPi * cosf_neon(windowPhase)) * windowShape);
         }
         
         void parameterUpdate()

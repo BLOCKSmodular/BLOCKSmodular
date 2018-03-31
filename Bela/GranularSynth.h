@@ -65,7 +65,7 @@ public:
             return;
         }
         
-        if(pos < 0.0 || 1.0 < pos) {
+        if(position < 0.0 || 1.0 < position) {
             std::cout<<"Error GranularSynth-setBufferPosition(): Invalid buffer position"<<std::endl;
             return;
         }
@@ -122,7 +122,7 @@ private:
         void init(const float phase)
         {
         	if(phase < 0.0f || Pi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
-            windowStep = twoPi / (float)granular_.grainSize[voiceID];
+            windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
             windowPhase = phase;
         }
         
@@ -150,9 +150,9 @@ private:
         
         void parameterUpdate()
         {
-            bufferPos = granular_.bufferPosition[voiceID];
-            windowShape = granular_.windowShape[voiceID];
-            windowStep = twoPi / (float)granular_.grainSize[voiceID];
+            bufferPos = granular_.bufferPosition[voiceIndex];
+            windowShape = granular_.windowShape[voiceIndex];
+            windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
             windowPhase = 0.0f;
         }
         

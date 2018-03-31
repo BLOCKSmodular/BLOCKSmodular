@@ -68,7 +68,11 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         if(controlNum == 5 || controlNum == 6) {
             bool isUpeerByte{controlNum == 5};
             gr_WindowShape[channel].set(value, isUpeerByte);
-            if(gr_WindowShape[channel].isPrepared()) granular.setWindowShape(gr_WindowShape[channel].get() * 2.0f, channel);//対数的に上げる
+            if(gr_WindowShape[channel].isPrepared()) {
+            	float v = gr_WindowShape[channel].get() * 2.0f;
+            	granular.setWindowShape(v * 3.0f, channel);//対数的に上げる
+            	granular.setDensity((v * v * v), channel);
+            }
         }
     }
 }

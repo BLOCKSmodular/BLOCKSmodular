@@ -16,7 +16,7 @@ public:
     GranularSynth()
     {
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
-        const float s = Pi / (float)numGrains;
+        const float s = twoPi / (float)numGrains;
         for(int i = 0; i < numVoice; ++i) {
             for (int k = 0; k < numGrains; ++k) {
                 grains[i][k] = new Grain(i, *this);
@@ -65,7 +65,7 @@ public:
             return;
         }
         
-        if(pos < 0.0 || 1.0 < pos) {
+        if(position < 0.0 || 1.0 < position) {
             std::cout<<"Error GranularSynth-setBufferPosition(): Invalid buffer position"<<std::endl;
             return;
         }
@@ -79,6 +79,16 @@ public:
             return;
         }
         windowShape[voiceIndex] = intensity;
+    }
+    
+    void setDensity(const float denst, const int voiceIndex)
+    {
+        if(voiceIndex >= numVoice) {
+            std::cout<<"Error GranularSynth-setDensity(): Invalid voiceIndex"<<std::endl;
+            return;
+        }
+        
+        density[voiceIndex] = denst;
     }
     
     void loadFile(const std::string audioFileName)
@@ -105,11 +115,23 @@ public:
     static constexpr int minSampleLength = 35280;//800mS
     
 private:
-    static constexpr int numGrains = 6;
-    static constexpr int numVoice = 4;
-    int bufferPosition[numVoice]{0, 0, 0, 0};//TODO: atomic
-    int grainSize[numVoice]{10000, 10000, 10000, 10000};//TODO: atomic
-    float windowShape[numVoice]{0.0f, 0.0f, 0.0f, 0.0f};//TODO: atomic
+    static constexpr int numGrains = 10;
+    static constexpr int numVoice = 3;
+    int bufferPosition[numVoice]{0, 0, 0};//TODO: atomic
+    int grainSize[numVoice]{10000, 10000, 10000};//TODO: atomic
+    float windowShape[numVoice]{0.0f, 0.0f, 0.0f};//TODO: atomic
+    float density[numVoice]{0.5f, 0.5f, 0.5f};//TODO: atomic
+    std::mt19937 random{12345};//TODO: seedの変更
+    std::uniform_real_distribution<float> dist{0.0f, 1.0f}; 
+    
+    bool dice(const int vI) {
+    	if(dist(random) <= density[vI]) {
+    		return true;
+    	}
+    	else {
+    		return false;
+    	}
+    }
     
     class Grain
     {
@@ -121,21 +143,26 @@ private:
         
         void init(const float phase)
         {
-        	if(phase < 0.0f || Pi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
-            windowStep = twoPi / (float)granular_.grainSize[voiceID];
+        	if(phase < 0.0f || twoPi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
+            windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
             windowPhase = phase;
         }
         
         void update(const float* bufferToRead, float* bufferToWrite, const int length){
-            for(int i = 0; i < length; ++i) {
-                bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
-                bufferPos++;
-                windowPhase += windowStep;
-                if(windowPhase >= twoPi) {
-                    parameterUpdate();
-                    return;
-                }
-            }
+        	if(windowPhase < twoPi) {
+  	            for(int i = 0; i < length; ++i) {
+	        		bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
+               		bufferPos++;
+                	windowPhase += windowStep;
+                	if(windowPhase >= twoPi) {
+                		parameterUpdate();
+                		return;
+                	}
+            	}
+        	}
+        	else{
+        		parameterUpdate();
+        	}
         }
         
     private:
@@ -145,15 +172,18 @@ private:
             windowShape<=1.0: 0~(Pi * windowShape)の範囲のハン窓
             windowShape>1,0: windowShapeが大きいほど矩形窓に近づいていく
             */
-            return tanhf_neon((halfPi - halfPi * cosf_neon(windowPhase)));
+            //TODO: あとで窓関数をグラフにして確認確認する
+            return tanhf_neon((halfPi - halfPi * cosf_neon(windowPhase)) * windowShape);
         }
         
         void parameterUpdate()
         {
-            bufferPos = granular_.bufferPosition[voiceID];
-            windowShape = granular_.windowShape[voiceID];
-            windowStep = twoPi / (float)granular_.grainSize[voiceID];
-            windowPhase = 0.0f;
+        	if(granular_.dice(voiceIndex)) {
+            	bufferPos = granular_.bufferPosition[voiceIndex];
+            	windowShape = granular_.windowShape[voiceIndex];
+            	windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
+            	windowPhase = 0.0f;
+        	}
         }
         
         int voiceIndex;

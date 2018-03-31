@@ -16,7 +16,7 @@ public:
     GranularSynth()
     {
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
-        const float s = Pi / (float)numGrains;
+        const float s = twoPi / (float)numGrains;
         for(int i = 0; i < numVoice; ++i) {
             for (int k = 0; k < numGrains; ++k) {
                 grains[i][k] = new Grain(i, *this);
@@ -121,7 +121,7 @@ private:
         
         void init(const float phase)
         {
-        	if(phase < 0.0f || Pi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
+        	if(phase < 0.0f || twoPi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
             windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
             windowPhase = phase;
         }

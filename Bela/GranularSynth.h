@@ -81,6 +81,16 @@ public:
         windowShape[voiceIndex] = intensity;
     }
     
+    void setDensity(const float denst, const int voiceIndex)
+    {
+        if(voiceIndex >= numVoice) {
+            std::cout<<"Error GranularSynth-setDensity(): Invalid voiceIndex"<<std::endl;
+            return;
+        }
+        
+        density[voiceIndex] = denst;
+    }
+    
     void loadFile(const std::string audioFileName)
     {
         const int numSamples = getNumFrames(audioFileName);
@@ -110,6 +120,18 @@ private:
     int bufferPosition[numVoice]{0, 0, 0, 0};//TODO: atomic
     int grainSize[numVoice]{10000, 10000, 10000, 10000};//TODO: atomic
     float windowShape[numVoice]{0.0f, 0.0f, 0.0f, 0.0f};//TODO: atomic
+    float density[numVoice]{0.5f, 0.5f, 0.5f};//TODO: atomic
+    std::mt19937 random{12345};//TODO: seedの変更
+    std::uniform_real_distribution<float> dist{0.0f, 1.0f}; 
+    
+    bool dice(const int vI) {
+    	if(dist(random) <= density[vI]) {
+    		return true;
+    	}
+    	else {
+    		return false;
+    	}
+    }
     
     class Grain
     {
@@ -127,15 +149,20 @@ private:
         }
         
         void update(const float* bufferToRead, float* bufferToWrite, const int length){
-            for(int i = 0; i < length; ++i) {
-                bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
-                bufferPos++;
-                windowPhase += windowStep;
-                if(windowPhase >= twoPi) {
-                    parameterUpdate();
-                    return;
-                }
-            }
+        	if(windowPhase < twoPi) {
+  	            for(int i = 0; i < length; ++i) {
+	        		bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
+               		bufferPos++;
+                	windowPhase += windowStep;
+                	if(windowPhase >= twoPi) {
+                		parameterUpdate();
+                		return;
+                	}
+            	}
+        	}
+        	else{
+        		parameterUpdate();
+        	}
         }
         
     private:
@@ -150,10 +177,12 @@ private:
         
         void parameterUpdate()
         {
-            bufferPos = granular_.bufferPosition[voiceIndex];
-            windowShape = granular_.windowShape[voiceIndex];
-            windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
-            windowPhase = 0.0f;
+        	if(granular_.dice(voiceIndex)) {
+            	bufferPos = granular_.bufferPosition[voiceIndex];
+            	windowShape = granular_.windowShape[voiceIndex];
+            	windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
+            	windowPhase = 0.0f;
+        	}
         }
         
         int voiceIndex;

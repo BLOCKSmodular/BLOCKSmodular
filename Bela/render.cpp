@@ -266,6 +266,12 @@ void render(BelaContext *context, void *userData)
             break;
         }
         case CVModeB: {
+            //Microtonal
+            for(unsigned int n = 0; n < numAnalogueFrames; n++) {
+                for(unsigned ch = 0; ch < NUMCVOUT; ch++) {
+                    analogWrite(context, n, ch, CVSmooth[ch].getNextValue());
+                }
+            }
             break;
         }
         case CVModeOFF: {

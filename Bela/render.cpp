@@ -175,8 +175,8 @@ bool setup(BelaContext *context, void *userData)
     midi.writeOutput(bytes, 3);
     
     //Load Sample
-    monoBuffer.loadSampleFile("vibe.wav");
-    stereoBuffer.loadSampleFile("test.wav");
+    monoBuffer.loadSampleFile("VibeOneshot.wav");
+    stereoBuffer.loadSampleFile("BellRoll.wav");
     granular.loadFile("GranularSource.wav");
     
     return true;

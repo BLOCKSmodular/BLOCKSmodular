@@ -67,30 +67,6 @@ void sendXYZCC(float x, float y, float z)
     sendCC (channel, 17, lowerZvalue);
 }
 
-int getMicrotonalIndexColour(int index)
-{
-    int colour = 0xFFFFFFFF;
-    if(index == 1)
-    {
-        colour = 0xFFFF0000;
-    }
-    if(index == 2)
-    {
-        colour = 0xFF00FF00;
-        
-    }
-    if(index == 3)
-    {
-        colour = 0xFF0000FF;
-    }
-    if(index == 4)
-    {
-        colour = 0xFFFFFFFF;
-    }
-    
-    return colour;
-}
-
 void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
 {
     /*
@@ -124,31 +100,6 @@ void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
         sendCC (index, 5, 0);
         sendCC (index, 6, 0);
     }
-}
-
-int getColour(int index)
-{
-    if (index == 0)  return 0xFFFFFFFF;
-    if (index == 1)  return 0xFFFF0000;
-    if (index == 2)  return 0xFF00FF00;
-    if (index == 3)  return 0xFF0000FF;
-    if (index == 4)  return 0xFFFFFF00;
-    return 0xFFFFFFFF;
-}
-
-//==============================================================================
-int getPadIndex (float x, float y)
-{
-    /*
-    0: top left
-    1: bottom left
-    2: top right
-    3: bottom right
-    */
-    int row = int (y * (0.95 / 2.0) * float (gridSize));
-    int col = int (x * (0.95 / 2.0) * float (gridSize));
-
-	return (gridSize * col) + row;
 }
 
 //==============================================================================

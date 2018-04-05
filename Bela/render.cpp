@@ -31,17 +31,16 @@ HighResolutionControlChange gr_Position[3];
 HighResolutionControlChange gr_GrainSize[3];
 HighResolutionControlChange gr_WindowShape[3];
 
+HighResolutionControlChange microtone_Distance[4];
+HighResolutionControlChange microtone_Pressure[4];
+Smoothing CVSmooth[[NUMCVOUT]];
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
-	const int channel = message.getChannel() - 1;//MIDIChannel 0~15
+	const int channel = message.getChannel();//MIDIChannel 1~16
 	
 	//Note On
 	if(message.getType() == kmmNoteOn){
-	}
-	
-	//Note Off
-	if(message.getType() == kmmNoteOff){
 	}
 
 	//Control change
@@ -50,27 +49,96 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
         
-        //TODO モード判定追加
-
-        if(controlNum == 1 || controlNum == 2) {
-            bool isUpeerByte{controlNum == 1};
-            gr_Position[channel].set(value, isUpeerByte);
-            if(gr_Position[channel].isPrepared()) granular.setBufferPosition(gr_Position[channel].get(), channel);
+        if(channel == 16) {
+            //General messeges
         }
-        
-        if(controlNum == 3 || controlNum == 4) {
-            bool isUpeerByte{controlNum == 3};
-            gr_GrainSize[channel].set(value, isUpeerByte);
-            if(gr_GrainSize[channel].isPrepared()) granular.setGrainSize(gr_GrainSize[channel].get(), channel);
+        else if(channel < 9) {
+            //Audio
+            const int voiceIndex = channel - 1;
+            switch(AudiomodeFlag) {
+                case AudioModeA: {
+                    //Granular
+                    if(controlNum == 1 || controlNum == 2) {
+                        bool isUpeerByte{controlNum == 1};
+                        gr_Position[voiceIndex].set(value, isUpeerByte);
+                        if(gr_Position[voiceIndex].update()) granular.setBufferPosition(gr_Position[voiceIndex].get(), voiceIndex);
+                    }
+                    
+                    if(controlNum == 3 || controlNum == 4) {
+                        bool isUpeerByte{controlNum == 3};
+                        gr_GrainSize[voiceIndex].set(value, isUpeerByte);
+                        if(gr_GrainSize[voiceIndex].update()) granular.setGrainSize(gr_GrainSize[voiceIndex].get(), voiceIndex);
+                    }
+                    
+                    if(controlNum == 5 || controlNum == 6) {
+                        bool isUpeerByte{controlNum == 5};
+                        gr_WindowShape[voiceIndex].set(value, isUpeerByte);
+                        if(gr_WindowShape[voiceIndex].update()) {
+                            float v = gr_WindowShape[voiceIndex].get() * 2.0f;
+                            granular.setWindowShape(v * 3.0f, voiceIndex);//対数的に上げる
+                            granular.setDensity((v * v * v), voiceIndex);
+                        }
+                    }
+                    break;
+                }
+                case AudioModeB: {
+                    //Sample playback
+                    break;
+                }
+                case AudioModeOFF: {
+                    break;
+                }
+                case AudioModeC: {
+                    //Karplus strong
+                    break;
+                }
+                case AudioModeD: {
+                    //Logistic map
+                    break;
+                }
+                default: {
+                    rt_printf("AudioMode: %d\n", AudiomodeFlag);
+                    break;
+                }
+            }
         }
-        
-        if(controlNum == 5 || controlNum == 6) {
-            bool isUpeerByte{controlNum == 5};
-            gr_WindowShape[channel].set(value, isUpeerByte);
-            if(gr_WindowShape[channel].isPrepared()) {
-            	float v = gr_WindowShape[channel].get() * 2.0f;
-            	granular.setWindowShape(v * 3.0f, channel);//対数的に上げる
-            	granular.setDensity((v * v * v), channel);
+        else {
+            const int voiceIndex = channel - 9;
+            //CV
+            switch(CVmodeFlag) {
+                case CVModeA: {
+                    //Morph looper
+                    break;
+                }
+                case CVModeB: {
+                    //Microtonal
+                    if(controlNum == 1 || controlNum == 2) {
+                        bool isUpeerByte{controlNum == 1};
+                        microtone_Distance[voiceIndex].set(value, isUpeerByte);
+                        if(microtone_Distance[voiceIndex].update()) CVSmooth[voiceIndex].set(microtone_Distance[voiceIndex].get());
+                    }
+                    
+                    if(controlNum == 3 || controlNum == 4) {
+                        bool isUpeerByte{controlNum == 3};
+                        microtone_Pressure[voiceIndex].set(value, isUpeerByte);
+                        if(microtone_Pressure[voiceIndex].update()) CVSmooth[voiceIndex].set(microtone_Pressure[voiceIndex].get());
+                    }
+                    break;
+                }
+                case CVModeOFF: {
+                    break;
+                }
+                case CVModeC: {
+                    break;
+                }
+                case CVModeD: {
+                    //Euclid sequence
+                    break;
+                }
+                default: {
+                    rt_printf("CVMode: %d\n", CVmodeFlag);
+                    break;
+                }
             }
         }
     }

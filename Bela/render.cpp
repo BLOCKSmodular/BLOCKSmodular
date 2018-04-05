@@ -32,7 +32,7 @@ HighResolutionControlChange gr_GrainSize[3];
 HighResolutionControlChange gr_WindowShape[3];
 HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
-Smoothing CVSmooth[[NUMCVOUT]];
+Smoothing CVSmooth[NUMCVOUT];
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {

@@ -118,6 +118,8 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
+    //-----------------------------------------------------------
+    //Digital
     unsigned char cvFLG = 0;
     unsigned char audioFLG = 0;
     //TODOチャタリング除去
@@ -127,67 +129,59 @@ void render(BelaContext *context, void *userData)
     if(digitalRead(context, 0, P8_10)) cvFLG = CVModeC;
     if(digitalRead(context, 0, P8_11)) cvFLG = CVModeD;
     if(CVmodeFlag != cvFLG && cvFLG != 0) {
-        //TODO CVModeリセット関数を追加
-        //sendMIDItoCVModeReset();
-        
+        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(2), 0};//Channel:16, CC Number:2, Value:0
         if(cvFLG == CVModeA) {
-            //CVmode1
-            //モード切り替え用CC送信
-            //midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
-            //midi.writeOutput(bytes, 3);
+            //Morph looper
+            bytes[2] = 16;
         }
         else if(cvFLG == CVModeB) {
-            //CVmode2
-            //モード切り替え用CC送信
+            //Microtonal
+            bytes[2] = 48;
         }
         else if(cvFLG == CVModeOFF) {
             //CVmode OFF
-            //モード切り替え用CC送信
+            bytes[2] = 0;
         }
         else if(cvFLG == CVModeC) {
             //CVmode3
-            //モード切り替え用CC送信
+            bytes[2] = 80;
         }
         else if(cvFLG == CVModeD) {
-            //CVmode4
-            //モード切り替え用CC送信
+            //Euclid sequence
+            bytes[2] = 112;
         }
+        midi.writeOutput(bytes, 3);
         CVmodeFlag = cvFLG;
     }
     
-    //-----------------------------------------------------------
-    //Digital
     if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeA;
     if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeB;
     if(digitalRead(context, 0, P8_28)) audioFLG = AudioModeOFF;//P8_28はOFFスイッチ
     if(digitalRead(context, 0, P8_29)) audioFLG = AudioModeC;
     if(digitalRead(context, 0, P8_30)) audioFLG = AudioModeD;
     if(AudiomodeFlag != audioFLG && audioFLG != 0) {
-        //TODO audioModeリセット関数を追加
-        //sendMIDItoAudioModeReset();
-        
+        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1, Value:0
         if(audioFLG == AudioModeA) {
-            //Audiomode1
-            //モード切り替え用CC送信
-            //midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
-            //midi.writeOutput(bytes, 3);
+            //Granular
+            bytes[2] = 16;
         }
         else if(audioFLG == AudioModeB) {
-            //Audiomode2
-            //モード切り替え用CC送信
+            //Sample playback
+            bytes[2] = 48;
         }
         else if(audioFLG == AudioModeOFF) {
             //Audiomode OFF
-            //モード切り替え用CC送信
+            bytes[2] = 0;
         }
         else if(audioFLG == AudioModeC) {
-            //Audiomode3
-            //モード切り替え用CC送信
+            //Karplus strong
+            bytes[2] = 80;
         }
         else if(audioFLG == AudioModeD) {
-            //Audiomode4
-            //モード切り替え用CC送信
+            //Logistic map
+            bytes[2] = 112;
         }
+        midi.writeOutput(bytes, 3);
         AudiomodeFlag = audioFLG;
     }
     

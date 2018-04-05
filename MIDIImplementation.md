@@ -1,18 +1,18 @@
 # MIDI Implementation
 ##モード切り替えフラグ
 **General**
-| Mode     | MIDI CC | Value            | MIDI Channel |
-| :------- | :------ | :--------------- | :----------- |
-| Audio/CV | 8       | 0(Audio)/127(CV) | 16           |
+| Mode     | MIDI CC | Value            | MIDI Channel   |
+| :------- | :------ | :--------------- | :------------- |
+| Audio/CV | 8       | 0(Audio)/127(CV) | 16(MIDI: 0xBF) |
 
 **Audio**
-| Mode                 | MIDI CC | Value        | MIDI Channel |
-| :------------------- | :------ | :----------- | :----------- |
-| OFF                  | 1       | 0            | 16           |
-| A(Granular sampling) | 1       | 16 (1~32)    | 16           |
-| B(Sample playback)   | 1       | 48 (33~64)   | 16           |
-| C(Karplus strong)    | 1       | 80 (65~96)   | 16           |
-| D(Logistic map)      | 1       | 112 (97~127) | 16           |
+| Mode                 | MIDI CC | Value        | MIDI Channel   |
+| :------------------- | :------ | :----------- | :------------- |
+| OFF                  | 1       | 0            | 16(MIDI: 0xBF) |
+| A(Granular sampling) | 1       | 16 (1~32)    | 16(MIDI: 0xBF) |
+| B(Sample playback)   | 1       | 48 (33~64)   | 16(MIDI: 0xBF) |
+| C(Karplus strong)    | 1       | 80 (65~96)   | 16(MIDI: 0xBF) |
+| D(Logistic map)      | 1       | 112 (97~127) | 16(MIDI: 0xBF) |
 
 **CV/Gate**
 | Mode               | MIDI CC | Value        | MIDI Channel |

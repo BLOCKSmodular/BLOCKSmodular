@@ -1,5 +1,9 @@
 # MIDI Implementation
 ##モード切り替えフラグ
+**General**
+| Mode     | MIDI CC | Value            | MIDI Channel |
+| :------- | :------ | :--------------- | :----------- |
+| Audio/CV | 8       | 0(Audio)/127(CV) | 16           |
 
 **Audio**
 | Mode                 | MIDI CC | Value        | MIDI Channel |

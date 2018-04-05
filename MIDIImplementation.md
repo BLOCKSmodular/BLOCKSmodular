@@ -39,24 +39,24 @@ CC
 *CC*
 | Description | MIDI CC | Value             | MIDI Channel |
 | :---------- | :------ | :---------------- | :----------- |
-| Rec         | 1       | 0(End)/127(Begin) | 1~2          |
-| Play        | 2       | 0(Stop)/127(Play) | 1~2          |
-| X           | 3, 4    | 14bit             | 1~2          |
-| Y           | 5,6     | 14bit             | 1~2          |
-| Z           | 7,8     | 14bit             | 1~2          |
+| Rec         | 1       | 0(End)/127(Begin) | 9, 10        |
+| Play        | 2       | 0(Stop)/127(Play) | 9, 10        |
+| X           | 3, 4    | 14bit             | 9, 10        |
+| Y           | 5, 6    | 14bit             | 9, 10        |
+| Z           | 7, 8    | 14bit             | 9, 10        |
 
 *Note*
 | Description | Note number | Value   | MIDI Channel |
 | :---------- | :---------- | :------ | :----------- |
-| Clear       | 1           | Note on | 1~2          |
+| Clear       | 1           | Note on | 9, 10        |
 
 ### Mode B（Microtonal）
 **BLOCKS → Bela**
 *CC*
 | Description | MIDI CC | Value | MIDI Channel |
 | :---------- | :------ | :---- | :----------- |
-| Distance    | 1,2     | 14bit | 1~4          |
-| Z           | 3,4     | 14bit | 1~4          |
+| Distance    | 1, 2    | 14bit | 9~12         |
+| Z           | 3, 4    | 14bit | 9~12         |
 
 
 ### Mode C

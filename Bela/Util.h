@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
+#include <atomic>
 
 static constexpr float Pi = 3.14159265359f;
 static constexpr float twoPi = 6.28318530718f;
@@ -68,6 +69,35 @@ private:
     std::atomic<int> up{-1};
     std::atomic<int> low{-1};
     float value = 0.0f;
+};
+
+class Smoothing
+{
+public:
+    Smoothing(){}
+    ~Smoothing(){}
+    
+    void set(const float target)
+    {
+        stepSize = (target - currentValue.load()) / (float)smoothingLength;
+        index = 0;
+    }
+    
+    float getNextValue()
+    {
+        if (index.load() < smoothingLength)
+        {
+            currentValue = currentValue.load() + stepSize.load();
+            index++;
+        }
+        return currentValue;
+    }
+    
+private:
+    std::atomic<float> currentValue{0.0f};
+    std::atomic<float> stepSize{0.0f};
+    std::atomic<int> index{0};
+    static constexpr int smoothingLength = 1200;
 };
 
 #endif//Util.h

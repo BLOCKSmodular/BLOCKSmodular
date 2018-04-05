@@ -1,12 +1,15 @@
 /*
-<metadata description="BLOCKS modular" details="" target="Lightpad" tags="MIDI;Controller;">
+<metadata description="BLOCKSmodular" details="" target="Lightpad" tags="MIDI;Controller;">
 <modes>
 <mode name="Default">
-  <variable name="channel" value="0"/>
-  <variable name="padColour1" value="0xFFC6F5F5"/>
-  <variable name="padColour2" value="0xFFC6F5F5"/>
-  <variable name="padColour3" value="0xFFC6FFFF"/>
-  <variable name="padColour4" value="0xFFC6F5F5"/>
+  <variable name="AudioColor1" value="0xFFC6F5F5"/>
+  <variable name="AudioColor2" value="0xFFC6F5F5"/>
+  <variable name="AudioColor3" value="0xFFC6FFFF"/>
+  <variable name="AudioColor4" value="0xFFC6F5F5"/>
+  <variable name="CVColor1" value="0xFFC6F5F5"/>
+  <variable name="CVColor2" value="0xFFC6F5F5"/>
+  <variable name="CVColor3" value="0xFFC6FFFF"/>
+  <variable name="CVColor4" value="0xFFC6F5F5"/>
 </mode>
 
 </modes>
@@ -15,96 +18,29 @@
     </groups>
 
     <variables>
-      <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="0" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
-      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
-      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="AudioColor1"  displayName="Audio 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="AudioColor2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="AudioColor3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
+    <variable name="AudioColor4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="CVColor1"  displayName="CV 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="CVColor2"  displayName="CV 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="CVColor3"  displayName="CV 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
+    <variable name="CVColor4"  displayName="CV 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
     </variables>
 </metadata>
 */
 
-#heapsize: 8 * 4
+#heapsize: 8
 /*
 heap description
 (int)0~3: Recorded(0/1)
 (int)4~7: Playing(0/1)
-Littlefoot does not has setHeapBits(). So I store boolean as int.
+Littlefoot does not has setHeapBits(). So I use setHeapByte()
 */
 
-int padWidth, padSpacing;
-int gridSize;
-int playedPad;
-int state;
-
-
-/*
-state
-0: Session View
-1: XYZ
-*/
-
-bool isRecorded(int padIndex)
-{
-    int recorded = getHeapInt(padIndex * 4);
-    return recorded == 1 ? true : false;
-}
-
-bool isPlayed(int padIndex)
-{
-    int playing = getHeapInt((padIndex + 4) * 4);
-    return playing == 1 ? true : false;
-}
-
-void recordBegin(int padIndex)
-{
-    if(!isRecorded(padIndex))
-    {
-        int note = padIndex;//TODO
-        sendNoteOn(channel, note, 127);
-        setHeapInt(padIndex * 4, 1);
-    }
-}
-
-void recordEnd(int padIndex)
-{
-    if(isRecorded(padIndex))
-    {
-        int note = padIndex;//TODO
-        sendNoteOff(channel, note, 0);
-    }
-}
-
-void clear(int padIndex)
-{
-    stop(padIndex);
-    setHeapInt(padIndex * 4, 0);
-}
-
-void play(int padIndex)
-{
-    if(!isPlayed(padIndex))
-    {
-        int anotherScene = padIndex % 2 == 0 ? padIndex + 1 : padIndex -1;
-        if(isPlayed(anotherScene))
-        {
-            stop(anotherScene);
-        }
-        int note = padIndex;//TODO
-        sendNoteOn(channel, note, 127);
-        setHeapInt((padIndex + 4) * 4, 1);
-    }
-}
-
-void stop(int padIndex)
-{
-    if(isPlayed(padIndex))
-    {
-        int note = padIndex;
-        sendNoteOff(channel, note, 0);
-        setHeapInt((padIndex + 4) * 4, 0);
-    }
-}
+bool isCVPage;
+int audioMode;
+int cvMode;
 
 //==============================================================================
 void sendXYZCC(float x, float y, float z)
@@ -165,20 +101,20 @@ void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
     
     if(isNoteOn) {
         int scaledX = int(map(x, 0.07, 1.93, 0.0, 16383.0));
-        int upperXvalue = (scaledX >> 7) & 127;
-        int lowerXvalue = scaledX & 127;
-        int scaledY = int(map(y, 1.93, 0.07, 0.0, 16383.0));
-        int upperYvalue = (scaledY >> 7) & 127;
-        int lowerYvalue = scaledY & 127;
+        int upperX = (scaledX >> 7) & 127;
+        int lowerX = scaledX & 127;
+        int scaledY = int(map(y, 0.07, 1.93, 16383.0, 0.0));
+        int upperY = (scaledY >> 7) & 127;
+        int lowerY = scaledY & 127;
         int scaledZ = int(map(z, 0.0, 1.0, 0.0, 16383.0));
-        int upperZvalue = (scaledZ >> 7) & 127;
-        int lowerZvalue = scaledZ & 127;
-        sendCC (index, 1, upperXvalue);
-        sendCC (index, 2, lowerXvalue);
-        sendCC (index, 3, upperYvalue);
-        sendCC (index, 4, lowerYvalue);
-        sendCC (index, 5, upperZvalue);
-        sendCC (index, 6, lowerZvalue);
+        int upperZ = (scaledZ >> 7) & 127;
+        int lowerZ = scaledZ & 127;
+        sendCC (index, 1, upperX);
+        sendCC (index, 2, lowerX);
+        sendCC (index, 3, upperY);
+        sendCC (index, 4, lowerY);
+        sendCC (index, 5, upperZ);
+        sendCC (index, 6, lowerZ);
     }
     else {
         sendCC (index, 1, 0);

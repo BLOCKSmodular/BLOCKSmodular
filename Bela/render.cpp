@@ -30,7 +30,6 @@ GranularSynth granular;
 HighResolutionControlChange gr_Position[3];
 HighResolutionControlChange gr_GrainSize[3];
 HighResolutionControlChange gr_WindowShape[3];
-
 HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
 Smoothing CVSmooth[[NUMCVOUT]];
@@ -257,12 +256,7 @@ void render(BelaContext *context, void *userData)
     const int numAnalogueFrames = context->analogFrames;
     switch(CVmodeFlag) {
         case CVModeA: {
-            //TODO BLOCKSからの入力に応じた値を出す
-            for (unsigned int n = 0; n < numAnalogueFrames; n++) {
-                for (unsigned int i = 0; i < NUMCVOUT; i++) {
-                    analogWrite(context, n, i, 1.0f);
-                }
-            }
+            //Morph looper
             break;
         }
         case CVModeB: {
@@ -281,6 +275,7 @@ void render(BelaContext *context, void *userData)
             break;
         }
         case CVModeD: {
+            //Euclid sequence
             break;
         }
         default: {
@@ -309,20 +304,14 @@ void render(BelaContext *context, void *userData)
             break;
         }
         case AudioModeB: {
-            //MonoBuffer
+            //Sample playback
             float mono = 0.0f;
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
                 monoBuffer.readNext(mono);
                 audioWrite(context, i, 0, mono);
                 audioWrite(context, i, 1, mono);
             }
-            break;
-        }
-        case AudioModeOFF: {
-            break;
-        }
-        case AudioModeC: {
-            //StereoBuffer
+            
             float stereo[2] = {0.0f, 0.0f};
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
                 stereoBuffer.readNext(stereo[0], stereo[1]);
@@ -331,7 +320,15 @@ void render(BelaContext *context, void *userData)
             }
             break;
         }
+        case AudioModeOFF: {
+            break;
+        }
+        case AudioModeC: {
+            //Karplus strong
+            break;
+        }
         case AudioModeD: {
+            //Logistic map
             break;
         }
         default: {

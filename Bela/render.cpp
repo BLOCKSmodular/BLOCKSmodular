@@ -189,6 +189,7 @@ void render(BelaContext *context, void *userData)
     unsigned char cvFLG = 0;
     unsigned char audioFLG = 0;
     //TODOチャタリング除去
+    //CV
     if(digitalRead(context, 0, P8_07)) cvFLG = CVModeA;
     if(digitalRead(context, 0, P8_08)) cvFLG = CVModeB;
     if(digitalRead(context, 0, P8_09)) cvFLG = CVModeOFF;//P8_09はOFFスイッチ
@@ -217,9 +218,11 @@ void render(BelaContext *context, void *userData)
             bytes[2] = 112;
         }
         midi.writeOutput(bytes, 3);
+        midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:0)
+        midi.writeOutput(w, 3);
         CVmodeFlag = cvFLG;
     }
-    
+    //Audio
     if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeA;
     if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeB;
     if(digitalRead(context, 0, P8_28)) audioFLG = AudioModeOFF;//P8_28はOFFスイッチ
@@ -248,6 +251,8 @@ void render(BelaContext *context, void *userData)
             bytes[2] = 112;
         }
         midi.writeOutput(bytes, 3);
+        midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:127)
+        midi.writeOutput(w, 3);
         AudiomodeFlag = audioFLG;
     }
     

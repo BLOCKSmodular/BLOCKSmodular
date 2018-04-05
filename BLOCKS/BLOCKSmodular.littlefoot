@@ -117,17 +117,14 @@ void drawPads()
 
 void initialise()
 {
-	padWidth = 15 / gridSize;
-	padSpacing = gridSize > 1 ? (15 - gridSize * padWidth) / (gridSize - 1) : 0;
-	padWidth += padSpacing;
-	
 	for (int i = 0; i < 8; ++i) {
         setHeapInt(i * 4, 0);
     }
-
 	for (int i = 0; i < 32; ++i) {
         setLocalConfigActiveState (i, false, false);
 	}
+
+
 }
 
 //==============================================================================

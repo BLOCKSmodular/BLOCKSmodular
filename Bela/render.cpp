@@ -5,7 +5,6 @@
 #include <atomic>
 #include <vector>
 #include <random>
-#include <Smoothing.h>
 #include <SampleBuffer.h>
 #include <Util.h>
 #include <GranularSynth.h>

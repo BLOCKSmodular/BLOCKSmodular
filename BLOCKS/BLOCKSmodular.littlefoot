@@ -65,25 +65,47 @@ void repaint()
     drawPressureMap();
 }
 
+int getColor(bool cvpage, int index)
+{
+    if(!cvpage)//Audio
+    {
+        if(index == 0) return AudioColor1;
+        if(index == 1) return AudioColor2;
+        if(index == 2) return AudioColor3;
+        if(index == 3) return AudioColor4;
+    }
+    else//CV
+    {
+        if(index == 0) return CVColor1;
+        if(index == 1) return CVColor2;
+        if(index == 2) return CVColor3;
+        if(index == 3) return CVColor4;
+    } 
+    return 0xFFFFFFFF
+}
+
+
+
 //==============================================================================
+//Touch event
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
     drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 60.0);
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 60.0);
     sendCoordinateCC(touchIndex, true, x, y, z);
 }
 
 void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
     drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 30.0);
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 30.0);
     sendCoordinateCC(touchIndex, true, x, y, z);
 }
 
 void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
     drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 20.0);
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 20.0);
     sendCoordinateCC(touchIndex, false, x, y, z);
 }
 

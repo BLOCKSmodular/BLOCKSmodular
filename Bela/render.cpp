@@ -186,8 +186,9 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-    //-----------------------------------------------------------
-    //Digital
+/*===========================================
+Digital
+=============================================*/
     unsigned char cvFLG = 0;
     unsigned char audioFLG = 0;
     //TODOチャタリング除去
@@ -258,8 +259,9 @@ void render(BelaContext *context, void *userData)
         AudiomodeFlag = audioFLG;
     }
     
-    //-----------------------------------------------------------
-    //Analogue
+/*===========================================
+Analogue
+=============================================*/
     const int numAnalogueFrames = context->analogFrames;
     float outGain = 0.0f;
     for(unsigned int n = 0; n < numAnalogueFrames; n++) {
@@ -300,8 +302,9 @@ void render(BelaContext *context, void *userData)
     }
     
     
-    //-----------------------------------------------------------
-    //Audio
+/*===========================================
+Audio
+=============================================*/
     const int numAudioFrames = context->audioFrames;
     switch(AudiomodeFlag) {
         case AudioModeA: {
@@ -313,8 +316,7 @@ void render(BelaContext *context, void *userData)
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-            	// const float gain = outputGain.getNextValue();
-            	const float gain = 0.1f;
+            	const float gain = outputGain.getNextValue();
                 audioWrite(context, i, 0, gr[i] * gain);
                 audioWrite(context, i, 1, gr[i] * gain);
             }

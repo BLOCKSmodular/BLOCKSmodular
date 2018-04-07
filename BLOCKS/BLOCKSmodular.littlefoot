@@ -38,33 +38,79 @@ heap description
 Littlefoot does not has setHeapBits(). So I use setHeapByte()
 */
 
+//==============================================================================
 bool isCVPage;
 int audioMode;
 int cvMode;
 
+void initialise()
+{
+    audioMode = 0;
+    cvMode = 0;
+    isCVPage = false;
+	for (int i = 0; i < 8; ++i) {
+        setHeapInt(i * 4, 0);
+    }
+	for (int i = 0; i < 32; ++i) {
+        setLocalConfigActiveState (i, false, false);
+	}
+}
+
 //==============================================================================
-void sendXYZCC(float x, float y, float z)
+//Graphics
+void repaint()
+{   
+    clearDisplay();
+    fadePressureMap();
+    drawPressureMap();
+}
+
+//==============================================================================
+void touchStart (int touchIndex, float x, float y, float z, float vz)
+{
+    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
+    addPressurePoint (getColour(touchIndex), x, y, z * 60.0);
+    sendCoordinateCC(touchIndex, true, x, y, z);
+}
+
+void touchMove (int touchIndex, float x, float y, float z, float vz)
+{
+    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
+    addPressurePoint (getColour(touchIndex), x, y, z * 30.0);
+    sendCoordinateCC(touchIndex, true, x, y, z);
+}
+
+void touchEnd (int touchIndex, float x, float y, float z, float vz)
+{
+    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
+    addPressurePoint (getColour(touchIndex), x, y, z * 20.0);
+    sendCoordinateCC(touchIndex, false, x, y, z);
+}
+
+//==============================================================================
+//MIDI
+void handleMIDI	(int byte0, int byte1, int byte2)
 {
     /*
-       x:12
-       y:13
-       z:14
+    MIDIchannel: byte0 - 175
+    CCnumber: byte1
+    CCvalue: byte2
     */
-    int scaledX = int(map(x, 0.07, 1.93, 0.0, 16383.0));
-    int upperXvalue = (scaledX >> 7) & 127;
-    int lowerXvalue = scaledX & 127;
-    int scaledY = int(map(y, 1.93, 0.07, 0.0, 16383.0));
-    int upperYvalue = (scaledY >> 7) & 127;
-    int lowerYvalue = scaledY & 127;
-    int scaledZ = int(map(z, 0.0, 1.0, 0.0, 16383.0));
-    int upperZvalue = (scaledZ >> 7) & 127;
-    int lowerZvalue = scaledZ & 127;
-    sendCC (channel, 12, upperXvalue);
-    sendCC (channel, 13, lowerXvalue);
-    sendCC (channel, 14, upperYvalue);
-    sendCC (channel, 15, lowerYvalue);
-    sendCC (channel, 16, upperZvalue);
-    sendCC (channel, 17, lowerZvalue);
+    if(byte0 == 191) { //MIDIchannel:16のCC送信
+        //Audio
+        if(byte1 == 0){
+            if(byte2 == 0) {
+                audioMode = 0;//OFF
+            }
+        }
+
+        //CV
+        if(byte1 = 1) {
+            if(byte2 == 0) {
+
+            }
+        }
+    }
 }
 
 void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
@@ -99,87 +145,5 @@ void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
         sendCC (index, 4, 0);
         sendCC (index, 5, 0);
         sendCC (index, 6, 0);
-    }
-}
-
-//==============================================================================
-void drawPads()
-{
-    for (int padIndex = 0; padIndex < gridSize * gridSize; ++padIndex)
-    {
-        int overlayColour = isRecorded(padIndex) ? 0x00FFFFFF : 0xDE000000;
-        int x = padIndex / 2 * padWidth;
-        int y = padIndex % 2 * padWidth;
-        int w = padWidth - padSpacing;
-        blendRect(blendARGB(getColour(padIndex), overlayColour), x, y, w, w);
-    }
-}
-
-void initialise()
-{
-    audioMode = 0;
-    cvMode = 0;
-    isCVPage = false;
-	for (int i = 0; i < 8; ++i) {
-        setHeapInt(i * 4, 0);
-    }
-	for (int i = 0; i < 32; ++i) {
-        setLocalConfigActiveState (i, false, false);
-	}
-
-
-}
-
-//==============================================================================
-void repaint()
-{   
-    clearDisplay();
-    fadePressureMap();
-    drawPressureMap();
-}
-
-//==============================================================================
-void touchStart (int touchIndex, float x, float y, float z, float vz)
-{
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 60.0);
-    sendCoordinateCC(touchIndex, true, x, y, z);
-}
-
-void touchMove (int touchIndex, float x, float y, float z, float vz)
-{
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 30.0);
-    sendCoordinateCC(touchIndex, true, x, y, z);
-}
-
-void touchEnd (int touchIndex, float x, float y, float z, float vz)
-{
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 20.0);
-    sendCoordinateCC(touchIndex, false, x, y, z);
-}
-
-void handleMIDI	(int byte0, int byte1, int byte2)
-{
-    /*
-    MIDIchannel: byte0 - 175
-    CCnumber: byte1
-    CCvalue: byte2
-    */
-    if(byte0 == 191) { //MIDIchannel:16のCC送信
-        //Audio
-        if(byte1 == 0){
-            if(byte2 == 0) {
-                audioMode = 0;//OFF
-            }
-        }
-
-        //CV
-        if(byte1 = 1) {
-            if(byte2 == 0) {
-
-            }
-        }
     }
 }

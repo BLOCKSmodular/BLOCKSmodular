@@ -33,6 +33,7 @@ HighResolutionControlChange gr_WindowShape[2];
 HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
 Smoothing CVSmooth[NUMCVOUT];
+Smoothing outputGain;
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -179,6 +180,7 @@ bool setup(BelaContext *context, void *userData)
     stereoBuffer.loadSampleFile("BellRoll.wav");
     granular.loadFile("GranularSource.wav");
     
+    outputGain.set(0.01f);
     return true;
 }
 
@@ -259,6 +261,14 @@ void render(BelaContext *context, void *userData)
     //-----------------------------------------------------------
     //Analogue
     const int numAnalogueFrames = context->analogFrames;
+    float outGain = 0.0f;
+    for(unsigned int n = 0; n < numAnalogueFrames; n++) {
+        outGain += analogRead(context, n, 0);
+    }
+    outGain = outGain / (float)numAnalogueFrames;
+    // rt_printf("gain: %f\n", outGain);
+    outputGain.set(outGain);
+    
     switch(CVmodeFlag) {
         case CVModeA: {
             //Morph looper
@@ -303,8 +313,10 @@ void render(BelaContext *context, void *userData)
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                audioWrite(context, i, 0, gr[i] * 0.1f);
-                audioWrite(context, i, 1, gr[i] * 0.1f);
+            	// const float gain = outputGain.getNextValue();
+            	const float gain = 0.1f;
+                audioWrite(context, i, 0, gr[i] * gain);
+                audioWrite(context, i, 1, gr[i] * gain);
             }
             break;
         }

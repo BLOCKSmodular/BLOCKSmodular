@@ -30,14 +30,6 @@
 </metadata>
 */
 
-#heapsize: 8
-/*
-heap description
-(int)0~3: Recorded(0/1)
-(int)4~7: Playing(0/1)
-Littlefoot does not has setHeapBits(). So I use setHeapByte()
-*/
-
 //==============================================================================
 bool isCVPage;
 int audioMode;

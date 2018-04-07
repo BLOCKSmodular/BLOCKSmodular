@@ -153,6 +153,8 @@ void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
     z:5,6
     */
     
+    int midiChannel = index - 1;
+    
     if(isNoteOn) {
         int scaledX = int(map(x, 0.07, 1.93, 0.0, 16383.0));
         int upperX = (scaledX >> 7) & 127;
@@ -163,19 +165,19 @@ void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
         int scaledZ = int(map(z, 0.0, 1.0, 0.0, 16383.0));
         int upperZ = (scaledZ >> 7) & 127;
         int lowerZ = scaledZ & 127;
-        sendCC (index, 1, upperX);
-        sendCC (index, 2, lowerX);
-        sendCC (index, 3, upperY);
-        sendCC (index, 4, lowerY);
-        sendCC (index, 5, upperZ);
-        sendCC (index, 6, lowerZ);
+        sendCC (midiChannel, 1, upperX);
+        sendCC (midiChannel, 2, lowerX);
+        sendCC (midiChannel, 3, upperY);
+        sendCC (midiChannel, 4, lowerY);
+        sendCC (midiChannel, 5, upperZ);
+        sendCC (midiChannel, 6, lowerZ);
     }
     else {
-        sendCC (index, 1, 0);
-        sendCC (index, 2, 0);
-        sendCC (index, 3, 0);
-        sendCC (index, 4, 0);
-        sendCC (index, 5, 0);
-        sendCC (index, 6, 0);
+        sendCC (midiChannel, 1, 0);
+        sendCC (midiChannel, 2, 0);
+        sendCC (midiChannel, 3, 0);
+        sendCC (midiChannel, 4, 0);
+        sendCC (midiChannel, 5, 0);
+        sendCC (midiChannel, 6, 0);
     }
 }

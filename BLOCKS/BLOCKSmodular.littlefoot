@@ -2,14 +2,14 @@
 <metadata description="BLOCKSmodular" details="" target="Lightpad" tags="MIDI;Controller;">
 <modes>
 <mode name="Default">
-  <variable name="AudioColor1" value="0xFFC6F5F5"/>
-  <variable name="AudioColor2" value="0xFFC6F5F5"/>
-  <variable name="AudioColor3" value="0xFFC6FFFF"/>
-  <variable name="AudioColor4" value="0xFFC6F5F5"/>
-  <variable name="CVColor1" value="0xFFC6F5F5"/>
-  <variable name="CVColor2" value="0xFFC6F5F5"/>
-  <variable name="CVColor3" value="0xFFC6FFFF"/>
-  <variable name="CVColor4" value="0xFFC6F5F5"/>
+  <variable name="AudioColor1" value="0xFFFF0000"/>
+  <variable name="AudioColor2" value="0xFFFFA000"/>
+  <variable name="AudioColor3" value="0xFFE6F000"/>
+  <variable name="AudioColor4" value="0xFF80FF55"/>
+  <variable name="CVColor1" value="0xFF1500FF"/>
+  <variable name="CVColor2" value="0xFF03ABFF"/>
+  <variable name="CVColor3" value="0xFF00FF6C"/>
+  <variable name="CVColor4" value="0xFFB13FE8"/>
 </mode>
 
 </modes>
@@ -18,14 +18,14 @@
     </groups>
 
     <variables>
-    <variable name="AudioColor1"  displayName="Audio 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-    <variable name="AudioColor2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-    <variable name="AudioColor3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
-    <variable name="AudioColor4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-    <variable name="CVColor1"  displayName="CV 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-    <variable name="CVColor2"  displayName="CV 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-    <variable name="CVColor3"  displayName="CV 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
-    <variable name="CVColor4"  displayName="CV 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="AudioColor1"  displayName="Audio 1 Colour" group="colours" type="colour" value="0xFFFF0000"/>
+    <variable name="AudioColor2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFFFFA000"/>
+    <variable name="AudioColor3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFFE6F000"/>
+    <variable name="AudioColor4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFF80FF55"/>
+    <variable name="CVColor1"  displayName="CV 1 Colour" group="colours" type="colour" value="0xFF1500FF"/>
+    <variable name="CVColor2"  displayName="CV 2 Colour" group="colours" type="colour" value="0xFF03ABFF"/>
+    <variable name="CVColor3"  displayName="CV 3 Colour" group="colours" type="colour" value="0xFF00FF6C"/>
+    <variable name="CVColor4"  displayName="CV 4 Colour" group="colours" type="colour" value="0xFFB13FE8"/>
     </variables>
 </metadata>
 */
@@ -47,7 +47,7 @@ void initialise()
 {
     audioMode = 0;
     cvMode = 0;
-    isCVPage = false;
+    isCVPage = true;
 	for (int i = 0; i < 8; ++i) {
         setHeapInt(i * 4, 0);
     }
@@ -69,17 +69,17 @@ int getColor(bool cvpage, int index)
 {
     if(!cvpage)//Audio
     {
-        if(index == 0) return AudioColor1;
-        if(index == 1) return AudioColor2;
-        if(index == 2) return AudioColor3;
-        if(index == 3) return AudioColor4;
+        if(index == 1) return AudioColor1;
+        if(index == 2) return AudioColor2;
+        if(index == 3) return AudioColor3;
+        if(index == 4) return AudioColor4;
     }
     else//CV
     {
-        if(index == 0) return CVColor1;
-        if(index == 1) return CVColor2;
-        if(index == 2) return CVColor3;
-        if(index == 3) return CVColor4;
+        if(index == 1) return CVColor1;
+        if(index == 2) return CVColor2;
+        if(index == 3) return CVColor3;
+        if(index == 4) return CVColor4;
     } 
     return 0xFFFFFFFF
 }

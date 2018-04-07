@@ -27,9 +27,9 @@ const char *gMidiPort0 = "hw:1,0,0";
 MonoBuffer monoBuffer(88200, true, false);
 StereoBuffer stereoBuffer(88200, true, false);
 GranularSynth granular;
-HighResolutionControlChange gr_Position[3];
-HighResolutionControlChange gr_GrainSize[3];
-HighResolutionControlChange gr_WindowShape[3];
+HighResolutionControlChange gr_Position[2];
+HighResolutionControlChange gr_GrainSize[2];
+HighResolutionControlChange gr_WindowShape[2];
 HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
 Smoothing CVSmooth[NUMCVOUT];
@@ -74,7 +74,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                         gr_WindowShape[voiceIndex].set(value, isUpeerByte);
                         if(gr_WindowShape[voiceIndex].update()) {
                             float v = gr_WindowShape[voiceIndex].get() * 2.0f;
-                            granular.setWindowShape(v * 3.0f, voiceIndex);//対数的に上げる
+                            granular.setWindowShape(v * 4.0f, voiceIndex);
                             granular.setDensity((v * v * v), voiceIndex);
                         }
                     }

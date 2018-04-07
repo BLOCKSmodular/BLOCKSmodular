@@ -115,12 +115,12 @@ public:
     static constexpr int minSampleLength = 35280;//800mS
     
 private:
-    static constexpr int numGrains = 10;
-    static constexpr int numVoice = 3;
-    int bufferPosition[numVoice]{0, 0, 0};//TODO: atomic
-    int grainSize[numVoice]{10000, 10000, 10000};//TODO: atomic
-    float windowShape[numVoice]{0.0f, 0.0f, 0.0f};//TODO: atomic
-    float density[numVoice]{0.5f, 0.5f, 0.5f};//TODO: atomic
+    static constexpr int numGrains = 15;
+    static constexpr int numVoice = 2;
+    int bufferPosition[numVoice]{0, 0};//TODO: atomic
+    int grainSize[numVoice]{10000, 10000};//TODO: atomic
+    float windowShape[numVoice]{0.0f, 0.0f};//TODO: atomic
+    float density[numVoice]{0.5f, 0.5f};//TODO: atomic
     std::mt19937 random{12345};//TODO: seedの変更
     std::uniform_real_distribution<float> dist{0.0f, 1.0f}; 
     

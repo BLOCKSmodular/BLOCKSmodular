@@ -34,6 +34,7 @@ HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
+bool isCVMode = false;
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -51,6 +52,16 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         
         if(channel == 16) {
             //General messeges
+            if(controlNum == 8) {
+                if(value == 0) {
+                    //to Audio Mode
+                    isCVMode = false;
+                }
+                else {
+                    //to CV Mode
+                    isCVMode = true;
+                }
+            }
         }
         else if(channel < 9) {
             //Audio
@@ -157,14 +168,12 @@ bool setup(BelaContext *context, void *userData)
     //Digital pins setup
     pinMode(context, 0, P8_07, INPUT);//AudioModeA
     pinMode(context, 0, P8_08, INPUT);//AudioModeB
-    pinMode(context, 0, P8_09, INPUT);//AudioModeOFF
-    pinMode(context, 0, P8_10, INPUT);//AudioModeC
-    pinMode(context, 0, P8_11, INPUT);//AudioModeD
-    pinMode(context, 0, P8_18, INPUT);//CVModeA
-    pinMode(context, 0, P8_27, INPUT);//CVModeB
-    pinMode(context, 0, P8_28, INPUT);//CVModeOFF
-    pinMode(context, 0, P8_29, INPUT);//CVModeC
-    pinMode(context, 0, P8_30, INPUT);//CVModeD
+    pinMode(context, 0, P8_09, INPUT);//AudioModeC
+    pinMode(context, 0, P8_10, INPUT);//AudioModeD
+    pinMode(context, 0, P8_11, INPUT);//CVModeA
+    pinMode(context, 0, P8_12, INPUT);//CVModeB
+    pinMode(context, 0, P8_15, INPUT);//CVModeC
+    pinMode(context, 0, P8_16, INPUT);//CVModeD
     
     //MIDI
     midi.readFrom(gMidiPort0);
@@ -189,48 +198,13 @@ void render(BelaContext *context, void *userData)
 /*===========================================
 Digital
 =============================================*/
-    unsigned char cvFLG = 0;
-    unsigned char audioFLG = 0;
-    //TODOチャタリング除去
-    //CV
-    if(digitalRead(context, 0, P8_07)) cvFLG = CVModeA;
-    if(digitalRead(context, 0, P8_08)) cvFLG = CVModeB;
-    if(digitalRead(context, 0, P8_09)) cvFLG = CVModeOFF;//P8_09はOFFスイッチ
-    if(digitalRead(context, 0, P8_10)) cvFLG = CVModeC;
-    if(digitalRead(context, 0, P8_11)) cvFLG = CVModeD;
-    if(CVmodeFlag != cvFLG && cvFLG != 0) {
-        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(2), 0};//Channel:16, CC Number:2, Value:0
-        if(cvFLG == CVModeA) {
-            //Morph looper
-            bytes[2] = 16;
-        }
-        else if(cvFLG == CVModeB) {
-            //Microtonal
-            bytes[2] = 48;
-        }
-        else if(cvFLG == CVModeOFF) {
-            //CVmode OFF
-            bytes[2] = 0;
-        }
-        else if(cvFLG == CVModeC) {
-            //CVmode3
-            bytes[2] = 80;
-        }
-        else if(cvFLG == CVModeD) {
-            //Euclid sequence
-            bytes[2] = 112;
-        }
-        midi.writeOutput(bytes, 3);
-        midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:0)
-        midi.writeOutput(w, 3);
-        CVmodeFlag = cvFLG;
-    }
+    unsigned char cvFLG = CVModeOFF;
+    unsigned char audioFLG = AudioModeOFF;
     //Audio
-    if(digitalRead(context, 0, P8_18)) audioFLG = AudioModeA;
-    if(digitalRead(context, 0, P8_27)) audioFLG = AudioModeB;
-    if(digitalRead(context, 0, P8_28)) audioFLG = AudioModeOFF;//P8_28はOFFスイッチ
-    if(digitalRead(context, 0, P8_29)) audioFLG = AudioModeC;
-    if(digitalRead(context, 0, P8_30)) audioFLG = AudioModeD;
+    if(digitalRead(context, 0, P8_07)) audioFLG = AudioModeA;
+    if(digitalRead(context, 0, P8_08)) audioFLG = AudioModeB;
+    if(digitalRead(context, 0, P8_09)) audioFLG = AudioModeC;
+    if(digitalRead(context, 0, P8_10)) audioFLG = AudioModeD;
     if(AudiomodeFlag != audioFLG && audioFLG != 0) {
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1, Value:0
         if(audioFLG == AudioModeA) {
@@ -257,6 +231,39 @@ Digital
         midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:127)
         midi.writeOutput(w, 3);
         AudiomodeFlag = audioFLG;
+    }
+    
+    //CV
+    if(digitalRead(context, 0, P8_11)) cvFLG = CVModeA;
+    if(digitalRead(context, 0, P8_12)) cvFLG = CVModeB;
+    if(digitalRead(context, 0, P8_15)) cvFLG = CVModeC;
+    if(digitalRead(context, 0, P8_16)) cvFLG = CVModeD;
+    if(CVmodeFlag != cvFLG && cvFLG != 0) {
+        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(2), 0};//Channel:16, CC Number:2, Value:0
+        if(cvFLG == CVModeA) {
+            //Morph looper
+            bytes[2] = 16;
+        }
+        else if(cvFLG == CVModeB) {
+            //Microtonal
+            bytes[2] = 48;
+        }
+        else if(cvFLG == CVModeOFF) {
+            //CVmode OFF
+            bytes[2] = 0;
+        }
+        else if(cvFLG == CVModeC) {
+            //CVmode3
+            bytes[2] = 80;
+        }
+        else if(cvFLG == CVModeD) {
+            //Euclid sequence
+            bytes[2] = 112;
+        }
+        midi.writeOutput(bytes, 3);
+        midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:0)
+        midi.writeOutput(w, 3);
+        CVmodeFlag = cvFLG;
     }
     
 /*===========================================

@@ -45,7 +45,6 @@ int cvMode;
 
 void initialise()
 {
-    log(1234);
     audioMode = 0;
     cvMode = 0;
     isCVPage = false;
@@ -62,6 +61,9 @@ void initialise()
 void repaint()
 {   
     clearDisplay();
+    drawNumber(int(isCVPage),0xFFFFFFFF, 0, 0);
+    drawNumber(audioMode, 0xFFFF0000, 0, 5);
+    drawNumber(cvMode, 0xFF0000FF, 0, 10);
     fadePressureMap();
     drawPressureMap();
 }
@@ -85,71 +87,60 @@ int getColor(bool cvpage, int index)
     return 0xFFFFFFFF
 }
 
-
-
 //==============================================================================
 //Touch event
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
     addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 60.0);
     sendCoordinateCC(touchIndex, true, x, y, z);
 }
 
 void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
     addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 30.0);
     sendCoordinateCC(touchIndex, true, x, y, z);
 }
 
 void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 20.0);
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 1.0);
     sendCoordinateCC(touchIndex, false, x, y, z);
 }
+ 
 
 //==============================================================================
 //MIDI
-
-// void handleMIDI (int byte0, int byte1, int byte2)
-// {
-//     
-// }
-void handleMIDI	(int byte0, int byte1, int byte2)
+void handleMIDI (int byte0, int byte1, int byte2)
 {
     /*
     MIDIchannel: byte0 - 175
     CCnumber: byte1
     CCvalue: byte2
     */
-    log(byte0);
-    log(byte1);
-    log(byte2);
+    
     if(byte0 == 191) { //MIDIchannel:16のCC送信
         //General
-        if(byte1 == 7) {//CCnumber:8
+        if(byte1 == 8) {//CCnumber:8
+            if(byte2 == 127) isCVPage = true;
+            if(byte2 == 0) isCVPage = false;
         }
         
         //Audio
-        if(byte1 == 0){//CCnumber:1
+        if(byte1 == 1) {
             if(byte2 == 0) audioMode = 0;//OFF
             if(1 <= byte2 && byte2 <= 32) audioMode = 1;//Granular
             if(33 <= byte2 && byte2 <= 64) audioMode = 2;//Sample playback
             if(65 <= byte2 && byte2 <= 96) audioMode = 3;//Karplus strong
             if(97 <= byte2 && byte2 <= 127) audioMode = 4;//Logistic map
         }
-
+        
         //CV
-        if(byte1 = 1) {//CCnumber:2
-            if(byte2 == 0) {
-                if(byte2 == 0) audioMode = 0;//OFF
-                if(1 <= byte2 && byte2 <= 32) cvMode = 1;//Morph looper
-                if(33 <= byte2 && byte2 <= 64) cvMode = 2;//Microtonal
-                if(65 <= byte2 && byte2 <= 96) cvMode = 3;//....
-                if(97 <= byte2 && byte2 <= 127) cvMode = 4;//Euclid seqence
-            }
+        if(byte1 == 2) {
+            if(byte2 == 0) cvMode = 0;//OFF
+            if(1 <= byte2 && byte2 <= 32) cvMode = 1;
+            if(33 <= byte2 && byte2 <= 64) cvMode = 2;
+            if(65 <= byte2 && byte2 <= 96) cvMode = 3;
+            if(97 <= byte2 && byte2 <= 127) cvMode = 4;
         }
     }
 }

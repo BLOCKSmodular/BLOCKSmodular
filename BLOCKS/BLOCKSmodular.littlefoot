@@ -31,6 +31,7 @@
 */
 
 //==============================================================================
+bool isTouching;
 bool isCVPage;
 int audioMode;
 int cvMode;
@@ -40,6 +41,7 @@ void initialise()
     audioMode = 0;
     cvMode = 0;
     isCVPage = false;
+    isTouching = false;
 	for (int i = 0; i < 8; ++i) {
         setHeapInt(i * 4, 0);
     }
@@ -53,6 +55,9 @@ void initialise()
 void repaint()
 {   
     clearDisplay();
+    if(isTouching == false) {
+        drawModeChangeButton();
+    }
     drawNumber(int(isCVPage),0xFFFFFFFF, 0, 0);
     drawNumber(audioMode, 0xFFFF0000, 0, 5);
     drawNumber(cvMode, 0xFF0000FF, 0, 10);
@@ -80,9 +85,30 @@ int getColor(bool cvpage, int index)
 }
 
 //==============================================================================
+void drawModeChangeButton()
+{
+    if(isCVPage) {
+        getColor(isCVPage, 1);
+    }
+    int w = 15;
+    int h = 4;
+    int cl = getColor(isCVPage, 1);
+    blendRect(cl, 0, 0, w, h);
+}
+
+//==============================================================================
 //Touch event
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
+    if(isTouching == false) {
+        if(0.0 <= y && y <= 0.25) {
+            isCVPage = !isCVPage;
+            int v = isCVPage == true ? 127 : 0;
+            sendCC(15, 8, v);
+        }
+        isTouching = true;
+    }
+
     addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 60.0);
     sendCoordinateCC(touchIndex, true, x, y, z);
 }
@@ -97,6 +123,10 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
     addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 1.0);
     sendCoordinateCC(touchIndex, false, x, y, z);
+
+    if(touchIndex == 1) {
+        isTouching = false;
+    }
 }
  
 

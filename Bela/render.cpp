@@ -123,6 +123,11 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 }
                 case CVModeB: {
                     //Microtonal
+                	if(voiceIndex > 3) {
+                		std::cout<<"MIDI: Invalid voice number"<<std::endl;
+                		break;
+                	}
+                	
                     if(controlNum == 1 || controlNum == 2) {
                         bool isUpeerByte{controlNum == 1};
                         microtone_Distance[voiceIndex].set(value, isUpeerByte);
@@ -162,7 +167,7 @@ bool setup(BelaContext *context, void *userData)
     sleep(2);
     std::cout<<"End sleep"<<std::endl;
     
-    CVmodeFlag = CVModeA;
+    CVmodeFlag = CVModeB;
     AudiomodeFlag = AudioModeA;
     
     //Digital pins setup

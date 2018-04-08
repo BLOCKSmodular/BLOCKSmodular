@@ -35,7 +35,7 @@ Smoothing outputGain;
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
-	const int channel = message.getChannel();//MIDIChannel 1~16
+	const int channel = message.getChannel();//MIDIChannel 0~15
 	
 	//Note On
 	if(message.getType() == kmmNoteOn){
@@ -47,12 +47,12 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
         
-        if(channel == 16) {
+        if(channel == 15) {
             //General messeges
         }
-        else if(channel < 9) {
+        else if(channel < 8) {
             //Audio
-            const int voiceIndex = channel - 1;
+            const int voiceIndex = channel;
             switch(AudiomodeFlag) {
                 case AudioModeA: {
                     //Granular
@@ -98,7 +98,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
             }
         }
         else {
-            const int voiceIndex = channel - 9;
+            const int voiceIndex = channel - 8;
             //CV
             switch(CVmodeFlag) {
                 case CVModeA: {
@@ -107,7 +107,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 }
                 case CVModeB: {
                     //Microtonal
-                	if(voiceIndex > 3) {
+                	if(voiceIndex >= 4) {
                 		std::cout<<"MIDI: Invalid voice number"<<std::endl;
                 		break;
                 	}

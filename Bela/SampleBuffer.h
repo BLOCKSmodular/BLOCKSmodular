@@ -232,6 +232,10 @@ public:
         addReadIter(1);
     }
     
+    bool isBufferEnd() {
+    	return readIter == buffer[0].size();
+    }
+    
     void writeNext(const float& leftCh, const float& rightCh)
     {
         buffer[0][readIter] = leftCh;

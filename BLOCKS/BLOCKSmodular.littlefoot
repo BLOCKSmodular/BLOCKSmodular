@@ -100,13 +100,8 @@ void drawModeChangeButton()
 //Touch event
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
-    if(isTouching == false) {
-        if(0.0 <= y && y <= 0.25) {
-            isCVPage = !isCVPage;
-//            int v = isCVPage == true ? 127 : 0;
-//            sendCC(15, 8, v);
-        }
-        isTouching = true;
+    if(isTouching == false && 0.0 <= y && y <= 0.25) {
+        isCVPage = !isCVPage;
     }
  
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);

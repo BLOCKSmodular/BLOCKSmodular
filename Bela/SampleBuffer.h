@@ -227,8 +227,8 @@ public:
     
     void readNext(float& leftCh, float& rightCh)
     {
-        leftCh = buffer[0][readIter];
-        rightCh = buffer[1][readIter];
+        leftCh += buffer[0][readIter];
+        rightCh += buffer[1][readIter];
         addReadIter(1);
     }
     

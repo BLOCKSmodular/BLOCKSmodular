@@ -68,9 +68,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 3,
 					"outlettype" : [ "int", "int", "int" ],
-					"patching_rect" : [ 670.0, 228.0, 40.0, 22.0 ],
+					"patching_rect" : [ 670.0, 226.5, 179.0, 22.0 ],
 					"style" : "",
-					"text" : "ctlin"
+					"text" : "ctlin @name \"Lightpad BLOCK\""
 				}
 
 			}

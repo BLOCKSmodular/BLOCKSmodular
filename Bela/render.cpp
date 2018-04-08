@@ -158,12 +158,12 @@ bool setup(BelaContext *context, void *userData)
     
     //Digital pins setup
     pinMode(context, 0, P8_07, INPUT);//AudioModeA
-    pinMode(context, 0, P8_08, INPUT);//AudioModeB
-    pinMode(context, 0, P8_09, INPUT);//AudioModeC
-    pinMode(context, 0, P8_10, INPUT);//AudioModeD
-    pinMode(context, 0, P8_11, INPUT);//CVModeA
-    pinMode(context, 0, P8_12, INPUT);//CVModeB
-    pinMode(context, 0, P8_15, INPUT);//CVModeC
+    pinMode(context, 0, P8_09, INPUT);//AudioModeB
+    pinMode(context, 0, P8_11, INPUT);//AudioModeC
+    pinMode(context, 0, P8_15, INPUT);//AudioModeD
+    pinMode(context, 0, P8_08, INPUT);//CVModeA
+    pinMode(context, 0, P8_10, INPUT);//CVModeB
+    pinMode(context, 0, P8_12, INPUT);//CVModeC
     pinMode(context, 0, P8_16, INPUT);//CVModeD
     
     //MIDI
@@ -204,9 +204,9 @@ Digital
 
     //Audio
     if(digitalRead(context, 0, P8_07)) audioFLG = AudioModeA;
-    if(digitalRead(context, 0, P8_08)) audioFLG = AudioModeB;
-    if(digitalRead(context, 0, P8_09)) audioFLG = AudioModeC;
-    if(digitalRead(context, 0, P8_10)) audioFLG = AudioModeD;
+    if(digitalRead(context, 0, P8_09)) audioFLG = AudioModeB;
+    if(digitalRead(context, 0, P8_11)) audioFLG = AudioModeC;
+    if(digitalRead(context, 0, P8_15)) audioFLG = AudioModeD;
     if(AudiomodeFlag != audioFLG && audioFLG != 0) {
     	rt_printf("hoge\n");
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1, Value:0
@@ -233,9 +233,9 @@ Digital
     }
     
     //CV
-    if(digitalRead(context, 0, P8_11)) cvFLG = CVModeA;
-    if(digitalRead(context, 0, P8_12)) cvFLG = CVModeB;
-    if(digitalRead(context, 0, P8_15)) cvFLG = CVModeC;
+    if(digitalRead(context, 0, P8_08)) cvFLG = CVModeA;
+    if(digitalRead(context, 0, P8_10)) cvFLG = CVModeB;
+    if(digitalRead(context, 0, P8_12)) cvFLG = CVModeC;
     if(digitalRead(context, 0, P8_16)) cvFLG = CVModeD;
     if(CVmodeFlag != cvFLG && cvFLG != 0) {
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(2), 0};//Channel:16, CC Number:2, Value:0

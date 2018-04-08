@@ -19,8 +19,8 @@ static constexpr unsigned char AudioModeA =   0b00000001;
 static constexpr unsigned char AudioModeB =   0b00000010;
 static constexpr unsigned char AudioModeC =   0b00001000;
 static constexpr unsigned char AudioModeD =   0b00010000;
-unsigned char CVmodeFlag;
-unsigned char AudiomodeFlag;
+unsigned char CVmodeFlag = 0;
+unsigned char AudiomodeFlag = 0;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 
@@ -156,9 +156,6 @@ bool setup(BelaContext *context, void *userData)
     sleep(2);
     std::cout<<"End sleep"<<std::endl;
     
-    CVmodeFlag = CVModeB;
-    AudiomodeFlag = AudioModeB;
-    
     //Digital pins setup
     pinMode(context, 0, P8_07, INPUT);//AudioModeA
     pinMode(context, 0, P8_08, INPUT);//AudioModeB
@@ -175,8 +172,6 @@ bool setup(BelaContext *context, void *userData)
     midi.enableParser(true);
     midi.setParserCallback(midiMessageCallback, (void *)gMidiPort0);
     
-    midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
-    midi.writeOutput(bytes, 3);
     
     samplePlay_buffer = new StereoBuffer[NUMSAMPLEPLAYBUFFER];
     
@@ -193,17 +188,27 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
+	//t
+	midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
+    midi.writeOutput(audioModeBytes, 3);
+    midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
+    midi.writeOutput(cvModeBytes, 3);
+	
+	
+	
 /*===========================================
 Digital
 =============================================*/
-    unsigned char cvFLG = CVModeB;
     unsigned char audioFLG = AudioModeB;
+    unsigned char cvFLG = CVModeD;
+
     //Audio
     if(digitalRead(context, 0, P8_07)) audioFLG = AudioModeA;
     if(digitalRead(context, 0, P8_08)) audioFLG = AudioModeB;
     if(digitalRead(context, 0, P8_09)) audioFLG = AudioModeC;
     if(digitalRead(context, 0, P8_10)) audioFLG = AudioModeD;
     if(AudiomodeFlag != audioFLG && audioFLG != 0) {
+    	rt_printf("hoge\n");
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1, Value:0
         if(audioFLG == AudioModeA) {
             //Granular

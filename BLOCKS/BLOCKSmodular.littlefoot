@@ -1,12 +1,15 @@
 /*
-<metadata description="BLOCKS modular" details="" target="Lightpad" tags="MIDI;Controller;">
+<metadata description="BLOCKSmodular" details="" target="Lightpad" tags="MIDI;Controller;">
 <modes>
 <mode name="Default">
-  <variable name="channel" value="0"/>
-  <variable name="padColour1" value="0xFFC6F5F5"/>
-  <variable name="padColour2" value="0xFFC6F5F5"/>
-  <variable name="padColour3" value="0xFFC6FFFF"/>
-  <variable name="padColour4" value="0xFFC6F5F5"/>
+  <variable name="AudioColor1" value="0xFFFF0000"/>
+  <variable name="AudioColor2" value="0xFFFFA000"/>
+  <variable name="AudioColor3" value="0xFFE6F000"/>
+  <variable name="AudioColor4" value="0xFF80FF55"/>
+  <variable name="CVColor1" value="0xFF1500FF"/>
+  <variable name="CVColor2" value="0xFF03ABFF"/>
+  <variable name="CVColor3" value="0xFF00FF6C"/>
+  <variable name="CVColor4" value="0xFFB13FE8"/>
 </mode>
 
 </modes>
@@ -15,147 +18,181 @@
     </groups>
 
     <variables>
-      <variable name="channel" displayName="MIDI Channel" type="int" min="0" max="15" value="0" displayMode="stepper" tooltip="The MIDI channel that values are sent on" />
-      <variable name="padColour1"  displayName="Pad 1 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-      <variable name="padColour2"  displayName="Pad 2 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
-      <variable name="padColour3"  displayName="Pad 3 Colour" group="colours" type="colour" value="0xFFC6FFFF" />
-      <variable name="padColour4"  displayName="Pad 4 Colour" group="colours" type="colour" value="0xFFC6F5F5" />
+    <variable name="AudioColor1"  displayName="Audio 1 Colour" group="colours" type="colour" value="0xFFFF0000"/>
+    <variable name="AudioColor2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFFFFA000"/>
+    <variable name="AudioColor3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFFE6F000"/>
+    <variable name="AudioColor4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFF80FF55"/>
+    <variable name="CVColor1"  displayName="CV 1 Colour" group="colours" type="colour" value="0xFF1500FF"/>
+    <variable name="CVColor2"  displayName="CV 2 Colour" group="colours" type="colour" value="0xFF03ABFF"/>
+    <variable name="CVColor3"  displayName="CV 3 Colour" group="colours" type="colour" value="0xFF00FF6C"/>
+    <variable name="CVColor4"  displayName="CV 4 Colour" group="colours" type="colour" value="0xFFB13FE8"/>
     </variables>
 </metadata>
 */
 
-#heapsize: 8 * 4
-/*
-heap description
-(int)0~3: Recorded(0/1)
-(int)4~7: Playing(0/1)
-Littlefoot does not has setHeapBits(). So I store boolean as int.
-*/
+//==============================================================================
+bool isTouching;
+bool isCVPage;
+int audioMode;
+int cvMode;
 
-int padWidth, padSpacing;
-int gridSize;
-int playedPad;
-int state;
-
-
-/*
-state
-0: Session View
-1: XYZ
-*/
-
-bool isRecorded(int padIndex)
+void initialise()
 {
-    int recorded = getHeapInt(padIndex * 4);
-    return recorded == 1 ? true : false;
-}
-
-bool isPlayed(int padIndex)
-{
-    int playing = getHeapInt((padIndex + 4) * 4);
-    return playing == 1 ? true : false;
-}
-
-void recordBegin(int padIndex)
-{
-    if(!isRecorded(padIndex))
-    {
-        int note = padIndex;//TODO
-        sendNoteOn(channel, note, 127);
-        setHeapInt(padIndex * 4, 1);
+    audioMode = 1;
+    cvMode = 2;
+    isCVPage = false;
+    isTouching = false;
+	for (int i = 0; i < 8; ++i) {
+        setHeapInt(i * 4, 0);
     }
-}
-
-void recordEnd(int padIndex)
-{
-    if(isRecorded(padIndex))
-    {
-        int note = padIndex;//TODO
-        sendNoteOff(channel, note, 0);
-    }
-}
-
-void clear(int padIndex)
-{
-    stop(padIndex);
-    setHeapInt(padIndex * 4, 0);
-}
-
-void play(int padIndex)
-{
-    if(!isPlayed(padIndex))
-    {
-        int anotherScene = padIndex % 2 == 0 ? padIndex + 1 : padIndex -1;
-        if(isPlayed(anotherScene))
-        {
-            stop(anotherScene);
-        }
-        int note = padIndex;//TODO
-        sendNoteOn(channel, note, 127);
-        setHeapInt((padIndex + 4) * 4, 1);
-    }
-}
-
-void stop(int padIndex)
-{
-    if(isPlayed(padIndex))
-    {
-        int note = padIndex;
-        sendNoteOff(channel, note, 0);
-        setHeapInt((padIndex + 4) * 4, 0);
-    }
+	for (int i = 0; i < 32; ++i) {
+        setLocalConfigActiveState (i, false, false);
+	}
 }
 
 //==============================================================================
-void sendXYZCC(float x, float y, float z)
+//Graphics
+void repaint()
+{   
+    clearDisplay();
+    if(isTouching == false) {
+        drawModeChangeButton();
+    }
+    drawNumber(int(isCVPage),0xFFFFFFFF, 0, 0);
+    drawNumber(audioMode, 0xFFFF0000, 0, 5);
+    drawNumber(cvMode, 0xFF0000FF, 0, 10);
+    fadePressureMap();
+    drawPressureMap();
+}
+
+int getColor(bool cvpage, int index)
+{
+    if(!cvpage)//Audio
+    {
+        if(index == 1) return AudioColor1;
+        if(index == 2) return AudioColor2;
+        if(index == 3) return AudioColor3;
+        if(index == 4) return AudioColor4;
+    }
+    else//CV
+    {
+        if(index == 1) return CVColor1;
+        if(index == 2) return CVColor2;
+        if(index == 3) return CVColor3;
+        if(index == 4) return CVColor4;
+    } 
+    return 0xFFFFFFFF
+}
+
+//==============================================================================
+void drawModeChangeButton()
+{
+    if(isCVPage) {
+        getColor(isCVPage, 1);
+    }
+    int w = 15;
+    int h = 4;
+    int cl = getColor(isCVPage, 1);
+    blendRect(cl, 0, 0, w, h);
+}
+
+//==============================================================================
+//Touch event
+void touchStart (int touchIndex, float x, float y, float z, float vz)
+{
+    if(isTouching == false) {
+        if(0.0 <= y && y <= 0.25) {
+            isCVPage = !isCVPage;
+//            int v = isCVPage == true ? 127 : 0;
+//            sendCC(15, 8, v);
+        }
+        isTouching = true;
+    }
+ 
+    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
+    if(audioMode == 2 && isCVPage == false) {}
+    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) {}
+    
+    if(cvMode == 1 && isCVPage == true) {}
+    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
+    if(cvMode == 3 && isCVPage == true) {}
+    if(cvMode == 4 && isCVPage == true) {}
+
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 60.0);
+}
+
+void touchMove (int touchIndex, float x, float y, float z, float vz)
+{
+    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
+    if(audioMode == 2 && isCVPage == false) {}
+    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) {}
+    
+    if(cvMode == 1 && isCVPage == true) {}
+    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
+    if(cvMode == 3 && isCVPage == true) {}
+    if(cvMode == 4 && isCVPage == true) {}
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 30.0);
+}
+
+void touchEnd (int touchIndex, float x, float y, float z, float vz)
+{
+    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, false, x, y, z);
+    if(audioMode == 2 && isCVPage == false) {}
+    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) {}
+    
+    if(cvMode == 1 && isCVPage == true) {}
+    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, false, x, y, z);
+    if(cvMode == 3 && isCVPage == true) {}
+    if(cvMode == 4 && isCVPage == true) {}
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 1.0);
+
+    if(touchIndex == 1) {
+        isTouching = false;
+    }
+}
+ 
+
+//==============================================================================
+//MIDI
+void handleMIDI (int byte0, int byte1, int byte2)
 {
     /*
-       x:12
-       y:13
-       z:14
+    MIDIchannel: byte0 - 175
+    CCnumber: byte1
+    CCvalue: byte2
     */
-    int scaledX = int(map(x, 0.07, 1.93, 0.0, 16383.0));
-    int upperXvalue = (scaledX >> 7) & 127;
-    int lowerXvalue = scaledX & 127;
-    int scaledY = int(map(y, 1.93, 0.07, 0.0, 16383.0));
-    int upperYvalue = (scaledY >> 7) & 127;
-    int lowerYvalue = scaledY & 127;
-    int scaledZ = int(map(z, 0.0, 1.0, 0.0, 16383.0));
-    int upperZvalue = (scaledZ >> 7) & 127;
-    int lowerZvalue = scaledZ & 127;
-    sendCC (channel, 12, upperXvalue);
-    sendCC (channel, 13, lowerXvalue);
-    sendCC (channel, 14, upperYvalue);
-    sendCC (channel, 15, lowerYvalue);
-    sendCC (channel, 16, upperZvalue);
-    sendCC (channel, 17, lowerZvalue);
-}
-
-int getMicrotonalIndexColour(int index)
-{
-    int colour = 0xFFFFFFFF;
-    if(index == 1)
-    {
-        colour = 0xFFFF0000;
-    }
-    if(index == 2)
-    {
-        colour = 0xFF00FF00;
-        
-    }
-    if(index == 3)
-    {
-        colour = 0xFF0000FF;
-    }
-    if(index == 4)
-    {
-        colour = 0xFFFFFFFF;
-    }
     
-    return colour;
+    if(byte0 == 191) { //MIDIchannel:16のCC送信
+        //General
+        if(byte1 == 8) {//CCnumber:8
+            if(byte2 == 127) isCVPage = true;
+            if(byte2 == 0) isCVPage = false;
+        }
+        
+        //Audio
+        if(byte1 == 1) {
+            if(byte2 == 0) audioMode = 0;//OFF
+            if(1 <= byte2 && byte2 <= 32) audioMode = 1;//Granular
+            if(33 <= byte2 && byte2 <= 64) audioMode = 2;//Sample playback
+            if(65 <= byte2 && byte2 <= 96) audioMode = 3;//Karplus strong
+            if(97 <= byte2 && byte2 <= 127) audioMode = 4;//Logistic map
+        }
+        
+        //CV
+        if(byte1 == 2) {
+            if(byte2 == 0) cvMode = 0;//OFF
+            if(1 <= byte2 && byte2 <= 32) cvMode = 1;
+            if(33 <= byte2 && byte2 <= 64) cvMode = 2;
+            if(65 <= byte2 && byte2 <= 96) cvMode = 3;
+            if(97 <= byte2 && byte2 <= 127) cvMode = 4;
+        }
+    }
 }
 
-void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
+void sendGranularCC(int index, bool isNoteOn, float x, float y, float z)
 {
     /*
     x:1,2
@@ -163,122 +200,57 @@ void sendCoordinateCC(int index, bool isNoteOn, float x, float y, float z)
     z:5,6
     */
     
+    int midiChannel = index - 1;
+    
     if(isNoteOn) {
         int scaledX = int(map(x, 0.07, 1.93, 0.0, 16383.0));
-        int upperXvalue = (scaledX >> 7) & 127;
-        int lowerXvalue = scaledX & 127;
-        int scaledY = int(map(y, 1.93, 0.07, 0.0, 16383.0));
-        int upperYvalue = (scaledY >> 7) & 127;
-        int lowerYvalue = scaledY & 127;
+        int upperX = (scaledX >> 7) & 127;
+        int lowerX = scaledX & 127;
+        int scaledY = int(map(y, 0.07, 1.93, 16383.0, 0.0));
+        int upperY = (scaledY >> 7) & 127;
+        int lowerY = scaledY & 127;
         int scaledZ = int(map(z, 0.0, 1.0, 0.0, 16383.0));
-        int upperZvalue = (scaledZ >> 7) & 127;
-        int lowerZvalue = scaledZ & 127;
-        sendCC (index, 1, upperXvalue);
-        sendCC (index, 2, lowerXvalue);
-        sendCC (index, 3, upperYvalue);
-        sendCC (index, 4, lowerYvalue);
-        sendCC (index, 5, upperZvalue);
-        sendCC (index, 6, lowerZvalue);
+        int upperZ = (scaledZ >> 7) & 127;
+        int lowerZ = scaledZ & 127;
+        sendCC (midiChannel, 1, upperX);
+        sendCC (midiChannel, 2, lowerX);
+        sendCC (midiChannel, 3, upperY);
+        sendCC (midiChannel, 4, lowerY);
+        sendCC (midiChannel, 5, upperZ);
+        sendCC (midiChannel, 6, lowerZ);
     }
     else {
-        sendCC (index, 1, 0);
-        sendCC (index, 2, 0);
-        sendCC (index, 3, 0);
-        sendCC (index, 4, 0);
-        sendCC (index, 5, 0);
-        sendCC (index, 6, 0);
+        sendCC (midiChannel, 1, 0);
+        sendCC (midiChannel, 2, 0);
+        sendCC (midiChannel, 3, 0);
+        sendCC (midiChannel, 4, 0);
+        sendCC (midiChannel, 5, 0);
+        sendCC (midiChannel, 6, 0);
     }
 }
 
-int getColour(int index)
-{
-    if (index == 0)  return 0xFFFFFFFF;
-    if (index == 1)  return 0xFFFF0000;
-    if (index == 2)  return 0xFF00FF00;
-    if (index == 3)  return 0xFF0000FF;
-    if (index == 4)  return 0xFFFFFF00;
-    return 0xFFFFFFFF;
-}
-
-//==============================================================================
-int getPadIndex (float x, float y)
-{
+void sendMicrotonalCC(int index, bool isNoteOn, float x, float y, float z) {
     /*
-    0: top left
-    1: bottom left
-    2: top right
-    3: bottom right
+    distanse 1,2
+    Z(pressure) 3,4
     */
-    int row = int (y * (0.95 / 2.0) * float (gridSize));
-    int col = int (x * (0.95 / 2.0) * float (gridSize));
-
-	return (gridSize * col) + row;
-}
-
-//==============================================================================
-void drawPads()
-{
-    for (int padIndex = 0; padIndex < gridSize * gridSize; ++padIndex)
-    {
-        int overlayColour = isRecorded(padIndex) ? 0x00FFFFFF : 0xDE000000;
-        int x = padIndex / 2 * padWidth;
-        int y = padIndex % 2 * padWidth;
-        int w = padWidth - padSpacing;
-        blendRect(blendARGB(getColour(padIndex), overlayColour), x, y, w, w);
+    int midiChannel = index + 7;
+    if (isNoteOn) {
+        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+        int upperDistValue = (distance >> 7) & 127;
+        int lowerDistValue = distance & 127;
+        sendCC(midiChannel, 1, upperDistValue);
+        sendCC(midiChannel, 2, lowerDistValue);   
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+        int upperPressureValue = (pressure >> 7) & 127;
+        int lowerPressureValue = pressure & 127;
+        sendCC(midiChannel, 3, upperPressureValue);
+        sendCC(midiChannel, 4, lowerPressureValue);
     }
-}
-
-void initialise()
-{
-	padWidth = 15 / gridSize;
-	padSpacing = gridSize > 1 ? (15 - gridSize * padWidth) / (gridSize - 1) : 0;
-	padWidth += padSpacing;
-	
-	for (int i = 0; i < 8; ++i) {
-        setHeapInt(i * 4, 0);
+    else {
+        sendCC(midiChannel, 1, 0);
+        sendCC(midiChannel, 2, 0);
+        sendCC(midiChannel, 3, 0);
+        sendCC(midiChannel, 4, 0);
     }
-
-	for (int i = 0; i < 32; ++i) {
-        setLocalConfigActiveState (i, false, false);
-	}
-}
-
-//==============================================================================
-void repaint()
-{   
-    clearDisplay();
-    fadePressureMap();
-    drawPressureMap();
-}
-
-//==============================================================================
-void touchStart (int touchIndex, float x, float y, float z, float vz)
-{
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 60.0);
-    sendCoordinateCC(touchIndex, true, x, y, z);
-}
-
-void touchMove (int touchIndex, float x, float y, float z, float vz)
-{
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 30.0);
-    sendCoordinateCC(touchIndex, true, x, y, z);
-}
-
-void touchEnd (int touchIndex, float x, float y, float z, float vz)
-{
-    drawNumber(touchIndex,0xFFFFFFFF, 0, 0);
-    addPressurePoint (getColour(touchIndex), x, y, z * 20.0);
-    sendCoordinateCC(touchIndex, false, x, y, z);
-}
-
-void handleMIDI	(int byte0, int byte1, int byte2)
-{
-    /*
-    MIDIchannel: byte0 - 175
-    CCnumber: byte1
-    CCvalue: byte2
-    */
-    int channel = byte0 - 175;
 }

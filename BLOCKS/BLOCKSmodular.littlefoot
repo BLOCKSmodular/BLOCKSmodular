@@ -38,8 +38,8 @@ int cvMode;
 
 void initialise()
 {
-    audioMode = 1;
-    cvMode = 2;
+    audioMode = -1;
+    cvMode = -1;
     isCVPage = false;
     isTouching = false;
 	for (int i = 0; i < 8; ++i) {

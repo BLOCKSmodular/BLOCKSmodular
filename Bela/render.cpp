@@ -34,7 +34,7 @@ HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
-bool isCVMode = false;
+// bool isCVMode = false;
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -52,16 +52,16 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         
         if(channel == 16) {
             //General messeges
-            if(controlNum == 8) {
-                if(value == 0) {
-                    //to Audio Mode
-                    isCVMode = false;
-                }
-                else {
-                    //to CV Mode
-                    isCVMode = true;
-                }
-            }
+            // if(controlNum == 8) {
+            //     if(value == 0) {
+            //         //to Audio Mode
+            //         isCVMode = false;
+            //     }
+            //     else {
+            //         //to CV Mode
+            //         isCVMode = true;
+            //     }
+            // }
         }
         else if(channel < 9) {
             //Audio
@@ -224,8 +224,8 @@ Digital
             bytes[2] = 112;
         }
         midi.writeOutput(bytes, 3);
-        midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:127)
-        midi.writeOutput(w, 3);
+        // midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:127)
+        // midi.writeOutput(w, 3);
         AudiomodeFlag = audioFLG;
     }
     
@@ -253,14 +253,15 @@ Digital
             bytes[2] = 112;
         }
         midi.writeOutput(bytes, 3);
-        midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:0)
-        midi.writeOutput(w, 3);
+        // midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:0)
+        // midi.writeOutput(w, 3);
         CVmodeFlag = cvFLG;
     }
     
 /*===========================================
 Analogue
 =============================================*/
+//AnalogueIN
     const int numAnalogueFrames = context->analogFrames;
     float outGain = 0.0f;
     for(unsigned int n = 0; n < numAnalogueFrames; n++) {
@@ -270,6 +271,7 @@ Analogue
     // rt_printf("gain: %f\n", outGain);
     outputGain.set(outGain);
     
+//AnalogueOUT
     switch(CVmodeFlag) {
         case CVModeA: {
             //Morph looper

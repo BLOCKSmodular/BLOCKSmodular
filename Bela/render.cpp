@@ -115,13 +115,13 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     if(controlNum == 1 || controlNum == 2) {
                         bool isUpeerByte{controlNum == 1};
                         microtone_Distance[voiceIndex].set(value, isUpeerByte);
-                        if(microtone_Distance[voiceIndex].update()) CVSmooth[voiceIndex].set(microtone_Distance[voiceIndex].get());
+                        if(microtone_Distance[voiceIndex].update()) CVSmooth[voiceIndex * 2].set(microtone_Distance[voiceIndex].get());
                     }
                     
                     if(controlNum == 3 || controlNum == 4) {
                         bool isUpeerByte{controlNum == 3};
                         microtone_Pressure[voiceIndex].set(value, isUpeerByte);
-                        if(microtone_Pressure[voiceIndex].update()) CVSmooth[voiceIndex].set(microtone_Pressure[voiceIndex].get());
+                        if(microtone_Pressure[voiceIndex].update()) CVSmooth[voiceIndex * 2 + 1].set(microtone_Pressure[voiceIndex].get());
                     }
                     break;
                 }

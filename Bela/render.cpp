@@ -12,12 +12,10 @@
 static constexpr int NUMCVOUT = 8;
 static constexpr unsigned char CVModeA =   0b00000001;
 static constexpr unsigned char CVModeB =   0b00000010;
-// static constexpr unsigned char CVModeOFF = 0b00000100;
 static constexpr unsigned char CVModeC =   0b00001000;
 static constexpr unsigned char CVModeD =   0b00010000;
 static constexpr unsigned char AudioModeA =   0b00000001;
 static constexpr unsigned char AudioModeB =   0b00000010;
-// static constexpr unsigned char AudioModeOFF = 0b00000100;
 static constexpr unsigned char AudioModeC =   0b00001000;
 static constexpr unsigned char AudioModeD =   0b00010000;
 unsigned char CVmodeFlag;
@@ -34,7 +32,6 @@ HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
-// bool isCVMode = false;
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -52,16 +49,6 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         
         if(channel == 16) {
             //General messeges
-            // if(controlNum == 8) {
-            //     if(value == 0) {
-            //         //to Audio Mode
-            //         isCVMode = false;
-            //     }
-            //     else {
-            //         //to CV Mode
-            //         isCVMode = true;
-            //     }
-            // }
         }
         else if(channel < 9) {
             //Audio
@@ -96,9 +83,6 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     //Sample playback
                     break;
                 }
-                // case AudioModeOFF: {
-                //     break;
-                // }
                 case AudioModeC: {
                     //Karplus strong
                     break;
@@ -141,9 +125,6 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     }
                     break;
                 }
-                // case CVModeOFF: {
-                //     break;
-                // }
                 case CVModeC: {
                     break;
                 }

@@ -12,12 +12,12 @@
 static constexpr int NUMCVOUT = 8;
 static constexpr unsigned char CVModeA =   0b00000001;
 static constexpr unsigned char CVModeB =   0b00000010;
-static constexpr unsigned char CVModeOFF = 0b00000100;
+// static constexpr unsigned char CVModeOFF = 0b00000100;
 static constexpr unsigned char CVModeC =   0b00001000;
 static constexpr unsigned char CVModeD =   0b00010000;
 static constexpr unsigned char AudioModeA =   0b00000001;
 static constexpr unsigned char AudioModeB =   0b00000010;
-static constexpr unsigned char AudioModeOFF = 0b00000100;
+// static constexpr unsigned char AudioModeOFF = 0b00000100;
 static constexpr unsigned char AudioModeC =   0b00001000;
 static constexpr unsigned char AudioModeD =   0b00010000;
 unsigned char CVmodeFlag;
@@ -96,9 +96,9 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     //Sample playback
                     break;
                 }
-                case AudioModeOFF: {
-                    break;
-                }
+                // case AudioModeOFF: {
+                //     break;
+                // }
                 case AudioModeC: {
                     //Karplus strong
                     break;
@@ -136,9 +136,9 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     }
                     break;
                 }
-                case CVModeOFF: {
-                    break;
-                }
+                // case CVModeOFF: {
+                //     break;
+                // }
                 case CVModeC: {
                     break;
                 }
@@ -198,8 +198,8 @@ void render(BelaContext *context, void *userData)
 /*===========================================
 Digital
 =============================================*/
-    unsigned char cvFLG = CVModeOFF;
-    unsigned char audioFLG = AudioModeOFF;
+    unsigned char cvFLG = 0;
+    unsigned char audioFLG = 0;
     //Audio
     if(digitalRead(context, 0, P8_07)) audioFLG = AudioModeA;
     if(digitalRead(context, 0, P8_08)) audioFLG = AudioModeB;
@@ -214,10 +214,6 @@ Digital
         else if(audioFLG == AudioModeB) {
             //Sample playback
             bytes[2] = 48;
-        }
-        else if(audioFLG == AudioModeOFF) {
-            //Audiomode OFF
-            bytes[2] = 0;
         }
         else if(audioFLG == AudioModeC) {
             //Karplus strong
@@ -247,10 +243,6 @@ Digital
         else if(cvFLG == CVModeB) {
             //Microtonal
             bytes[2] = 48;
-        }
-        else if(cvFLG == CVModeOFF) {
-            //CVmode OFF
-            bytes[2] = 0;
         }
         else if(cvFLG == CVModeC) {
             //CVmode3
@@ -290,9 +282,6 @@ Analogue
                     analogWrite(context, n, ch, CVSmooth[ch].getNextValue());
                 }
             }
-            break;
-        }
-        case CVModeOFF: {
             break;
         }
         case CVModeC: {
@@ -344,9 +333,6 @@ Audio
                 audioWrite(context, i, 0, stereo[0]);
                 audioWrite(context, i, 1, stereo[1]);
             }
-            break;
-        }
-        case AudioModeOFF: {
             break;
         }
         case AudioModeC: {

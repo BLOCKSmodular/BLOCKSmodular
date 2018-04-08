@@ -173,7 +173,7 @@ private:
 //---------------------------------------------------------------------------------------
 class StereoBuffer {
 public:
-    StereoBuffer(const int size, bool loopPlaying = false, bool loopRecording = false)
+    StereoBuffer(const int size = 88400, bool loopPlaying = false, bool loopRecording = false)
     :readLoop(loopPlaying), writeLoop(loopRecording)
     {
         for(int channel = 0; channel < numBufferChannels; ++channel) {
@@ -332,8 +332,8 @@ public:
 private:
     static constexpr int numBufferChannels{2};//stereo
     std::vector<float> buffer[numBufferChannels];
-    unsigned int readIter = 0;
-    unsigned int writeIter = 0;
+    unsigned int readIter = 0;//TODO atomic
+    unsigned int writeIter = 0;//TODO atomic
     bool readLoop;
     bool writeLoop;
 };

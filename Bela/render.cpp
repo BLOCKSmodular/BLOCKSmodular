@@ -34,6 +34,8 @@ StereoBuffer* samplePlay_buffer;
 bool samplePlay_isPlaying[4]{false, false, false, false};
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
+Smoothing LChGain;
+Smoothing RChGain;
 
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
@@ -188,11 +190,11 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-	//t
-	midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
-    midi.writeOutput(audioModeBytes, 3);
-    midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
-    midi.writeOutput(cvModeBytes, 3);
+	// //test用強制モード切替
+	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
+ //   midi.writeOutput(audioModeBytes, 3);
+ //   midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
+ //   midi.writeOutput(cvModeBytes, 3);
 	
 	
 	
@@ -208,7 +210,6 @@ Digital
     if(digitalRead(context, 0, P8_11)) audioFLG = AudioModeC;
     if(digitalRead(context, 0, P8_15)) audioFLG = AudioModeD;
     if(AudiomodeFlag != audioFLG && audioFLG != 0) {
-    	rt_printf("hoge\n");
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1, Value:0
         if(audioFLG == AudioModeA) {
             //Granular
@@ -267,12 +268,20 @@ Analogue
 //AnalogueIN
     const int numAnalogueFrames = context->analogFrames;
     float outGain = 0.0f;
+    float lGain = 0.0f;
+    float rGain = 0.0f;
     for(unsigned int n = 0; n < numAnalogueFrames; n++) {
         outGain += analogRead(context, n, 0);
+        lGain += analogRead(context, n, 1);
+        rGain += analogRead(context, n, 2);
     }
     outGain = outGain / (float)numAnalogueFrames;
+    lGain = lGain / (float)numAnalogueFrames;
+    rGain = rGain / (float)numAnalogueFrames;
     // rt_printf("gain: %f\n", outGain);
     outputGain.set(outGain);
+    LChGain.set(lGain);
+    RChGain.set(rGain);
     
 //AnalogueOUT
     switch(CVmodeFlag) {
@@ -318,8 +327,10 @@ Audio
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
             	const float gain = outputGain.getNextValue();
-                audioWrite(context, i, 0, gr[i] * gain);
-                audioWrite(context, i, 1, gr[i] * gain);
+            	const float lg = LChGain.getNextValue();
+            	const float rg = RChGain.getNextValue();
+                audioWrite(context, i, 0, gr[i] * gain * lg);
+                audioWrite(context, i, 1, gr[i] * gain * rg);
             }
             break;
         }
@@ -340,8 +351,11 @@ Audio
             }
             
             for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
-                audioWrite(context, sample, 0, l[sample] * 0.01f);
-                audioWrite(context, sample, 1, r[sample] * 0.01f);
+            	const float gain = outputGain.getNextValue();
+            	const float lg = LChGain.getNextValue();
+            	const float rg = RChGain.getNextValue();
+                audioWrite(context, sample, 0, l[sample] * gain * lg);
+                audioWrite(context, sample, 1, r[sample] * gain * rg);
             }
             break;
         }

@@ -123,7 +123,7 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
 void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
-    if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
+    if(audioMode == 2 && isCVPage == false) {}//SamplePlaybackはtouchMoveを使用しない
     if(audioMode == 3 && isCVPage == false) {}
     if(audioMode == 4 && isCVPage == false) {}
     

@@ -85,21 +85,21 @@ int getColor(bool cvpage, int index)
 void drawSamplePlaybackPad()
 {
     int w = 7;
-    int h = 5;
+    int h = 7;
     for(int i = 0; i < 4; ++i)
     {
         int cl = getColor(false, i + 1);
         if(i == 0){
-            blendRect(cl, 0, 4, w, h);
+            blendRect(cl, 0, 0, w, h);
         }
         if(i == 1){
-            blendRect(cl, 8, 4, w, h);
+            blendRect(cl, 8, 0, w, h);
         }
         if(i == 2){
-            blendRect(cl, 0, 10, w, h);
+            blendRect(cl, 0, 8, w, h);
         }
         if(i == 3){
-            blendRect(cl, 8, 10, w, h);
+            blendRect(cl, 8, 8, w, h);
         }
     }
 }
@@ -159,7 +159,7 @@ void handleMIDI (int byte0, int byte1, int byte2)
     CCvalue: byte2
     */
     
-    if(byte0 == 191) { //MIDIchannel:16のCC送信
+    if(byte0 == 191) { //MIDIchannel:16のCC
         //General
         if(byte1 == 8) {//CCnumber:8
             if(byte2 == 127) isCVPage = true;

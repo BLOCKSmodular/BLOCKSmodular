@@ -31,7 +31,6 @@
 */
 
 //==============================================================================
-bool isTouching;
 bool isCVPage;
 int audioMode;
 int cvMode;
@@ -41,7 +40,6 @@ void initialise()
     audioMode = -1;
     cvMode = -1;
     isCVPage = false;
-    isTouching = false;
 	for (int i = 0; i < 8; ++i) {
         setHeapInt(i * 4, 0);
     }
@@ -55,9 +53,6 @@ void initialise()
 void repaint()
 {   
     clearDisplay();
-    if(isTouching == false) {
-        drawModeChangeButton();
-    }
     if(isCVPage == false && audioMode == 2) {
         drawSamplePlaybackPad();
     }
@@ -87,13 +82,13 @@ int getColor(bool cvpage, int index)
     return 0xFFFFFFFF
 }
 
-void drawModeChangeButton()
-{
-    int w = 15;
-    int h = 3;
-    int cl = getColor(isCVPage, 1);
-    blendRect(cl, 0, 0, w, h);
-}
+// void drawModeChangeButton()
+// {
+//     int w = 15;
+//     int h = 3;
+//     int cl = getColor(isCVPage, 1);
+//     blendRect(cl, 0, 0, w, h);
+// }
 
 void drawSamplePlaybackPad()
 {
@@ -121,60 +116,44 @@ void drawSamplePlaybackPad()
 //Touch event
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
-    if(isTouching == false && 0.0 <= y && y <= 0.25) {
-        isCVPage = !isCVPage;
-    }
-    else {
-        isTouching = true;
-        if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
-        if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
-        if(audioMode == 3 && isCVPage == false) {}
-        if(audioMode == 4 && isCVPage == false) {}
+    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
+    if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
+    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) {}
     
-        if(cvMode == 1 && isCVPage == true) {}
-        if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
-        if(cvMode == 3 && isCVPage == true) {}
-        if(cvMode == 4 && isCVPage == true) {}
-        addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 60.0);
-    }
+    if(cvMode == 1 && isCVPage == true) {}
+    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
+    if(cvMode == 3 && isCVPage == true) {}
+    if(cvMode == 4 && isCVPage == true) {}
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 60.0);
 }
 
 void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
-    if(isTouching == true)
-    {
-        if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
-        if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
-        if(audioMode == 3 && isCVPage == false) {}
-        if(audioMode == 4 && isCVPage == false) {}
+    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
+    if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
+    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) {}
     
-        if(cvMode == 1 && isCVPage == true) {}
-        if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
-        if(cvMode == 3 && isCVPage == true) {}
-        if(cvMode == 4 && isCVPage == true) {}
-        addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 30.0);
-    }
+    if(cvMode == 1 && isCVPage == true) {}
+    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
+    if(cvMode == 3 && isCVPage == true) {}
+    if(cvMode == 4 && isCVPage == true) {}
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 30.0);
 }
 
 void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
-    if(isTouching == true)
-    {
-        if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, false, x, y, z);
-        if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(false, x, y);
-        if(audioMode == 3 && isCVPage == false) {}
-        if(audioMode == 4 && isCVPage == false) {}
+    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, false, x, y, z);
+    if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(false, x, y);
+    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) {}
     
-        if(cvMode == 1 && isCVPage == true) {}
-        if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, false, x, y, z);
-        if(cvMode == 3 && isCVPage == true) {}
-        if(cvMode == 4 && isCVPage == true) {}
-        addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 1.0);
-
-        if(touchIndex == 1) {
-            isTouching = false;
-        }
-    }
+    if(cvMode == 1 && isCVPage == true) {}
+    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, false, x, y, z);
+    if(cvMode == 3 && isCVPage == true) {}
+    if(cvMode == 4 && isCVPage == true) {}
+    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 1.0);
 }
  
 

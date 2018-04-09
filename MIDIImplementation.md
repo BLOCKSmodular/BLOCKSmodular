@@ -34,6 +34,12 @@ CC
 | Z : Window function shape | 5, 6    | 14bit | 1~4          |
 
 ### Mode B(Sample playback)
+**BLOCKS → Bela**
+CC
+| Description          | MIDI CC | Value             | MIDI Channel |
+| :------------------- | :------ | :---------------- | :----------- |
+| Transpose(Play/Stop) | 1       | 0(stop)/127(play) | 1~4          |
+
 ### Mode C(Karplus strong)
 ### Mode D(Logistic map)
 

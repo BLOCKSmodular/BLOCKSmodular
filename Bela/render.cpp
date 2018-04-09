@@ -10,6 +10,7 @@
 #include <GranularSynth.h>
 
 static constexpr int NUMCVOUT = 8;
+static constexpr int NUMSAMPLEPLAYBUFFER = 4;
 static constexpr unsigned char CVModeA =   0b00000001;
 static constexpr unsigned char CVModeB =   0b00000010;
 static constexpr unsigned char CVModeC =   0b00001000;
@@ -18,20 +19,24 @@ static constexpr unsigned char AudioModeA =   0b00000001;
 static constexpr unsigned char AudioModeB =   0b00000010;
 static constexpr unsigned char AudioModeC =   0b00001000;
 static constexpr unsigned char AudioModeD =   0b00010000;
-unsigned char CVmodeFlag;
-unsigned char AudiomodeFlag;
+unsigned char CVmodeFlag = 0;
+unsigned char AudiomodeFlag = 0;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
-MonoBuffer monoBuffer(88200, true, false);
-StereoBuffer stereoBuffer(88200, true, false);
+
 GranularSynth granular;
 HighResolutionControlChange gr_Position[2];
 HighResolutionControlChange gr_GrainSize[2];
 HighResolutionControlChange gr_WindowShape[2];
 HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
+StereoBuffer* samplePlay_buffer;
+bool samplePlay_isPlaying[4]{false, false, false, false};
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
+Smoothing LChGain;
+Smoothing RChGain;
+
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -81,6 +86,11 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 }
                 case AudioModeB: {
                     //Sample playback
+                    if(controlNum == 1) {
+                    	if(value == 127) {
+                    		samplePlay_isPlaying[voiceIndex] = true;
+                    	}
+                    }
                     break;
                 }
                 case AudioModeC: {
@@ -148,17 +158,14 @@ bool setup(BelaContext *context, void *userData)
     sleep(2);
     std::cout<<"End sleep"<<std::endl;
     
-    CVmodeFlag = CVModeB;
-    AudiomodeFlag = AudioModeA;
-    
     //Digital pins setup
     pinMode(context, 0, P8_07, INPUT);//AudioModeA
-    pinMode(context, 0, P8_08, INPUT);//AudioModeB
-    pinMode(context, 0, P8_09, INPUT);//AudioModeC
-    pinMode(context, 0, P8_10, INPUT);//AudioModeD
-    pinMode(context, 0, P8_11, INPUT);//CVModeA
-    pinMode(context, 0, P8_12, INPUT);//CVModeB
-    pinMode(context, 0, P8_15, INPUT);//CVModeC
+    pinMode(context, 0, P8_09, INPUT);//AudioModeB
+    pinMode(context, 0, P8_11, INPUT);//AudioModeC
+    pinMode(context, 0, P8_15, INPUT);//AudioModeD
+    pinMode(context, 0, P8_08, INPUT);//CVModeA
+    pinMode(context, 0, P8_10, INPUT);//CVModeB
+    pinMode(context, 0, P8_12, INPUT);//CVModeC
     pinMode(context, 0, P8_16, INPUT);//CVModeD
     
     //MIDI
@@ -167,12 +174,14 @@ bool setup(BelaContext *context, void *userData)
     midi.enableParser(true);
     midi.setParserCallback(midiMessageCallback, (void *)gMidiPort0);
     
-    midi_byte_t bytes[3] = {176, (midi_byte_t)(97), 127};
-    midi.writeOutput(bytes, 3);
+    
+    samplePlay_buffer = new StereoBuffer[NUMSAMPLEPLAYBUFFER];
     
     //Load Sample
-    monoBuffer.loadSampleFile("VibeOneshot.wav");
-    stereoBuffer.loadSampleFile("BellRoll.wav");
+    samplePlay_buffer[0].loadSampleFile("samplePlayA.wav");
+    samplePlay_buffer[1].loadSampleFile("samplePlayB.wav");
+    samplePlay_buffer[2].loadSampleFile("samplePlayC.wav");
+    samplePlay_buffer[3].loadSampleFile("samplePlayD.wav");
     granular.loadFile("GranularSource.wav");
     
     outputGain.set(0.01f);
@@ -181,16 +190,25 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
+	// //test用強制モード切替
+	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
+ //   midi.writeOutput(audioModeBytes, 3);
+ //   midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
+ //   midi.writeOutput(cvModeBytes, 3);
+	
+	
+	
 /*===========================================
 Digital
 =============================================*/
-    unsigned char cvFLG = 0;
-    unsigned char audioFLG = 0;
+    unsigned char audioFLG = AudioModeB;
+    unsigned char cvFLG = CVModeD;
+
     //Audio
     if(digitalRead(context, 0, P8_07)) audioFLG = AudioModeA;
-    if(digitalRead(context, 0, P8_08)) audioFLG = AudioModeB;
-    if(digitalRead(context, 0, P8_09)) audioFLG = AudioModeC;
-    if(digitalRead(context, 0, P8_10)) audioFLG = AudioModeD;
+    if(digitalRead(context, 0, P8_09)) audioFLG = AudioModeB;
+    if(digitalRead(context, 0, P8_11)) audioFLG = AudioModeC;
+    if(digitalRead(context, 0, P8_15)) audioFLG = AudioModeD;
     if(AudiomodeFlag != audioFLG && audioFLG != 0) {
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1, Value:0
         if(audioFLG == AudioModeA) {
@@ -216,9 +234,9 @@ Digital
     }
     
     //CV
-    if(digitalRead(context, 0, P8_11)) cvFLG = CVModeA;
-    if(digitalRead(context, 0, P8_12)) cvFLG = CVModeB;
-    if(digitalRead(context, 0, P8_15)) cvFLG = CVModeC;
+    if(digitalRead(context, 0, P8_08)) cvFLG = CVModeA;
+    if(digitalRead(context, 0, P8_10)) cvFLG = CVModeB;
+    if(digitalRead(context, 0, P8_12)) cvFLG = CVModeC;
     if(digitalRead(context, 0, P8_16)) cvFLG = CVModeD;
     if(CVmodeFlag != cvFLG && cvFLG != 0) {
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(2), 0};//Channel:16, CC Number:2, Value:0
@@ -250,12 +268,20 @@ Analogue
 //AnalogueIN
     const int numAnalogueFrames = context->analogFrames;
     float outGain = 0.0f;
+    float lGain = 0.0f;
+    float rGain = 0.0f;
     for(unsigned int n = 0; n < numAnalogueFrames; n++) {
         outGain += analogRead(context, n, 0);
+        lGain += analogRead(context, n, 1);
+        rGain += analogRead(context, n, 2);
     }
     outGain = outGain / (float)numAnalogueFrames;
+    lGain = lGain / (float)numAnalogueFrames;
+    rGain = rGain / (float)numAnalogueFrames;
     // rt_printf("gain: %f\n", outGain);
     outputGain.set(outGain);
+    LChGain.set(lGain);
+    RChGain.set(rGain);
     
 //AnalogueOUT
     switch(CVmodeFlag) {
@@ -301,25 +327,35 @@ Audio
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
             	const float gain = outputGain.getNextValue();
-                audioWrite(context, i, 0, gr[i] * gain);
-                audioWrite(context, i, 1, gr[i] * gain);
+            	const float lg = LChGain.getNextValue();
+            	const float rg = RChGain.getNextValue();
+                audioWrite(context, i, 0, gr[i] * gain * lg);
+                audioWrite(context, i, 1, gr[i] * gain * rg);
             }
             break;
         }
         case AudioModeB: {
             //Sample playback
-            float mono = 0.0f;
-            for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                monoBuffer.readNext(mono);
-                audioWrite(context, i, 0, mono);
-                audioWrite(context, i, 1, mono);
+            float l[numAudioFrames];
+            float r[numAudioFrames];
+            for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+            	l[sample] = 0.0f;
+            	r[sample] = 0.0f;
             }
             
-            float stereo[2] = {0.0f, 0.0f};
-            for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                stereoBuffer.readNext(stereo[0], stereo[1]);
-                audioWrite(context, i, 0, stereo[0]);
-                audioWrite(context, i, 1, stereo[1]);
+            for(unsigned int i = 0; i < 4; ++i) {
+            	if(samplePlay_isPlaying[i]) {
+            		samplePlay_buffer[i].nextBlock(l, r, numAudioFrames);
+            		if(samplePlay_buffer[i].isBufferEnd()) samplePlay_isPlaying[i] = false;
+            	}
+            }
+            
+            for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+            	const float gain = outputGain.getNextValue();
+            	const float lg = LChGain.getNextValue();
+            	const float rg = RChGain.getNextValue();
+                audioWrite(context, sample, 0, l[sample] * gain * lg);
+                audioWrite(context, sample, 1, r[sample] * gain * rg);
             }
             break;
         }
@@ -340,4 +376,5 @@ Audio
 
 void cleanup(BelaContext *context, void *userData)
 {
+	delete [] samplePlay_buffer;
 }

@@ -34,8 +34,6 @@ StereoBuffer* samplePlay_buffer;
 bool samplePlay_isPlaying[4]{false, false, false, false};
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
-Smoothing LChGain;
-Smoothing RChGain;
 
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
@@ -268,20 +266,17 @@ Analogue
 //AnalogueIN
     const int numAnalogueFrames = context->analogFrames;
     float outGain = 0.0f;
-    float lGain = 0.0f;
-    float rGain = 0.0f;
+    float paramKnobA = 0.0f;
+    float paramKnobB = 0.0f;
     for(unsigned int n = 0; n < numAnalogueFrames; n++) {
         outGain += analogRead(context, n, 0);
-        lGain += analogRead(context, n, 1);
-        rGain += analogRead(context, n, 2);
+        paramKnobA += analogRead(context, n, 1);
+        paramKnobB += analogRead(context, n, 2);
     }
     outGain = outGain / (float)numAnalogueFrames;
-    lGain = lGain / (float)numAnalogueFrames;
-    rGain = rGain / (float)numAnalogueFrames;
-    // rt_printf("gain: %f\n", outGain);
+    paramKnobA = paramKnobA / (float)numAnalogueFrames;//Parameter Knob A
+    paramKnobB = paramKnobB / (float)numAnalogueFrames;//Parameter Knob B
     outputGain.set(outGain);
-    LChGain.set(lGain);
-    RChGain.set(rGain);
     
 //AnalogueOUT
     switch(CVmodeFlag) {
@@ -327,10 +322,8 @@ Audio
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
             	const float gain = outputGain.getNextValue();
-            	const float lg = LChGain.getNextValue();
-            	const float rg = RChGain.getNextValue();
-                audioWrite(context, i, 0, gr[i] * gain * lg);
-                audioWrite(context, i, 1, gr[i] * gain * rg);
+                audioWrite(context, i, 0, gr[i] * gain);
+                audioWrite(context, i, 1, gr[i] * gain);
             }
             break;
         }
@@ -352,10 +345,8 @@ Audio
             
             for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
             	const float gain = outputGain.getNextValue();
-            	const float lg = LChGain.getNextValue();
-            	const float rg = RChGain.getNextValue();
-                audioWrite(context, sample, 0, l[sample] * gain * lg);
-                audioWrite(context, sample, 1, r[sample] * gain * rg);
+                audioWrite(context, sample, 0, l[sample] * gain);
+                audioWrite(context, sample, 1, r[sample] * gain);
             }
             break;
         }

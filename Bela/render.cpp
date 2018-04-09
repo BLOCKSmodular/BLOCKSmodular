@@ -174,7 +174,6 @@ bool setup(BelaContext *context, void *userData)
     midi.enableParser(true);
     midi.setParserCallback(midiMessageCallback, (void *)gMidiPort0);
     
-    
     samplePlay_buffer = new StereoBuffer[NUMSAMPLEPLAYBUFFER];
     
     //Load Sample
@@ -190,11 +189,11 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-	// //test用強制モード切替
+	//test用強制モード切替
 	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
- //   midi.writeOutput(audioModeBytes, 3);
- //   midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
- //   midi.writeOutput(cvModeBytes, 3);
+ 	// midi.writeOutput(audioModeBytes, 3);
+ 	// midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
+ 	// midi.writeOutput(cvModeBytes, 3);
 	
 	
 	

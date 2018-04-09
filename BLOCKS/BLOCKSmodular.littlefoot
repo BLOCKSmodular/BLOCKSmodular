@@ -82,14 +82,6 @@ int getColor(bool cvpage, int index)
     return 0xFFFFFFFF
 }
 
-// void drawModeChangeButton()
-// {
-//     int w = 15;
-//     int h = 3;
-//     int cl = getColor(isCVPage, 1);
-//     blendRect(cl, 0, 0, w, h);
-// }
-
 void drawSamplePlaybackPad()
 {
     int w = 7;

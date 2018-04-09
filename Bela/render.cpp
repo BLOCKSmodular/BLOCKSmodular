@@ -21,6 +21,7 @@ static constexpr unsigned char AudioModeC =   0b00001000;
 static constexpr unsigned char AudioModeD =   0b00010000;
 unsigned char CVmodeFlag = 0;
 unsigned char AudiomodeFlag = 0;
+bool isAudioPage = false;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 
@@ -165,6 +166,7 @@ bool setup(BelaContext *context, void *userData)
     pinMode(context, 0, P8_10, INPUT);//CVModeB
     pinMode(context, 0, P8_12, INPUT);//CVModeC
     pinMode(context, 0, P8_16, INPUT);//CVModeD
+    pinMode(context, 0, P8_16, INPUT);//Audio/CV switching
     
     //MIDI
     midi.readFrom(gMidiPort0);
@@ -199,6 +201,19 @@ void render(BelaContext *context, void *userData)
 /*===========================================
 Digital
 =============================================*/
+	bool audiopage = (bool)digitalRead(context, 0, P9_12);
+	if(audiopage != isAudioPage) {
+        midi_byte_t bp[3] = {0xBF, (midi_byte_t)(8), 0};//Channel:16, CC Number:8
+        if(audiopage) {
+        	bp[2] = 0;
+        }
+        else {
+        	bp[2] = 127;
+        }
+        midi.writeOutput(bp, 3);
+        isAudioPage = audiopage;
+	}
+
     unsigned char audioFLG = AudioModeB;
     unsigned char cvFLG = CVModeD;
 

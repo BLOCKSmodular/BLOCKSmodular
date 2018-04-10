@@ -50,6 +50,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
+        //std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
         
         if(channel == 15) {
             //General messeges
@@ -190,11 +191,15 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
+	//---------------------------------------
 	//test用強制モード切替
-	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
- 	// midi.writeOutput(audioModeBytes, 3);
- 	// midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
- 	// midi.writeOutput(cvModeBytes, 3);
+	/*
+	midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
+ 	midi.writeOutput(audioModeBytes, 3);
+ 	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
+ 	midi.writeOutput(cvModeBytes, 3);
+ 	*/
+ 	//----------------------------------------
 	
 	
 	
@@ -355,6 +360,7 @@ Audio
             	if(samplePlay_isPlaying[i]) {
             		samplePlay_buffer[i].nextBlock(l, r, numAudioFrames);
             		if(samplePlay_buffer[i].isBufferEnd()) samplePlay_isPlaying[i] = false;
+            		
             	}
             }
             

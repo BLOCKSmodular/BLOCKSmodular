@@ -87,6 +87,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     //Sample playback
                     if(controlNum == 1) {
                     	if(value == 127) {
+                    		samplePlay_buffer[voiceIndex].setReadIter(0);
                     		samplePlay_isPlaying[voiceIndex] = true;
                     	}
                     }

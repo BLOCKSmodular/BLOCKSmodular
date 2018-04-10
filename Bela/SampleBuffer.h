@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <vector>
 #include <Util.h>
+#include <atomic>
 
 class MonoBuffer {
 public:
@@ -164,8 +165,8 @@ public:
     
 private:
     std::vector<float> buffer;
-    unsigned int readIter = 0;
-    unsigned int writeIter = 0;
+    std::atomic<unsigned int> readIter{0};
+    std::atomic<unsigned int> writeIter{0};
     bool readLoop;
     bool writeLoop;
 };
@@ -273,6 +274,15 @@ public:
         }
     }
     
+    void setReadIter(const unsigned int itr) {
+    	if(itr < buffer[0].size()) {
+    		readIter = itr;
+    	}
+    	else{
+    		std::cout<<"StereoBuffer-setReadIter(): Invalid iterater"<<std::endl;
+    	}
+    }
+    
     void loadSampleFile(std::string file)
     {
         SNDFILE *sndfile ;
@@ -336,8 +346,8 @@ public:
 private:
     static constexpr int numBufferChannels{2};//stereo
     std::vector<float> buffer[numBufferChannels];
-    unsigned int readIter = 0;//TODO atomic
-    unsigned int writeIter = 0;//TODO atomic
+    std::atomic<unsigned int> readIter{0};
+    std::atomic<unsigned int> writeIter{0};
     bool readLoop;
     bool writeLoop;
 };

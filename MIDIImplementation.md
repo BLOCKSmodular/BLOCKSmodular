@@ -41,7 +41,24 @@ CC
 | Transpose(Play/Stop) | 1       | 0(stop)/127(play) | 1~4          |
 
 ### Mode C(Karplus strong)
+**BLOCKS → Bela**
+CC
+| Description          | MIDI CC | Value | MIDI Channel |
+| :------------------- | :------ | :---- | :----------- |
+| Distance: Pitch      | 1, 2    | 14bit | 1~4          |
+| Z(Pressure): Decay   | 3, 4    | 14bit | 1~4          |
+| Touch start: trigger | 5       | 127   | 1~4          |
+
 ### Mode D(Logistic map)
+**BLOCKS → Bela**
+CC
+| Description                     | MIDI CC | Value | MIDI Channel |
+| :------------------------------ | :------ | :---- | :----------- |
+| Distance: Logistic map alpha    | 1, 2    | 14bit | 1            |
+| Z(Pressure): Volume             | 3, 4    | 14bit | 1            |
+| Distance: Sine circle map alpha | 1, 2    | 14bit | 2            |
+| Z(Pressure): Volume             | 3, 4    | 14bit | 2            |
+
 
 ## CV/Gate Mode詳細
 ### Mode A（Morph looper）

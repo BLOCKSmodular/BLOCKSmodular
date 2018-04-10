@@ -8,6 +8,9 @@
 #include <SampleBuffer.h>
 #include <Util.h>
 #include <GranularSynth.h>
+#include <LogisticMap.h>
+#include <SineCircleMap.h>
+
 
 static constexpr int NUMCVOUT = 8;
 static constexpr int NUMSAMPLEPLAYBUFFER = 4;
@@ -25,6 +28,12 @@ bool isAudioPage = false;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 
+LogisticMap logisticOsc;
+HighResolutionControlChange	lgst_alpha;
+HighResolutionControlChange lgst_gain;
+SineCircleMap sineCircleOsc;
+HighResolutionControlChange sineCircle_k;
+HighResolutionControlChange sineCircle_gain;
 GranularSynth granular;
 HighResolutionControlChange gr_Position[2];
 HighResolutionControlChange gr_GrainSize[2];
@@ -50,7 +59,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
-        //std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
+        // std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
         
         if(channel == 15) {
             //General messeges
@@ -100,6 +109,32 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 }
                 case AudioModeD: {
                     //Logistic map
+                    if(voiceIndex == 0) {
+                    	if(controlNum == 1 || controlNum == 2) {
+                        	bool isUpeerByte{controlNum == 1};
+                        	lgst_alpha.set(value, isUpeerByte);
+                        	if(lgst_alpha.update()) logisticOsc.setAlpha(lgst_alpha.get() * 0.5f + 3.490f);
+                    	}
+                    
+                    	if(controlNum == 3 || controlNum == 4) {
+                        	bool isUpeerByte{controlNum == 3};
+                        	lgst_gain.set(value, isUpeerByte);
+                        	if(lgst_gain.update()) logisticOsc.setGain(lgst_gain.get());
+                    	}
+                    }
+                    else if(voiceIndex == 1) {
+                    	if(controlNum == 1 || controlNum == 2) {
+                        	bool isUpeerByte{controlNum == 1};
+                        	sineCircle_k.set(value, isUpeerByte);
+                        	if(sineCircle_k.update()) sineCircleOsc.setK(sineCircle_k.get() * 0.2f + 1.0f);
+                    	}
+                    
+                    	if(controlNum == 3 || controlNum == 4) {
+                        	bool isUpeerByte{controlNum == 3};
+                        	sineCircle_gain.set(value, isUpeerByte);
+                        	if(sineCircle_gain.update()) sineCircleOsc.setGain(sineCircle_gain.get());
+                    	}
+                    }
                     break;
                 }
                 default: {
@@ -193,12 +228,12 @@ void render(BelaContext *context, void *userData)
 {
 	//---------------------------------------
 	//test用強制モード切替
-	/*
-	midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
+	AudiomodeFlag = AudioModeD;
+	midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 112};//Channel:16, CC Number:1
  	midi.writeOutput(audioModeBytes, 3);
- 	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
+ 	CVmodeFlag = CVModeC;
+ 	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2
  	midi.writeOutput(cvModeBytes, 3);
- 	*/
  	//----------------------------------------
 	
 	
@@ -219,8 +254,9 @@ Digital
         isAudioPage = audiopage;
 	}
 
-    unsigned char audioFLG = AudioModeB;
-    unsigned char cvFLG = CVModeD;
+	//テスト用強制モード切替
+    unsigned char audioFLG = 0;
+    unsigned char cvFLG = 0;
 
     //Audio
     if(digitalRead(context, 0, P8_07)) audioFLG = AudioModeA;
@@ -228,7 +264,7 @@ Digital
     if(digitalRead(context, 0, P8_11)) audioFLG = AudioModeC;
     if(digitalRead(context, 0, P8_15)) audioFLG = AudioModeD;
     if(AudiomodeFlag != audioFLG && audioFLG != 0) {
-        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1, Value:0
+        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1
         if(audioFLG == AudioModeA) {
             //Granular
             bytes[2] = 16;
@@ -246,8 +282,6 @@ Digital
             bytes[2] = 112;
         }
         midi.writeOutput(bytes, 3);
-        // midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:127)
-        // midi.writeOutput(w, 3);
         AudiomodeFlag = audioFLG;
     }
     
@@ -257,7 +291,7 @@ Digital
     if(digitalRead(context, 0, P8_12)) cvFLG = CVModeC;
     if(digitalRead(context, 0, P8_16)) cvFLG = CVModeD;
     if(CVmodeFlag != cvFLG && cvFLG != 0) {
-        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(2), 0};//Channel:16, CC Number:2, Value:0
+        midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(2), 0};//Channel:16, CC Number:2
         if(cvFLG == CVModeA) {
             //Morph looper
             bytes[2] = 16;
@@ -275,8 +309,6 @@ Digital
             bytes[2] = 112;
         }
         midi.writeOutput(bytes, 3);
-        // midi_byte_t w[3] = {0xBF, (midi_byte_t)(8), 127};//BLOCKS画面切替用(Channel:16, CC Number:8, Value:0)
-        // midi.writeOutput(w, 3);
         CVmodeFlag = cvFLG;
     }
     
@@ -377,6 +409,14 @@ Audio
         }
         case AudioModeD: {
             //Logistic map
+            for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+            	float v = 0.0f;
+            	v += logisticOsc.update();
+            	v += sineCircleOsc.update();
+            	const float gain = outputGain.getNextValue();
+                audioWrite(context, sample, 0, v * gain);
+                audioWrite(context, sample, 1, v * gain);
+            }
             break;
         }
         default: {

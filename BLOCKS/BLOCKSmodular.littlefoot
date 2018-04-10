@@ -111,7 +111,7 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
     if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
     if(audioMode == 3 && isCVPage == false) {}
-    if(audioMode == 4 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, true, x, y, z);
     
     if(cvMode == 1 && isCVPage == true) {}
     if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
@@ -125,7 +125,7 @@ void touchMove (int touchIndex, float x, float y, float z, float vz)
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
     if(audioMode == 2 && isCVPage == false) {}//SamplePlaybackはtouchMoveを使用しない
     if(audioMode == 3 && isCVPage == false) {}
-    if(audioMode == 4 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, true, x, y, z);
     
     if(cvMode == 1 && isCVPage == true) {}
     if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
@@ -139,7 +139,7 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, false, x, y, z);
     if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(false, x, y);
     if(audioMode == 3 && isCVPage == false) {}
-    if(audioMode == 4 && isCVPage == false) {}
+    if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, false, x, y, z);
     
     if(cvMode == 1 && isCVPage == true) {}
     if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, false, x, y, z);
@@ -223,6 +223,51 @@ void sendGranularCC(int index, bool isNoteOn, float x, float y, float z)
     }
 }
 
+void sendSamplePlaybackCC(bool isNoteOn, float x, float y) {
+    /*
+    MIDI channel: 9~12
+    CC Number:1
+    */
+    if(isNoteOn)
+    {
+        int bx = x < 1.0 ? 0 : 1;
+        int by = y < 1.0 ? 0 : 1;
+        int midiChannel = ((by << 1) | bx);
+        sendCC(midiChannel, 1, 127);
+    }else{
+        sendCC(0, 1, 0);
+        sendCC(1, 1, 0);
+        sendCC(2, 1, 0);
+        sendCC(3, 1, 0);
+    }
+}
+
+void sendChaoticOscillatorCC(int index, bool isNoteOn, float x, float y, float z) {
+    /*
+    distanse 1,2
+    Z(pressure) 3,4
+    */
+    int midiChannel = index - 1;
+    if (isNoteOn) {
+        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+        int upperDistValue = (distance >> 7) & 127;
+        int lowerDistValue = distance & 127;
+        sendCC(midiChannel, 1, upperDistValue);
+        sendCC(midiChannel, 2, lowerDistValue);   
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+        int upperPressureValue = (pressure >> 7) & 127;
+        int lowerPressureValue = pressure & 127;
+        sendCC(midiChannel, 3, upperPressureValue);
+        sendCC(midiChannel, 4, lowerPressureValue);
+    }
+    else {
+        sendCC(midiChannel, 1, 0);
+        sendCC(midiChannel, 2, 0);
+        sendCC(midiChannel, 3, 0);
+        sendCC(midiChannel, 4, 0);
+    }
+}
+
 void sendMicrotonalCC(int index, bool isNoteOn, float x, float y, float z) {
     /*
     distanse 1,2
@@ -246,24 +291,5 @@ void sendMicrotonalCC(int index, bool isNoteOn, float x, float y, float z) {
         sendCC(midiChannel, 2, 0);
         sendCC(midiChannel, 3, 0);
         sendCC(midiChannel, 4, 0);
-    }
-}
-
-void sendSamplePlaybackCC(bool isNoteOn, float x, float y) {
-    /*
-    MIDI channel: 9~12
-    CC Number:1
-    */
-    if(isNoteOn)
-    {
-        int bx = x < 1.0 ? 0 : 1;
-        int by = y < 1.0 ? 0 : 1;
-        int midiChannel = ((by << 1) | bx);
-        sendCC(midiChannel, 1, 127);
-    }else{
-        sendCC(0, 1, 0);
-        sendCC(1, 1, 0);
-        sendCC(2, 1, 0);
-        sendCC(3, 1, 0);
     }
 }

@@ -110,7 +110,7 @@ void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
     if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
-    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 3 && isCVPage == false) sendKarplusStrongCC(touchIndex, true, x, y, z);
     if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, true, x, y, z);
     
     if(cvMode == 1 && isCVPage == true) {}
@@ -124,7 +124,7 @@ void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
     if(audioMode == 2 && isCVPage == false) {}//SamplePlaybackはtouchMoveを使用しない
-    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 3 && isCVPage == false) sendKarplusStrongCC(touchIndex, false, x, y, z);
     if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, true, x, y, z);
     
     if(cvMode == 1 && isCVPage == true) {}
@@ -138,7 +138,7 @@ void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
     if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, false, x, y, z);
     if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(false, x, y);
-    if(audioMode == 3 && isCVPage == false) {}
+    if(audioMode == 3 && isCVPage == false) sendKarplusStrongCC(touchIndex, false, x, y, z);
     if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, false, x, y, z);
     
     if(cvMode == 1 && isCVPage == true) {}
@@ -239,6 +239,27 @@ void sendSamplePlaybackCC(bool isNoteOn, float x, float y) {
         sendCC(1, 1, 0);
         sendCC(2, 1, 0);
         sendCC(3, 1, 0);
+    }
+}
+
+void sendKarplusStrongCC(int index, bool trigger, float x, float y, float z) {
+    int midiChannel = index - 1;
+    int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+    int upperDistValue = (distance >> 7) & 127;
+    int lowerDistValue = distance & 127;
+    sendCC(midiChannel, 1, upperDistValue);
+    sendCC(midiChannel, 2, lowerDistValue);   
+    int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+    int upperPressureValue = (pressure >> 7) & 127;
+    int lowerPressureValue = pressure & 127;
+    sendCC(midiChannel, 3, upperPressureValue);
+    sendCC(midiChannel, 4, lowerPressureValue);
+    
+    if (trigger) {
+        sendCC(midiChannel, 5, 127);
+    }
+    else {
+        sendCC(midiChannel, 5, 0);
     }
 }
 

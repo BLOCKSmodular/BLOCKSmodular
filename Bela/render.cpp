@@ -252,12 +252,12 @@ void render(BelaContext *context, void *userData)
 {
 	//---------------------------------------
 	//test用強制モード切替
-	AudiomodeFlag = AudioModeD;
-	midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 112};//Channel:16, CC Number:1
- 	midi.writeOutput(audioModeBytes, 3);
- 	CVmodeFlag = CVModeC;
- 	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2
- 	midi.writeOutput(cvModeBytes, 3);
+	// AudiomodeFlag = AudioModeC;
+	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 80};//Channel:16, CC Number:1
+ //	midi.writeOutput(audioModeBytes, 3);
+ //	CVmodeFlag = CVModeB;
+ //	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 48};//Channel:16, CC Number:2
+ //	midi.writeOutput(cvModeBytes, 3);
  	//----------------------------------------
 	
 	
@@ -278,7 +278,6 @@ Digital
         isAudioPage = audiopage;
 	}
 
-	//テスト用強制モード切替
     unsigned char audioFLG = 0;
     unsigned char cvFLG = 0;
 
@@ -451,9 +450,9 @@ Audio
             	float v = 0.0f;
             	v += logisticOsc.update();
             	v += sineCircleOsc.update();
-            	const float gain = outputGain.getNextValue();
-                audioWrite(context, sample, 0, v * gain);
-                audioWrite(context, sample, 1, v * gain);
+            	v = v * outputGain.getNextValue();
+                audioWrite(context, sample, 0, v);
+                audioWrite(context, sample, 1, v);
             }
             break;
         }

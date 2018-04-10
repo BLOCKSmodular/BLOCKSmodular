@@ -1,7 +1,7 @@
 {
   "fileName": "render.cpp",
   "CLArgs": {
-    "-p": "32",
+    "-p": "64",
     "-C": "8",
     "-B": "16",
     "-H": "-6",
@@ -10,8 +10,8 @@
     "-M": 1,
     "-D": "0",
     "-A": "0",
-    "--pga-gain-left": "10",
-    "--pga-gain-right": "10",
+    "--pga-gain-left": "0",
+    "--pga-gain-right": "0",
     "user": "",
     "make": "CPPFLAGS=-std=c++14",
     "-X": "0",

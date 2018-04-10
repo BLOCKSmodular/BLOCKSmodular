@@ -258,12 +258,12 @@ void sendSamplePlaybackCC(bool isNoteOn, float x, float y) {
     {
         int bx = x < 1.0 ? 0 : 1;
         int by = y < 1.0 ? 0 : 1;
-        int midiChannel = ((by << 1) | bx) + 8;
+        int midiChannel = ((by << 1) | bx);
         sendCC(midiChannel, 1, 127);
     }else{
-        sendCC(8, 1, 0);
-        sendCC(8, 2, 0);
-        sendCC(8, 3, 0);
-        sendCC(8, 4, 0);
+        sendCC(0, 1, 0);
+        sendCC(1, 1, 0);
+        sendCC(2, 1, 0);
+        sendCC(3, 1, 0);
     }
 }

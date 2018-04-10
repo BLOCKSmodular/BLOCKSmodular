@@ -21,6 +21,7 @@ static constexpr unsigned char AudioModeC =   0b00001000;
 static constexpr unsigned char AudioModeD =   0b00010000;
 unsigned char CVmodeFlag = 0;
 unsigned char AudiomodeFlag = 0;
+bool isAudioPage = false;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 
@@ -34,8 +35,6 @@ StereoBuffer* samplePlay_buffer;
 bool samplePlay_isPlaying[4]{false, false, false, false};
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
-Smoothing LChGain;
-Smoothing RChGain;
 
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
@@ -51,6 +50,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
+        //std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
         
         if(channel == 15) {
             //General messeges
@@ -88,6 +88,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     //Sample playback
                     if(controlNum == 1) {
                     	if(value == 127) {
+                    		samplePlay_buffer[voiceIndex].setReadIter(0);
                     		samplePlay_isPlaying[voiceIndex] = true;
                     	}
                     }
@@ -167,13 +168,13 @@ bool setup(BelaContext *context, void *userData)
     pinMode(context, 0, P8_10, INPUT);//CVModeB
     pinMode(context, 0, P8_12, INPUT);//CVModeC
     pinMode(context, 0, P8_16, INPUT);//CVModeD
+    pinMode(context, 0, P8_16, INPUT);//Audio/CV switching
     
     //MIDI
     midi.readFrom(gMidiPort0);
     midi.writeTo(gMidiPort0);
     midi.enableParser(true);
     midi.setParserCallback(midiMessageCallback, (void *)gMidiPort0);
-    
     
     samplePlay_buffer = new StereoBuffer[NUMSAMPLEPLAYBUFFER];
     
@@ -190,17 +191,34 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-	// //test用強制モード切替
-	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
- //   midi.writeOutput(audioModeBytes, 3);
- //   midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
- //   midi.writeOutput(cvModeBytes, 3);
+	//---------------------------------------
+	//test用強制モード切替
+	/*
+	midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1, Value:48
+ 	midi.writeOutput(audioModeBytes, 3);
+ 	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 80};//Channel:16, CC Number:2, Value:80
+ 	midi.writeOutput(cvModeBytes, 3);
+ 	*/
+ 	//----------------------------------------
 	
 	
 	
 /*===========================================
 Digital
 =============================================*/
+	bool audiopage = (bool)digitalRead(context, 0, P9_12);
+	if(audiopage != isAudioPage) {
+        midi_byte_t bp[3] = {0xBF, (midi_byte_t)(8), 0};//Channel:16, CC Number:8
+        if(audiopage) {
+        	bp[2] = 0;
+        }
+        else {
+        	bp[2] = 127;
+        }
+        midi.writeOutput(bp, 3);
+        isAudioPage = audiopage;
+	}
+
     unsigned char audioFLG = AudioModeB;
     unsigned char cvFLG = CVModeD;
 
@@ -268,20 +286,17 @@ Analogue
 //AnalogueIN
     const int numAnalogueFrames = context->analogFrames;
     float outGain = 0.0f;
-    float lGain = 0.0f;
-    float rGain = 0.0f;
+    float paramKnobA = 0.0f;
+    float paramKnobB = 0.0f;
     for(unsigned int n = 0; n < numAnalogueFrames; n++) {
         outGain += analogRead(context, n, 0);
-        lGain += analogRead(context, n, 1);
-        rGain += analogRead(context, n, 2);
+        paramKnobA += analogRead(context, n, 1);
+        paramKnobB += analogRead(context, n, 2);
     }
     outGain = outGain / (float)numAnalogueFrames;
-    lGain = lGain / (float)numAnalogueFrames;
-    rGain = rGain / (float)numAnalogueFrames;
-    // rt_printf("gain: %f\n", outGain);
+    paramKnobA = paramKnobA / (float)numAnalogueFrames;//Parameter Knob A
+    paramKnobB = paramKnobB / (float)numAnalogueFrames;//Parameter Knob B
     outputGain.set(outGain);
-    LChGain.set(lGain);
-    RChGain.set(rGain);
     
 //AnalogueOUT
     switch(CVmodeFlag) {
@@ -327,10 +342,8 @@ Audio
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
             	const float gain = outputGain.getNextValue();
-            	const float lg = LChGain.getNextValue();
-            	const float rg = RChGain.getNextValue();
-                audioWrite(context, i, 0, gr[i] * gain * lg);
-                audioWrite(context, i, 1, gr[i] * gain * rg);
+                audioWrite(context, i, 0, gr[i] * gain);
+                audioWrite(context, i, 1, gr[i] * gain);
             }
             break;
         }
@@ -347,15 +360,14 @@ Audio
             	if(samplePlay_isPlaying[i]) {
             		samplePlay_buffer[i].nextBlock(l, r, numAudioFrames);
             		if(samplePlay_buffer[i].isBufferEnd()) samplePlay_isPlaying[i] = false;
+            		
             	}
             }
             
             for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
             	const float gain = outputGain.getNextValue();
-            	const float lg = LChGain.getNextValue();
-            	const float rg = RChGain.getNextValue();
-                audioWrite(context, sample, 0, l[sample] * gain * lg);
-                audioWrite(context, sample, 1, r[sample] * gain * rg);
+                audioWrite(context, sample, 0, l[sample] * gain);
+                audioWrite(context, sample, 1, r[sample] * gain);
             }
             break;
         }

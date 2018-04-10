@@ -17,6 +17,7 @@ public:
     :readLoop(loopPlaying), writeLoop(loopRecording)
     {
         buffer.resize(size);
+        bufferSize = size;
     }
     
     ~MonoBuffer(){}
@@ -24,6 +25,7 @@ public:
     void resize(const int size)
     {
         buffer.resize(size, 0.0f);
+        bufferSize = size;
     }
     
     void nextBlock(float* bufferToWrite, const int blockSize)
@@ -47,7 +49,7 @@ public:
     
     int getSize()
     {
-        return buffer.size();
+        return bufferSize;
     }
     
     const unsigned int getWriteIter()
@@ -62,8 +64,11 @@ public:
     
     void readNext(float& value)
     {
-        value = buffer[readIter];
-        addReadIter(1);
+        if(readIter < bufferSize)
+        {
+            value += buffer[readIter];
+            addReadIter(1);
+        }
     }
     
     void writeNext(float& value)
@@ -74,31 +79,36 @@ public:
     
     void addReadIter(const unsigned int add)
     {
-        const int bufSize = buffer.size();
-        
-        if(readIter + add >= bufSize && !readLoop) {
-            readIter = bufSize;
+        if(readIter + add >= bufferSize && !readLoop) {
+            readIter = bufferSize;
             return;
         }
         
         readIter += add;
-        if(readIter >= bufSize) {
-            readIter -= bufSize;
+        if(readIter >= bufferSize) {
+            readIter -= bufferSize;
         }
     }
     
     void addWriteIter(const unsigned int add)
     {
-        const int bufSize = buffer.size();
-        
-        if(writeIter + add >= bufSize && !writeLoop) {
-            writeIter = bufSize;
+        if(writeIter + add >= bufferSize && !writeLoop) {
+            writeIter = bufferSize;
             return;
         }
         
         writeIter += add;
-        if(writeIter >= bufSize) {
-            writeIter -= bufSize;
+        if(writeIter >= bufferSize) {
+            writeIter -= bufferSize;
+        }
+    }
+    
+    void setReadIter(const unsigned int itr) {
+        if(itr < buffer.size()) {
+            readIter = itr;
+        }
+        else{
+            std::cout<<"MonoBuffer-setReadIter(): Invalid iterater"<<std::endl;
         }
     }
     
@@ -124,6 +134,7 @@ public:
         if(buffer.size() < frameLen) {
             std::cout << "Warning: MonoBuffer class was resized!!!" << std::endl;
             buffer.resize(frameLen, 0.0f);
+            bufferSize = frameLen;
         }
         
         sf_seek(sndfile,0,SEEK_SET);
@@ -167,6 +178,7 @@ private:
     std::vector<float> buffer;
     std::atomic<unsigned int> readIter{0};
     std::atomic<unsigned int> writeIter{0};
+    unsigned int bufferSize;
     bool readLoop;
     bool writeLoop;
 };
@@ -180,6 +192,7 @@ public:
         for(int channel = 0; channel < numBufferChannels; ++channel) {
             buffer[channel].resize(size, 0.0f);
         }
+        bufferSize = size;
     }
     
     ~StereoBuffer(){}
@@ -189,6 +202,7 @@ public:
         for(int channel = 0; channel < numBufferChannels; ++channel) {
             buffer[channel].resize(size, 0.0f);
         }
+        bufferSize = size;
     }
     
     void nextBlock(float* LeftBufferToWrite, float* RightBufferToWrite, const int blockSize)
@@ -213,7 +227,7 @@ public:
     
     int getSize()
     {
-        return buffer[0].size();
+        return bufferSize;
     }
     
     const unsigned int getWriteIter()
@@ -228,13 +242,16 @@ public:
     
     void readNext(float& leftCh, float& rightCh)
     {
-        leftCh += buffer[0][readIter];
-        rightCh += buffer[1][readIter];
-        addReadIter(1);
+        if(readIter < bufferSize)
+        {
+            leftCh += buffer[0][readIter];
+            rightCh += buffer[1][readIter];
+            addReadIter(1);
+        }
     }
     
     bool isBufferEnd() {
-    	return readIter == buffer[0].size();
+    	return readIter >= bufferSize;
     }
     
     void writeNext(const float& leftCh, const float& rightCh)
@@ -246,36 +263,32 @@ public:
     
     void addReadIter(const unsigned int add)
     {
-        const int bufSize = buffer[0].size();
-        
-        if(readIter + add >= bufSize && !readLoop) {
-            readIter = bufSize;
+        if(readIter + add >= bufferSize && !readLoop) {
+            readIter = bufferSize;
             return;
         }
         
         readIter += add;
-        if(readIter >= bufSize) {
-            readIter -= bufSize;
+        if(readIter >= bufferSize) {
+            readIter -= bufferSize;
         }
     }
     
     void addWriteIter(const unsigned int add)
     {
-        const int bufSize = buffer[0].size();
-        
-        if(writeIter + add >= bufSize && !writeLoop) {
-            writeIter = bufSize;
+        if(writeIter + add >= bufferSize && !writeLoop) {
+            writeIter = bufferSize;
             return;
         }
         
         writeIter += add;
-        if(writeIter >= bufSize) {
-            writeIter -= bufSize;
+        if(writeIter >= bufferSize) {
+            writeIter -= bufferSize;
         }
     }
     
     void setReadIter(const unsigned int itr) {
-    	if(itr < buffer[0].size()) {
+    	if(itr < bufferSize) {
     		readIter = itr;
     	}
     	else{
@@ -348,6 +361,7 @@ private:
     std::vector<float> buffer[numBufferChannels];
     std::atomic<unsigned int> readIter{0};
     std::atomic<unsigned int> writeIter{0};
+    unsigned int bufferSize;
     bool readLoop;
     bool writeLoop;
 };

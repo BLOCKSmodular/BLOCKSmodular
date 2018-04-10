@@ -10,10 +10,12 @@
 #include <GranularSynth.h>
 #include <LogisticMap.h>
 #include <SineCircleMap.h>
+#include <KarplusStrong.h>
 
 
 static constexpr int NUMCVOUT = 8;
 static constexpr int NUMSAMPLEPLAYBUFFER = 4;
+static constexpr int NUMKARPLUSVOICE = 4;
 static constexpr unsigned char CVModeA =   0b00000001;
 static constexpr unsigned char CVModeB =   0b00000010;
 static constexpr unsigned char CVModeC =   0b00001000;
@@ -42,6 +44,9 @@ HighResolutionControlChange microtone_Distance[4];
 HighResolutionControlChange microtone_Pressure[4];
 StereoBuffer* samplePlay_buffer;
 bool samplePlay_isPlaying[4]{false, false, false, false};
+KarplusStrong karplus[NUMKARPLUSVOICE];
+HighResolutionControlChange kp_pitch[NUMKARPLUSVOICE];
+HighResolutionControlChange kp_decay[NUMKARPLUSVOICE];
 Smoothing CVSmooth[NUMCVOUT];
 Smoothing outputGain;
 
@@ -105,6 +110,25 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 }
                 case AudioModeC: {
                     //Karplus strong
+                    if(controlNum == 1 || controlNum == 2) {
+                    	bool isUpeerByte{controlNum == 1};
+                        kp_pitch[voiceIndex].set(value, isUpeerByte);
+                        if(kp_pitch[voiceIndex].update()) {
+                        		const float p = kp_pitch[voiceIndex].get() * 140.0f + 28.0f;
+                        		karplus[voiceIndex].setFreq(p);
+                    	}
+                    }
+                    
+                    if(controlNum == 3 || controlNum == 4) {
+                    	bool isUpeerByte{controlNum == 3};
+                        kp_decay[voiceIndex].set(value, isUpeerByte);
+                        if(kp_decay[voiceIndex].update()) karplus[voiceIndex].setDecay(kp_decay[voiceIndex].get());
+                    }
+                    	
+                    if(controlNum == 5 && value == 127) {
+                    	karplus[voiceIndex].trigger();
+                    }
+                    
                     break;
                 }
                 case AudioModeD: {
@@ -405,6 +429,20 @@ Audio
         }
         case AudioModeC: {
             //Karplus strong
+            float b[numAudioFrames];
+            for(unsigned int i = 0; i < numAudioFrames; ++i) {
+                b[i] = 0.0f;
+            }
+            
+            for(unsigned int i = 0; i < NUMKARPLUSVOICE; ++i) {
+            	karplus[i].nextBlock(b, numAudioFrames);
+            }
+            
+            for(unsigned int i = 0; i < numAudioFrames; ++i) {
+            	const float v = b[i] * outputGain.getNextValue();
+                audioWrite(context, i, 0, v);
+                audioWrite(context, i, 1, v);
+            }
             break;
         }
         case AudioModeD: {

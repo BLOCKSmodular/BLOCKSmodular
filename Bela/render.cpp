@@ -64,7 +64,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
-        // std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
+        //std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
         
         if(channel == 15) {
             //General messeges
@@ -252,8 +252,8 @@ void render(BelaContext *context, void *userData)
 {
 	//---------------------------------------
 	//test用強制モード切替
-	// AudiomodeFlag = AudioModeC;
-	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 80};//Channel:16, CC Number:1
+	// AudiomodeFlag = AudioModeB;
+	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1
  //	midi.writeOutput(audioModeBytes, 3);
  //	CVmodeFlag = CVModeB;
  //	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 48};//Channel:16, CC Number:2
@@ -376,7 +376,7 @@ Analogue
             break;
         }
         default: {
-            rt_printf("CVMode: %d\n", CVmodeFlag);
+            // rt_printf("CVMode: %d\n", CVmodeFlag);
             break;
         }
     }
@@ -457,7 +457,7 @@ Audio
             break;
         }
         default: {
-            rt_printf("AudioMode: %d\n", AudiomodeFlag);
+            // rt_printf("AudioMode: %d\n", AudiomodeFlag);
             break;
         }
     }

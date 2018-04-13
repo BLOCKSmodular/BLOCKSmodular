@@ -12,7 +12,6 @@
 #include <SineCircleMap.h>
 #include <KarplusStrong.h>
 
-
 static constexpr int NUMCVOUT = 8;
 static constexpr int NUMSAMPLEPLAYBUFFER = 4;
 static constexpr int NUMKARPLUSVOICE = 4;
@@ -26,7 +25,7 @@ static constexpr unsigned char AudioModeC =   0b00001000;
 static constexpr unsigned char AudioModeD =   0b00010000;
 unsigned char CVmodeFlag = 0;
 unsigned char AudiomodeFlag = 0;
-bool isAudioPage = false;
+bool isCVPage = false;
 Midi midi;
 const char *gMidiPort0 = "hw:1,0,0";
 
@@ -48,7 +47,6 @@ KarplusStrong karplus[NUMKARPLUSVOICE];
 HighResolutionControlChange kp_pitch[NUMKARPLUSVOICE];
 HighResolutionControlChange kp_decay[NUMKARPLUSVOICE];
 Smoothing CVSmooth[NUMCVOUT];
-Smoothing outputGain;
 
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
@@ -64,7 +62,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
     {
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
-        // std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
+        //std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
         
         if(channel == 15) {
             //General messeges
@@ -244,7 +242,6 @@ bool setup(BelaContext *context, void *userData)
     samplePlay_buffer[3].loadSampleFile("samplePlayD.wav");
     granular.loadFile("GranularSource.wav");
     
-    outputGain.set(0.01f);
     return true;
 }
 
@@ -252,8 +249,8 @@ void render(BelaContext *context, void *userData)
 {
 	//---------------------------------------
 	//test用強制モード切替
-	// AudiomodeFlag = AudioModeC;
-	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 80};//Channel:16, CC Number:1
+	// AudiomodeFlag = AudioModeB;
+	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1
  //	midi.writeOutput(audioModeBytes, 3);
  //	CVmodeFlag = CVModeB;
  //	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 48};//Channel:16, CC Number:2
@@ -265,17 +262,17 @@ void render(BelaContext *context, void *userData)
 /*===========================================
 Digital
 =============================================*/
-	bool audiopage = (bool)digitalRead(context, 0, P9_12);
-	if(audiopage != isAudioPage) {
+	bool cvpage = (bool)digitalRead(context, 0, P9_12);
+	if(cvpage != isCVPage) {
         midi_byte_t bp[3] = {0xBF, (midi_byte_t)(8), 0};//Channel:16, CC Number:8
-        if(audiopage) {
-        	bp[2] = 0;
-        }
-        else {
+        if(cvpage) {
         	bp[2] = 127;
         }
+        else {
+        	bp[2] = 0;
+        }
         midi.writeOutput(bp, 3);
-        isAudioPage = audiopage;
+        isCVPage = cvpage;
 	}
 
     unsigned char audioFLG = 0;
@@ -340,18 +337,6 @@ Analogue
 =============================================*/
 //AnalogueIN
     const int numAnalogueFrames = context->analogFrames;
-    float outGain = 0.0f;
-    float paramKnobA = 0.0f;
-    float paramKnobB = 0.0f;
-    for(unsigned int n = 0; n < numAnalogueFrames; n++) {
-        outGain += analogRead(context, n, 0);
-        paramKnobA += analogRead(context, n, 1);
-        paramKnobB += analogRead(context, n, 2);
-    }
-    outGain = outGain / (float)numAnalogueFrames;
-    paramKnobA = paramKnobA / (float)numAnalogueFrames;//Parameter Knob A
-    paramKnobB = paramKnobB / (float)numAnalogueFrames;//Parameter Knob B
-    outputGain.set(outGain);
     
 //AnalogueOUT
     switch(CVmodeFlag) {
@@ -376,7 +361,7 @@ Analogue
             break;
         }
         default: {
-            rt_printf("CVMode: %d\n", CVmodeFlag);
+            // rt_printf("CVMode: %d\n", CVmodeFlag);
             break;
         }
     }
@@ -386,81 +371,130 @@ Analogue
 Audio
 =============================================*/
     const int numAudioFrames = context->audioFrames;
-    switch(AudiomodeFlag) {
-        case AudioModeA: {
-            //Granular
-            float gr[numAudioFrames];
-            for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                gr[i] = 0.0f;
-            }
-            granular.nextBlock(gr, numAudioFrames);
-            
-            for(unsigned int i = 0; i < numAudioFrames; ++i) {
-            	const float gain = outputGain.getNextValue();
-                audioWrite(context, i, 0, gr[i] * gain);
-                audioWrite(context, i, 1, gr[i] * gain);
-            }
-            break;
-        }
-        case AudioModeB: {
-            //Sample playback
-            float l[numAudioFrames];
-            float r[numAudioFrames];
-            for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
-            	l[sample] = 0.0f;
-            	r[sample] = 0.0f;
-            }
-            
-            for(unsigned int i = 0; i < 4; ++i) {
-            	if(samplePlay_isPlaying[i]) {
-            		samplePlay_buffer[i].nextBlock(l, r, numAudioFrames);
-            		if(samplePlay_buffer[i].isBufferEnd()) samplePlay_isPlaying[i] = false;
-            		
-            	}
-            }
-            
-            for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
-            	const float gain = outputGain.getNextValue();
-                audioWrite(context, sample, 0, l[sample] * gain);
-                audioWrite(context, sample, 1, r[sample] * gain);
-            }
-            break;
-        }
-        case AudioModeC: {
-            //Karplus strong
-            float b[numAudioFrames];
-            for(unsigned int i = 0; i < numAudioFrames; ++i) {
-                b[i] = 0.0f;
-            }
-            
-            for(unsigned int i = 0; i < NUMKARPLUSVOICE; ++i) {
-            	karplus[i].nextBlock(b, numAudioFrames);
-            }
-            
-            for(unsigned int i = 0; i < numAudioFrames; ++i) {
-            	const float v = b[i] * outputGain.getNextValue();
-                audioWrite(context, i, 0, v);
-                audioWrite(context, i, 1, v);
-            }
-            break;
-        }
-        case AudioModeD: {
-            //Logistic map
-            for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
-            	float v = 0.0f;
-            	v += logisticOsc.update();
-            	v += sineCircleOsc.update();
-            	v = v * outputGain.getNextValue();
-                audioWrite(context, sample, 0, v);
-                audioWrite(context, sample, 1, v);
-            }
-            break;
-        }
-        default: {
-            rt_printf("AudioMode: %d\n", AudiomodeFlag);
-            break;
-        }
+    float gr[numAudioFrames];
+    float l[numAudioFrames];
+    float r[numAudioFrames];
+    float kpbuf[numAudioFrames];
+    float noiseBuf[numAudioFrames];
+    for(unsigned int i = 0; i < numAudioFrames; ++i) {
+    	gr[i] = 0.0f;
+    	l[i] = 0.0f;
+    	r[i] = 0.0f;
+    	kpbuf[i] = 0.0f;
+    	noiseBuf[i] = 0.0f;
     }
+    
+    //granular
+   	granular.nextBlock(gr, numAudioFrames);
+   	
+   	//Sample playback
+    for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+    	l[sample] = 0.0f;
+        r[sample] = 0.0f;
+    }
+            
+    for(unsigned int i = 0; i < 4; ++i) {
+    	if(samplePlay_isPlaying[i]) {
+        	samplePlay_buffer[i].nextBlock(l, r, numAudioFrames);
+        	if(samplePlay_buffer[i].isBufferEnd()) samplePlay_isPlaying[i] = false;
+        }
+   	}
+   	
+   	//Karplus Strong
+	for(unsigned int i = 0; i < NUMKARPLUSVOICE; ++i) {
+		karplus[i].nextBlock(kpbuf, numAudioFrames);
+  	}
+
+
+  	//Logistic map  	
+  	for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+        float v = 0.0f;
+        v += logisticOsc.update();
+        v += sineCircleOsc.update();
+        noiseBuf[sample] = v * 0.1f;
+  	}
+     
+     
+    for(unsigned int i = 0; i < numAudioFrames; ++i) {
+    	audioWrite(context, i, 0, gr[i] * 0.02f + l[i] * 0.2f + kpbuf[i] * 0.2f + noiseBuf[i] * 0.15f);
+    	audioWrite(context, i, 1, gr[i] * 0.02f + r[i] * 0.2f + kpbuf[i] * 0.2f + noiseBuf[i] * 0.15f);
+  	}   
+    
+    // switch(AudiomodeFlag) {
+    //     case AudioModeA: {
+    //         //Granular
+    //         float gr[numAudioFrames];
+    //         for(unsigned int i = 0; i < numAudioFrames; ++i) {
+    //             gr[i] = 0.0f;
+    //         }
+    //         granular.nextBlock(gr, numAudioFrames);
+            
+    //         for(unsigned int i = 0; i < numAudioFrames; ++i) {
+    //         	const float gain = 0.01f;
+    //             audioWrite(context, i, 0, gr[i] * gain);
+    //             audioWrite(context, i, 1, gr[i] * gain);
+    //         }
+    //         break;
+    //     }
+    //     case AudioModeB: {
+    //         //Sample playback
+    //         float l[numAudioFrames];
+    //         float r[numAudioFrames];
+    //         for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+    //         	l[sample] = 0.0f;
+    //         	r[sample] = 0.0f;
+    //         }
+            
+    //         for(unsigned int i = 0; i < 4; ++i) {
+    //         	if(samplePlay_isPlaying[i]) {
+    //         		samplePlay_buffer[i].nextBlock(l, r, numAudioFrames);
+    //         		if(samplePlay_buffer[i].isBufferEnd()) samplePlay_isPlaying[i] = false;
+            		
+    //         	}
+    //         }
+            
+    //         for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+    //         	const float gain = 0.1f;
+    //             audioWrite(context, sample, 0, l[sample] * gain);
+    //             audioWrite(context, sample, 1, r[sample] * gain);
+    //         }
+    //         break;
+    //     }
+    //     case AudioModeC: {
+    //         //Karplus strong
+    //         float b[numAudioFrames];
+    //         for(unsigned int i = 0; i < numAudioFrames; ++i) {
+    //             b[i] = 0.0f;
+    //         }
+            
+    //         for(unsigned int i = 0; i < NUMKARPLUSVOICE; ++i) {
+    //         	karplus[i].nextBlock(b, numAudioFrames);
+    //         }
+            
+    //         for(unsigned int i = 0; i < numAudioFrames; ++i) {
+    //         	const float v = b[i] * 0.1f;
+    //             audioWrite(context, i, 0, v);
+    //             audioWrite(context, i, 1, v);
+    //         }
+    //         break;
+    //     }
+    //     case AudioModeD: {
+    //         //Logistic map
+    //         for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
+    //         	float v = 0.0f;
+    //         	v += logisticOsc.update();
+    //         	v += sineCircleOsc.update();
+    //         	v = v * 0.1f;
+    //             audioWrite(context, sample, 0, v);
+    //             audioWrite(context, sample, 1, v);
+    //         }
+    //         break;
+    //     }
+    //     default: {
+    //         // rt_printf("AudioMode: %d\n", AudiomodeFlag);
+    //         break;
+    //     }
+    // }
 }
 
 void cleanup(BelaContext *context, void *userData)

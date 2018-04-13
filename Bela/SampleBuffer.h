@@ -320,6 +320,7 @@ public:
             for(int channel = 0; channel < numBufferChannels; ++channel) {
                 buffer[channel].resize(frameLen, 0.0f);
             }
+            bufferSize = frameLen;
         }
         
         sf_seek(sndfile,0,SEEK_SET);

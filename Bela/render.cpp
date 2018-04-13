@@ -12,7 +12,6 @@
 #include <SineCircleMap.h>
 #include <KarplusStrong.h>
 
-
 static constexpr int NUMCVOUT = 8;
 static constexpr int NUMSAMPLEPLAYBUFFER = 4;
 static constexpr int NUMKARPLUSVOICE = 4;
@@ -48,7 +47,6 @@ KarplusStrong karplus[NUMKARPLUSVOICE];
 HighResolutionControlChange kp_pitch[NUMKARPLUSVOICE];
 HighResolutionControlChange kp_decay[NUMKARPLUSVOICE];
 Smoothing CVSmooth[NUMCVOUT];
-Smoothing outputGain;
 
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
@@ -244,7 +242,6 @@ bool setup(BelaContext *context, void *userData)
     samplePlay_buffer[3].loadSampleFile("samplePlayD.wav");
     granular.loadFile("GranularSource.wav");
     
-    outputGain.set(0.01f);
     return true;
 }
 
@@ -340,18 +337,6 @@ Analogue
 =============================================*/
 //AnalogueIN
     const int numAnalogueFrames = context->analogFrames;
-    float outGain = 0.0f;
-    float paramKnobA = 0.0f;
-    float paramKnobB = 0.0f;
-    for(unsigned int n = 0; n < numAnalogueFrames; n++) {
-        outGain += analogRead(context, n, 0);
-        paramKnobA += analogRead(context, n, 1);
-        paramKnobB += analogRead(context, n, 2);
-    }
-    outGain = outGain / (float)numAnalogueFrames;
-    paramKnobA = paramKnobA / (float)numAnalogueFrames;//Parameter Knob A
-    paramKnobB = paramKnobB / (float)numAnalogueFrames;//Parameter Knob B
-    outputGain.set(outGain);
     
 //AnalogueOUT
     switch(CVmodeFlag) {
@@ -396,7 +381,7 @@ Audio
             granular.nextBlock(gr, numAudioFrames);
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-            	const float gain = outputGain.getNextValue();
+            	const float gain = 0.01f;
                 audioWrite(context, i, 0, gr[i] * gain);
                 audioWrite(context, i, 1, gr[i] * gain);
             }
@@ -420,7 +405,7 @@ Audio
             }
             
             for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {
-            	const float gain = outputGain.getNextValue();
+            	const float gain = 0.1f;
                 audioWrite(context, sample, 0, l[sample] * gain);
                 audioWrite(context, sample, 1, r[sample] * gain);
             }
@@ -438,7 +423,7 @@ Audio
             }
             
             for(unsigned int i = 0; i < numAudioFrames; ++i) {
-            	const float v = b[i] * outputGain.getNextValue();
+            	const float v = b[i] * 0.1f;
                 audioWrite(context, i, 0, v);
                 audioWrite(context, i, 1, v);
             }
@@ -450,7 +435,7 @@ Audio
             	float v = 0.0f;
             	v += logisticOsc.update();
             	v += sineCircleOsc.update();
-            	v = v * outputGain.getNextValue();
+            	v = v * 0.1f;
                 audioWrite(context, sample, 0, v);
                 audioWrite(context, sample, 1, v);
             }

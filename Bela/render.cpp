@@ -416,8 +416,8 @@ Audio
      
      
     for(unsigned int i = 0; i < numAudioFrames; ++i) {
-    	audioWrite(context, i, 0, gr[i] * 0.02f + l[i] * 0.2f + kpbuf[i] * 0.2f + noiseBuf[i] * 0.15f);
-    	audioWrite(context, i, 1, gr[i] * 0.02f + r[i] * 0.2f + kpbuf[i] * 0.2f + noiseBuf[i] * 0.15f);
+    	audioWrite(context, i, 0, gr[i] * 0.4f + l[i] + kpbuf[i] * 0.3f + noiseBuf[i] * 0.5f);
+    	audioWrite(context, i, 1, gr[i] * 0.4f + r[i] + kpbuf[i] * 0.3f + noiseBuf[i] * 0.5f);
   	}   
     
     // switch(AudiomodeFlag) {

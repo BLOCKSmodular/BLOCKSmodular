@@ -411,7 +411,7 @@ Audio
         float v = 0.0f;
         v += logisticOsc.update();
         v += sineCircleOsc.update();
-        noiseBuf[sample] = v * 0.1f;
+        noiseBuf[sample] = v;
   	}
      
      

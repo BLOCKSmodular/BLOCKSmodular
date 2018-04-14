@@ -15,7 +15,7 @@ public:
     float update(){
     	x = alpha.load() * x * (1.0 - x) ;
     	const float g = smoothGain.getNextValue();
-    	return x * g;
+    	return (x * 2.0 - 1.0f)  * g;
     };
     
     void setAlpha(double a) {

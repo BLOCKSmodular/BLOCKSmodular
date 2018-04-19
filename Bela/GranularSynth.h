@@ -1,4 +1,5 @@
-/***** GranularSynth.h *****/
+//  GranularSynth.h
+//  Created by Akiyuki Okayasu
 #ifndef GranularSynth_H_
 #define GranularSynth_H_
 

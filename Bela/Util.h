@@ -1,4 +1,5 @@
-/***** Util.h *****/
+//  Util.h
+//  Created by Akiyuki Okayasu
 #ifndef UTIL_H_
 #define UTIL_H_
 

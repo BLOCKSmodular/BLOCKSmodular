@@ -1,4 +1,5 @@
-//ver0.6.5
+//  BLOCKSmodular
+//  ver0.6.5
 #include <Bela.h>
 #include <Midi.h>
 #include <stdlib.h>
@@ -13,21 +14,24 @@
 #include <SineCircleMap.h>
 #include <KarplusStrong.h>
 
+enum class modeList{
+    init = 0,
+    Granular,
+    SamplePlay,
+    Karplus,
+    Logistic,
+    SineCircle,
+    MorphLooper,
+    Microtonal,
+    Euclid
+};
+
 static constexpr int NUMCVOUT = 8;
 static constexpr int NUMSAMPLEPLAYBUFFER = 4;
 static constexpr int NUMKARPLUSVOICE = 4;
-static constexpr unsigned char CVModeA =   0b00000001;
-static constexpr unsigned char CVModeB =   0b00000010;
-static constexpr unsigned char CVModeC =   0b00001000;
-static constexpr unsigned char CVModeD =   0b00010000;
-static constexpr unsigned char AudioModeA =   0b00000001;
-static constexpr unsigned char AudioModeB =   0b00000010;
-static constexpr unsigned char AudioModeC =   0b00001000;
-static constexpr unsigned char AudioModeD =   0b00010000;
-unsigned char CVmodeFlag = 0;
-unsigned char AudiomodeFlag = 0;
-bool isCVPage = false;
+static constexpr int NUMMICROTONALVOICE = 4;
 Midi midi;
+modeList mode;
 const char *gMidiPort0 = "hw:1,0,0";
 
 LogisticMap logisticOsc;
@@ -40,10 +44,10 @@ GranularSynth granular;
 HighResolutionControlChange gr_Position[2];
 HighResolutionControlChange gr_GrainSize[2];
 HighResolutionControlChange gr_WindowShape[2];
-HighResolutionControlChange microtone_Distance[4];
-HighResolutionControlChange microtone_Pressure[4];
+HighResolutionControlChange microtone_Distance[NUMMICROTONALVOICE];
+HighResolutionControlChange microtone_Pressure[NUMMICROTONALVOICE];
 StereoBuffer* samplePlay_buffer;
-bool samplePlay_isPlaying[4]{false, false, false, false};
+bool samplePlay_isPlaying[NUMSAMPLEPLAYBUFFER]{false, false, false, false};
 KarplusStrong karplus[NUMKARPLUSVOICE];
 HighResolutionControlChange kp_pitch[NUMKARPLUSVOICE];
 HighResolutionControlChange kp_decay[NUMKARPLUSVOICE];
@@ -54,9 +58,9 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
     const int channel = message.getChannel();//MIDIChannel 0~15
     
-    //Note On
-    if(message.getType() == kmmNoteOn){
-    }
+//    //Note On
+//    if(message.getType() == kmmNoteOn){
+//    }
     
     //Control change
     if(message.getType() == kmmControlChange)

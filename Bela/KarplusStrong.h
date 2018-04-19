@@ -1,4 +1,5 @@
 //  KarplusStrong.h
+//  Created by Akiyuki Okayasu
 #ifndef KarplusStrong_h
 #define KarplusStrong_h
 

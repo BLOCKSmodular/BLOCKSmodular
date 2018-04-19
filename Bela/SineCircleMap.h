@@ -1,4 +1,5 @@
-/***** SineCircleMap.h *****/
+//  SineCircleMap.h
+//  Created by Akiyuki Okayasu
 #ifndef SineCircleMap_H_
 #define SineCircleMap_H_
 

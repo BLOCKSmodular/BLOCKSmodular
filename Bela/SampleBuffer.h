@@ -1,4 +1,5 @@
-/***** SampleBuffer.h *****/
+//  SampleBuffer.h
+//  Created by Akiyuki Okayasu
 #ifndef SAMPLEBUFFER_H_
 #define SAMPLEBUFFER_H_
 

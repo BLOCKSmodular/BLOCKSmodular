@@ -1,4 +1,5 @@
-/***** LogisticMap.h *****/
+//  LogisticMap.h
+//  Created by Akiyuki Okayasu
 #ifndef LogisticMap_H_
 #define LogisticMap_H_
 

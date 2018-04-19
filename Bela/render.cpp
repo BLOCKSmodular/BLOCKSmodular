@@ -251,14 +251,12 @@ void render(BelaContext *context, void *userData)
 	//---------------------------------------
 	//test用強制モード切替
 	// AudiomodeFlag = AudioModeB;
-	// midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1
- //	midi.writeOutput(audioModeBytes, 3);
- //	CVmodeFlag = CVModeB;
- //	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 48};//Channel:16, CC Number:2
- //	midi.writeOutput(cvModeBytes, 3);
+    // midi_byte_t audioModeBytes[3] = {0xBF, (midi_byte_t)(1), 48};//Channel:16, CC Number:1
+    //	midi.writeOutput(audioModeBytes, 3);
+    //	CVmodeFlag = CVModeB;
+    //	midi_byte_t cvModeBytes[3] = {0xBF, (midi_byte_t)(2), 48};//Channel:16, CC Number:2
+    //	midi.writeOutput(cvModeBytes, 3);
  	//----------------------------------------
-	
-	
 	
 /*===========================================
 Digital

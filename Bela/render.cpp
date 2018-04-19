@@ -113,7 +113,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     	bool isUpeerByte{controlNum == 1};
                         kp_pitch[voiceIndex].set(value, isUpeerByte);
                         if(kp_pitch[voiceIndex].update()) {
-                        		const float p = kp_pitch[voiceIndex].get() * 140.0f + 28.0f;
+                        		const float p = kp_pitch[voiceIndex].get() * 40.0f + 40.0f;//40Hz~80Hz
                         		karplus[voiceIndex].setFreq(p);
                     	}
                     }

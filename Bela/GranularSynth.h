@@ -27,8 +27,8 @@ public:
     };
     
     ~GranularSynth(){
-        for(int i = 0; i < 4; ++i) {
-            for (int k = 0; k < numGrains; ++k) {
+        for(int i = numVoice - 1; i >= 0; --i) {
+            for(int k = numGrains - 1; k >= 0; --k) {
                 delete grains[i][k];
             }
         }

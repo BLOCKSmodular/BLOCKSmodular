@@ -1,57 +1,39 @@
 # MIDI Implementation
-##モード切り替えフラグ
-**General**
-| Mode     | MIDI CC | Value            | MIDI Channel   |
-| :------- | :------ | :--------------- | :------------- |
-| Audio/CV | 8       | 0(Audio)/127(CV) | 16(MIDI: 0xBF) |
-
+##モード切り替え
 **Audio**
-| Mode                 | MIDI CC | Value        | MIDI Channel   |
-| :------------------- | :------ | :----------- | :------------- |
-| OFF                  | 1       | 0            | 16(MIDI: 0xBF) |
-| A(Granular sampling) | 1       | 16 (1~32)    | 16(MIDI: 0xBF) |
-| B(Sample playback)   | 1       | 48 (33~64)   | 16(MIDI: 0xBF) |
-| C(Karplus strong)    | 1       | 80 (65~96)   | 16(MIDI: 0xBF) |
-| D(Logistic map)      | 1       | 112 (97~127) | 16(MIDI: 0xBF) |
+| Mode               | MIDI CC | Value | MIDI Channel   |
+| :----------------- | :------ | :---- | :------------- |
+| Init               | 1       | 0     | 16(MIDI: 0xBF) |
+| Granular synthesis | 1       | 1     | 16(MIDI: 0xBF) |
+| Sample playback    | 1       | 2     | 16(MIDI: 0xBF) |
+| Karplus strong     | 1       | 3     | 16(MIDI: 0xBF) |
+| Logistic map       | 1       | 4     | 16(MIDI: 0xBF) |
+| Sine circle map    | 1       | 5     | 16(MIDI: 0xBF) |
+| Morph looper       | 1       | 6     | 16(MIDI: 0xBF) |
+| Microtonal         | 1       | 7     | 16(MIDI: 0xBF) |
+| Euclid             | 1       | 8     | 16(MIDI: 0xBF) |
 
-**CV/Gate**
-| Mode               | MIDI CC | Value        | MIDI Channel |
-| :----------------- | :------ | :----------- | ------------ |
-| OFF                | 2       | 0            | 16           |
-| A(Morph looper)    | 2       | 16 (1~32)    | 16           |
-| B(Microtonal)      | 2       | 48 (33~64)   | 16           |
-| C(未定)            | 2       | 80 (65~96)   | 16           |
-| D(Euclid sequence) | 2       | 112 (97~127) | 16           |
-
-## Audio Mode詳細
-### Mode A (Granular sampling)
-**BLOCKS → Bela**
-CC
+## Mode詳細
+### Granular synthesis
 | Description               | MIDI CC | Value | MIDI Channel |
 | :------------------------ | :------ | :---- | :----------- |
 | X: Sample start position  | 1, 2    | 14bit | 1~4          |
 | Y : Grain size            | 3, 4    | 14bit | 1~4          |
 | Z : Window function shape | 5, 6    | 14bit | 1~4          |
 
-### Mode B(Sample playback)
-**BLOCKS → Bela**
-CC
+### Sample playback
 | Description          | MIDI CC | Value             | MIDI Channel |
 | :------------------- | :------ | :---------------- | :----------- |
 | Transpose(Play/Stop) | 1       | 0(stop)/127(play) | 1~4          |
 
-### Mode C(Karplus strong)
-**BLOCKS → Bela**
-CC
+### Karplus strong
 | Description          | MIDI CC | Value | MIDI Channel |
 | :------------------- | :------ | :---- | :----------- |
 | Distance: Pitch      | 1, 2    | 14bit | 1~4          |
 | Z(Pressure): Decay   | 3, 4    | 14bit | 1~4          |
 | Touch start: trigger | 5       | 127   | 1~4          |
 
-### Mode D(Logistic map)
-**BLOCKS → Bela**
-CC
+### Logistic map
 | Description                     | MIDI CC | Value | MIDI Channel |
 | :------------------------------ | :------ | :---- | :----------- |
 | Distance: Logistic map alpha    | 1, 2    | 14bit | 1            |
@@ -60,10 +42,7 @@ CC
 | Z(Pressure): Volume             | 3, 4    | 14bit | 2            |
 
 
-## CV/Gate Mode詳細
-### Mode A（Morph looper）
-**BLOCKS → Bela**
-*CC*
+### Morph looper
 | Description | MIDI CC | Value             | MIDI Channel |
 | :---------- | :------ | :---------------- | :----------- |
 | Rec         | 1       | 0(End)/127(Begin) | 9, 10        |
@@ -77,14 +56,11 @@ CC
 | :---------- | :---------- | :------ | :----------- |
 | Clear       | 1           | Note on | 9, 10        |
 
-### Mode B（Microtonal）
-**BLOCKS → Bela**
-*CC*
+### Microtonal
 | Description | MIDI CC | Value | MIDI Channel |
 | :---------- | :------ | :---- | :----------- |
 | Distance    | 1, 2    | 14bit | 9~12         |
 | Z           | 3, 4    | 14bit | 9~12         |
 
 
-### Mode C
-### Mode D
+### Euclid sequence

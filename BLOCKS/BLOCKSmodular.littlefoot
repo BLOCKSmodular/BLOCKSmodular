@@ -42,7 +42,7 @@ void initialise()
 void repaint()
 {   
     clearDisplay();
-    if(mode == 1) {
+    if(mode == 2) {
         drawSamplePlaybackPad();
     }
     drawNumber(mode,0xFFFFFFFF, 0, 0);

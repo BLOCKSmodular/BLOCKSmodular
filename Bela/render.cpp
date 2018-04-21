@@ -61,127 +61,145 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
         const int controlNum = message.getDataByte(0);
         const int value = message.getDataByte(1);
         //std::cout<<channel<<", "<<controlNum<<", "<<value<<std::endl;
-
-      	switch(mode) {
-      		case ModeList::init: {
-      			std::cout<<"mode init..."<<std::endl;
-      			break;
-      		}
-      		case ModeList::Granular: {
-      			if(controlNum == 1 || controlNum == 2) {
-          			bool isUpeerByte{controlNum == 1};
+        
+        switch(mode) {
+            case ModeList::init: {
+                std::cout<<"mode init..."<<std::endl;
+                break;
+            }
+            case ModeList::Granular: {
+                if(channel >= 2)
+                {
+                    break;
+                }
+                
+                if(controlNum == 1 || controlNum == 2) {
+                    bool isUpeerByte{controlNum == 1};
                     gr_Position[channel].set(value, isUpeerByte);
                     if(gr_Position[channel].update()) granular.setBufferPosition(gr_Position[channel].get(), channel);
                 }
-                    
+                
                 if(controlNum == 3 || controlNum == 4) {
-                	bool isUpeerByte{controlNum == 3};
+                    bool isUpeerByte{controlNum == 3};
                     gr_GrainSize[channel].set(value, isUpeerByte);
                     if(gr_GrainSize[channel].update()) granular.setGrainSize(gr_GrainSize[channel].get(), channel);
                 }
-                    
+                
                 if(controlNum == 5 || controlNum == 6) {
-                	bool isUpeerByte{controlNum == 5};
+                    bool isUpeerByte{controlNum == 5};
                     gr_WindowShape[channel].set(value, isUpeerByte);
                     if(gr_WindowShape[channel].update()) {
-                    	float v = gr_WindowShape[channel].get() * 2.0f;
+                        float v = gr_WindowShape[channel].get() * 2.0f;
                         granular.setWindowShape(v * 4.0f, channel);
                         granular.setDensity((v * v * v), channel);
                     }
                 }
-      			break;
-        	}
-        	case ModeList::SamplePlay: {
-        		if(controlNum == 1) {
+                
+                break;
+            }
+            case ModeList::SamplePlay: {
+                if(channel >= NUMSAMPLEPLAYBUFFER)
+                {
+                    break;
+                }
+                
+                if(controlNum == 1) {
                     if(value == 127) {
-                    	samplePlay_buffer[channel].setReadIter(0);
+                        samplePlay_buffer[channel].setReadIter(0);
                         samplePlay_isPlaying[channel] = true;
                     }
                 }
-        		break;
-        	}
-        	case ModeList::Karplus: {
-        		if(controlNum == 1 || controlNum == 2) {
-                	bool isUpeerByte{controlNum == 1};
+                
+                break;
+            }
+            case ModeList::Karplus: {
+                if(channel >= NUMKARPLUSVOICE)
+                {
+                    break;
+                }
+                
+                if(controlNum == 1 || controlNum == 2) {
+                    bool isUpeerByte{controlNum == 1};
                     kp_pitch[channel].set(value, isUpeerByte);
                     if(kp_pitch[channel].update()) {
-                    	const float p = kp_pitch[channel].get() * 40.0f + 40.0f;//40Hz~80Hz
+                        const float p = kp_pitch[channel].get() * 40.0f + 40.0f;//40Hz~80Hz
                         karplus[channel].setFreq(p);
                     }
                 }
-                    
+                
                 if(controlNum == 3 || controlNum == 4) {
                     bool isUpeerByte{controlNum == 3};
                     kp_decay[channel].set(value, isUpeerByte);
                     if(kp_decay[channel].update()) karplus[channel].setDecay(kp_decay[channel].get());
                 }
-                    
+                
                 if(controlNum == 5 && value == 127) {
-                	karplus[channel].trigger();
+                    karplus[channel].trigger();
                 }
-        		break;
-        	}
-        	case ModeList::Logistic: {
-        		if(channel == 0) {
-                	if(controlNum == 1 || controlNum == 2) {
-                		bool isUpeerByte{controlNum == 1};
-                		lgst_alpha.set(value, isUpeerByte);
-                		if(lgst_alpha.update()) logisticOsc.setAlpha(lgst_alpha.get() * 0.5f + 3.490f);
-                	}
-                        
-                	if(controlNum == 3 || controlNum == 4) {
-                		bool isUpeerByte{controlNum == 3};
-                    	lgst_gain.set(value, isUpeerByte);
-                    	if(lgst_gain.update()) logisticOsc.setGain(lgst_gain.get());
-                   	}
+                
+                break;
+            }
+            case ModeList::Logistic: {
+                if(channel == 0) {
+                    if(controlNum == 1 || controlNum == 2) {
+                        bool isUpeerByte{controlNum == 1};
+                        lgst_alpha.set(value, isUpeerByte);
+                        if(lgst_alpha.update()) logisticOsc.setAlpha(lgst_alpha.get() * 0.5f + 3.490f);
+                    }
+                    
+                    if(controlNum == 3 || controlNum == 4) {
+                        bool isUpeerByte{controlNum == 3};
+                        lgst_gain.set(value, isUpeerByte);
+                        if(lgst_gain.update()) logisticOsc.setGain(lgst_gain.get());
+                    }
                 }
                 else if(channel == 1) {
                     if(controlNum == 1 || controlNum == 2) {
-                    	bool isUpeerByte{controlNum == 1};
+                        bool isUpeerByte{controlNum == 1};
                         sineCircle_k.set(value, isUpeerByte);
                         if(sineCircle_k.update()) sineCircleOsc.setK(sineCircle_k.get() * 0.2f + 1.0f);
                     }
-                        
+                    
                     if(controlNum == 3 || controlNum == 4) {
-                    	bool isUpeerByte{controlNum == 3};
+                        bool isUpeerByte{controlNum == 3};
                         sineCircle_gain.set(value, isUpeerByte);
                         if(sineCircle_gain.update()) sineCircleOsc.setGain(sineCircle_gain.get());
-                     }
+                    }
                 }
-        		break;
-        	}
-         	case ModeList::SineCircle: {
-         		//TODO SineCircleMapモードの実装
-        		break;
-        	}
-        	case ModeList::MorphLooper: {
-        		break;
-        	}
-         	case ModeList::Microtonal: {
-         		if(channel >= NUMMICROTONALVOICE) {
-					std::cout<<"MIDI: Invalid voice number"<<std::endl;
-        	         break;
-				}
-                    
+                break;
+            }
+            case ModeList::SineCircle: {
+                //TODO SineCircleMapモードの実装
+                break;
+            }
+            case ModeList::MorphLooper: {
+                break;
+            }
+            case ModeList::Microtonal: {
+                if(channel >= NUMMICROTONALVOICE) {
+                    std::cout<<"MIDI: Invalid voice number"<<std::endl;
+                    break;
+                }
+                
                 if(controlNum == 1 || controlNum == 2) {
-                	bool isUpeerByte{controlNum == 1};
+                    bool isUpeerByte{controlNum == 1};
                     microtone_Distance[channel].set(value, isUpeerByte);
                     if(microtone_Distance[channel].update()) CVSmooth[channel * 2].set(microtone_Distance[channel].get());
                 }
-                    
+                
                 if(controlNum == 3 || controlNum == 4) {
-                	bool isUpeerByte{controlNum == 3};
+                    bool isUpeerByte{controlNum == 3};
                     microtone_Pressure[channel].set(value, isUpeerByte);
                     if(microtone_Pressure[channel].update()) CVSmooth[channel * 2 + 1].set(microtone_Pressure[channel].get());
                 }
-        		break;
-        	}
-        	case ModeList::Euclid: {
-        		break;
-        	}
-        	default: {
-        		break;
-        	}
+                break;
+            }
+            case ModeList::Euclid: {
+                break;
+            }
+            default: {
+                break;
+            }
         }
     }
 }
@@ -197,7 +215,7 @@ bool setup(BelaContext *context, void *userData)
     pinMode(context, 0, P8_07, INPUT);//Granular
     pinMode(context, 0, P8_08, INPUT);//Sample playback
     pinMode(context, 0, P8_09, INPUT);//Karplus strong
-   	pinMode(context, 0, P8_10, INPUT);//Logistic
+    pinMode(context, 0, P8_10, INPUT);//Logistic
     pinMode(context, 0, P8_11, INPUT);//Sine circle
     pinMode(context, 0, P8_12, INPUT);//Morph looper
     pinMode(context, 0, P8_15, INPUT);//Microtonal
@@ -245,15 +263,15 @@ void render(BelaContext *context, void *userData)
     if(digitalRead(context, 0, P8_10)) modeFlag = 4;//Logistic
     if(digitalRead(context, 0, P8_11)) modeFlag = 5;//Sine circle
     if(digitalRead(context, 0, P8_12)) modeFlag = 6;//Morph looper
-    if(digitalRead(context, 0, P8_15)) modeFlag = 7;//Microtonal
+    if(digitalRead(context, 0, P8_15)) modeFlag = 7;//Microtonal
     if(digitalRead(context, 0, P8_16)) modeFlag = 8;//Euclid
     if(digitalRead(context, 0, P8_18)) modeFlag = 9;
     if(digitalRead(context, 0, P8_27)) modeFlag = 10;
     if(mode != static_cast<ModeList>(modeFlag) && modeFlag != 0) {
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1
         bytes[2] = modeFlag;
-       	midi.writeOutput(bytes, 3);
-       	mode = static_cast<ModeList>(modeFlag);
+        midi.writeOutput(bytes, 3);
+        mode = static_cast<ModeList>(modeFlag);
     }
     
     /*===========================================
@@ -261,24 +279,24 @@ void render(BelaContext *context, void *userData)
      =============================================*/
     const int numAnalogueFrames = context->analogFrames;
     switch(mode) {
-    	case ModeList::MorphLooper: {
-    		break;
-    	}
-    	case ModeList:: Microtonal: {
-    		for(unsigned int n = 0; n < numAnalogueFrames; n++) {
+        case ModeList::MorphLooper: {
+            break;
+        }
+        case ModeList:: Microtonal: {
+            for(unsigned int n = 0; n < numAnalogueFrames; n++) {
                 for(unsigned ch = 0; ch < NUMCVOUT; ch++) {
                     analogWrite(context, n, ch, CVSmooth[ch].getNextValue());
                 }
             }
-    		break;
-    	}
-    	case ModeList:: Euclid: {
-    		break;
-    	}
-    	default: {
-    		rt_printf("CVOut Switch: default...\n");
-    		break;
-    	}
+            break;
+        }
+        case ModeList:: Euclid: {
+            break;
+        }
+        default: {
+            rt_printf("CVOut Switch: default...\n");
+            break;
+        }
     }
     
     /*===========================================

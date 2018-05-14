@@ -18,31 +18,20 @@
     </groups>
 
     <variables>
-    <variable name="AudioColor1"  displayName="Audio 1 Colour" group="colours" type="colour" value="0xFFFF0000"/>
-    <variable name="AudioColor2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFFFFA000"/>
-    <variable name="AudioColor3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFFE6F000"/>
-    <variable name="AudioColor4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFF80FF55"/>
-    <variable name="CVColor1"  displayName="CV 1 Colour" group="colours" type="colour" value="0xFF1500FF"/>
-    <variable name="CVColor2"  displayName="CV 2 Colour" group="colours" type="colour" value="0xFF03ABFF"/>
-    <variable name="CVColor3"  displayName="CV 3 Colour" group="colours" type="colour" value="0xFF00FF6C"/>
-    <variable name="CVColor4"  displayName="CV 4 Colour" group="colours" type="colour" value="0xFFB13FE8"/>
+    <variable name="Color1"  displayName="Audio 1 Colour" group="colours" type="colour" value="0xFFFF0000"/>
+    <variable name="Color2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFFFFA000"/>
+    <variable name="Color3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFFE6F000"/>
+    <variable name="Color4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFF80FF55"/>
     </variables>
 </metadata>
 */
 
 //==============================================================================
-bool isCVPage;
-int audioMode;
-int cvMode;
+int mode;
 
 void initialise()
 {
-    audioMode = -1;
-    cvMode = -1;
-    isCVPage = false;
-	for (int i = 0; i < 8; ++i) {
-        setHeapInt(i * 4, 0);
-    }
+    mode = 0;
 	for (int i = 0; i < 32; ++i) {
         setLocalConfigActiveState (i, false, false);
 	}
@@ -53,32 +42,20 @@ void initialise()
 void repaint()
 {   
     clearDisplay();
-    if(isCVPage == false && audioMode == 2) {
+    if(mode == 2) {
         drawSamplePlaybackPad();
     }
-    drawNumber(int(isCVPage),0xFFFFFFFF, 0, 0);
-    drawNumber(audioMode, 0xFFFF0000, 0, 5);
-    drawNumber(cvMode, 0xFF0000FF, 0, 10);
+    drawNumber(mode,0xFFFFFFFF, 0, 0);
     fadePressureMap();
     drawPressureMap();
 }
 
-int getColor(bool cvpage, int index)
+int getColor(int index)
 {
-    if(!cvpage)//Audio
-    {
-        if(index == 1) return AudioColor1;
-        if(index == 2) return AudioColor2;
-        if(index == 3) return AudioColor3;
-        if(index == 4) return AudioColor4;
-    }
-    else//CV
-    {
-        if(index == 1) return CVColor1;
-        if(index == 2) return CVColor2;
-        if(index == 3) return CVColor3;
-        if(index == 4) return CVColor4;
-    } 
+    if(index == 1) return Color1;
+    if(index == 2) return Color2;
+    if(index == 3) return Color3;
+    if(index == 4) return Color4;
     return 0xFFFFFFFF
 }
 
@@ -88,7 +65,7 @@ void drawSamplePlaybackPad()
     int h = 7;
     for(int i = 0; i < 4; ++i)
     {
-        int cl = getColor(false, i + 1);
+        int cl = getColor(i + 1);
         if(i == 0){
             blendRect(cl, 0, 0, w, h);
         }
@@ -108,44 +85,41 @@ void drawSamplePlaybackPad()
 //Touch event
 void touchStart (int touchIndex, float x, float y, float z, float vz)
 {
-    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
-    if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(true, x, y);
-    if(audioMode == 3 && isCVPage == false) sendKarplusStrongCC(touchIndex, true, x, y, z);
-    if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, true, x, y, z);
-    
-    if(cvMode == 1 && isCVPage == true) {}
-    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
-    if(cvMode == 3 && isCVPage == true) {}
-    if(cvMode == 4 && isCVPage == true) {}
-    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 60.0);
+    if(mode == 1) sendGranularCC(touchIndex, true, x, y, z);
+    if(mode == 2) sendSamplePlaybackCC(true, x, y);
+    if(mode == 3) sendKarplusStrongCC(touchIndex, true, x, y, z);
+    if(mode == 4) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Logistic map
+    if(mode == 5) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Sine circle map
+    if(mode == 6) {}//Morph looper
+    if(mode == 7) sendMicrotonalCC(touchIndex, true, x, y, z);
+    if(mode == 8) {}//Euclid
+    addPressurePoint (getColor(touchIndex), x, y, z * 60.0);
 }
 
 void touchMove (int touchIndex, float x, float y, float z, float vz)
 {
-    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, true, x, y, z);
-    if(audioMode == 2 && isCVPage == false) {}//SamplePlaybackはtouchMoveを使用しない
-    if(audioMode == 3 && isCVPage == false) sendKarplusStrongCC(touchIndex, false, x, y, z);
-    if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, true, x, y, z);
-    
-    if(cvMode == 1 && isCVPage == true) {}
-    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, true, x, y, z);
-    if(cvMode == 3 && isCVPage == true) {}
-    if(cvMode == 4 && isCVPage == true) {}
-    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 30.0);
+    if(mode == 1) sendGranularCC(touchIndex, true, x, y, z);
+    if(mode == 2) {}//SamplePlaybackはtouchMoveを使わない    
+    if(mode == 3) sendKarplusStrongCC(touchIndex, false, x, y, z);
+    if(mode == 4) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Logistic map
+    if(mode == 5) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Sine circle map
+    if(mode == 6) {}//Morph looper
+    if(mode == 7) sendMicrotonalCC(touchIndex, true, x, y, z);
+    if(mode == 8) {}//Euclid
+    addPressurePoint (getColor(touchIndex), x, y, z * 30.0);
 }
 
 void touchEnd (int touchIndex, float x, float y, float z, float vz)
 {
-    if(audioMode == 1 && isCVPage == false) sendGranularCC(touchIndex, false, x, y, z);
-    if(audioMode == 2 && isCVPage == false) sendSamplePlaybackCC(false, x, y);
-    if(audioMode == 3 && isCVPage == false) sendKarplusStrongCC(touchIndex, false, x, y, z);
-    if(audioMode == 4 && isCVPage == false) sendChaoticOscillatorCC(touchIndex, false, x, y, z);
-    
-    if(cvMode == 1 && isCVPage == true) {}
-    if(cvMode == 2 && isCVPage == true) sendMicrotonalCC(touchIndex, false, x, y, z);
-    if(cvMode == 3 && isCVPage == true) {}
-    if(cvMode == 4 && isCVPage == true) {}
-    addPressurePoint (getColor(isCVPage, touchIndex), x, y, z * 1.0);
+    if(mode == 1) sendGranularCC(touchIndex, false, x, y, z);
+    if(mode == 2) sendSamplePlaybackCC(false, x, y);
+    if(mode == 3) sendKarplusStrongCC(touchIndex, false, x, y, z);
+    if(mode == 4) sendChaoticOscillatorCC(touchIndex, false, x, y, z);//Logistic map
+    if(mode == 5) sendChaoticOscillatorCC(touchIndex, false, x, y, z);//Sine circle map
+    if(mode == 6) {}//Morph looper
+    if(mode == 7) sendMicrotonalCC(touchIndex, false, x, y, z);
+    if(mode == 8) {}//Euclid
+    addPressurePoint (getColor(touchIndex), x, y, z * 1.0);
 }
  
 
@@ -160,28 +134,8 @@ void handleMIDI (int byte0, int byte1, int byte2)
     */
     
     if(byte0 == 191) { //MIDIchannel:16のCC
-        //General
-        if(byte1 == 8) {//CCnumber:8
-            if(byte2 == 127) isCVPage = true;
-            if(byte2 == 0) isCVPage = false;
-        }
-        
-        //Audio
         if(byte1 == 1) {
-            if(byte2 == 0) audioMode = 0;//OFF
-            if(1 <= byte2 && byte2 <= 32) audioMode = 1;//Granular
-            if(33 <= byte2 && byte2 <= 64) audioMode = 2;//Sample playback
-            if(65 <= byte2 && byte2 <= 96) audioMode = 3;//Karplus strong
-            if(97 <= byte2 && byte2 <= 127) audioMode = 4;//Logistic map
-        }
-        
-        //CV
-        if(byte1 == 2) {
-            if(byte2 == 0) cvMode = 0;//OFF
-            if(1 <= byte2 && byte2 <= 32) cvMode = 1;
-            if(33 <= byte2 && byte2 <= 64) cvMode = 2;
-            if(65 <= byte2 && byte2 <= 96) cvMode = 3;
-            if(97 <= byte2 && byte2 <= 127) cvMode = 4;
+            mode = byte2;
         }
     }
 }
@@ -294,7 +248,7 @@ void sendMicrotonalCC(int index, bool isNoteOn, float x, float y, float z) {
     distanse 1,2
     Z(pressure) 3,4
     */
-    int midiChannel = index + 7;
+    int midiChannel = index - 1;
     if (isNoteOn) {
         int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
         int upperDistValue = (distance >> 7) & 127;

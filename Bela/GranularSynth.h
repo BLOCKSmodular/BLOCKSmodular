@@ -1,4 +1,8 @@
-/***** GranularSynth.h *****/
+/*
+ GranularSynth.h for BLOCKSmodular
+ Created by Akiyuki Okayasu
+ License: GPLv3
+ */
 #ifndef GranularSynth_H_
 #define GranularSynth_H_
 
@@ -27,8 +31,8 @@ public:
     };
     
     ~GranularSynth(){
-        for(int i = 0; i < 4; ++i) {
-            for (int k = 0; k < numGrains; ++k) {
+        for(int i = numVoice - 1; i >= 0; --i) {
+            for(int k = numGrains - 1; k >= 0; --k) {
                 delete grains[i][k];
             }
         }
@@ -103,7 +107,7 @@ public:
             for(int i = 0; i < numVoice; ++i) {
                 bufferPosition[i] = 0;
                 for (int k = 0; k < numGrains; ++k) {
-                	float ph = (float)i * s;
+                    float ph = (float)i * s;
                     grains[i][k]->init(ph);
                 }
             }
@@ -122,15 +126,15 @@ private:
     float windowShape[numVoice]{0.0f, 0.0f};//TODO: atomic
     float density[numVoice]{0.5f, 0.5f};//TODO: atomic
     std::mt19937 random{12345};//TODO: seedの変更
-    std::uniform_real_distribution<float> dist{0.0f, 1.0f}; 
+    std::uniform_real_distribution<float> dist{0.0f, 1.0f};
     
     bool dice(const int vI) {
-    	if(dist(random) <= density[vI]) {
-    		return true;
-    	}
-    	else {
-    		return false;
-    	}
+        if(dist(random) <= density[vI]) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
     
     class Grain
@@ -143,47 +147,47 @@ private:
         
         void init(const float phase)
         {
-        	if(phase < 0.0f || twoPi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
+            if(phase < 0.0f || twoPi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
             windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
             windowPhase = phase;
         }
         
         void update(const float* bufferToRead, float* bufferToWrite, const int length){
-        	if(windowPhase < twoPi) {
-  	            for(int i = 0; i < length; ++i) {
-	        		bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
-               		bufferPos++;
-                	windowPhase += windowStep;
-                	if(windowPhase >= twoPi) {
-                		parameterUpdate();
-                		return;
-                	}
-            	}
-        	}
-        	else{
-        		parameterUpdate();
-        	}
+            if(windowPhase < twoPi) {
+                for(int i = 0; i < length; ++i) {
+                    bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
+                    bufferPos++;
+                    windowPhase += windowStep;
+                    if(windowPhase >= twoPi) {
+                        parameterUpdate();
+                        return;
+                    }
+                }
+            }
+            else{
+                parameterUpdate();
+            }
         }
         
     private:
         inline float variableWindow()
         {
             /*
-            windowShape<=1.0: 0~(Pi * windowShape)の範囲のハン窓
-            windowShape>1,0: windowShapeが大きいほど矩形窓に近づいていく
-            */
+             windowShape<=1.0: 0~(Pi * windowShape)の範囲のハン窓
+             windowShape>1,0: windowShapeが大きいほど矩形窓に近づいていく
+             */
             //TODO: あとで窓関数をグラフにして確認確認する
             return tanhf_neon((halfPi - halfPi * cosf_neon(windowPhase)) * windowShape);
         }
         
         void parameterUpdate()
         {
-        	if(granular_.dice(voiceIndex)) {
-            	bufferPos = granular_.bufferPosition[voiceIndex];
-            	windowShape = granular_.windowShape[voiceIndex];
-            	windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
-            	windowPhase = 0.0f;
-        	}
+            if(granular_.dice(voiceIndex)) {
+                bufferPos = granular_.bufferPosition[voiceIndex];
+                windowShape = granular_.windowShape[voiceIndex];
+                windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
+                windowPhase = 0.0f;
+            }
         }
         
         int voiceIndex;

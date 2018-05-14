@@ -1,5 +1,8 @@
-//  EuclideanRhythm.h
-//  Created by Akiyuki Okayasu
+/*
+ EuclideanRhythm.h for BLOCKSmodular
+ Created by Akiyuki Okayasu
+ License: GPLv3
+ */
 #ifndef EuclideanRhythm_h
 #define EuclideanRhythm_h
 

@@ -1,5 +1,9 @@
-//  Util.h
-//  Created by Akiyuki Okayasu
+/*
+ Util.h for BLOCKSmodular
+ Created by Akiyuki Okayasu
+ License: GPLv3
+ */
+
 #ifndef UTIL_H_
 #define UTIL_H_
 
@@ -19,7 +23,7 @@ static inline int getNumChannels(std::string file)
     SNDFILE *sndfile ;
     SF_INFO sfinfo ;
     sfinfo.format = 0;
-    if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo))) 
+    if (!(sndfile = sf_open (file.c_str(), SFM_READ, &sfinfo)))
     {
         std::cout << "Couldn't open file " << file << ": " << sf_strerror(sndfile) << std::endl;
         return -1;
@@ -42,28 +46,28 @@ static inline int getNumFrames(std::string file)
 
 class HighResolutionControlChange {
 public:
-	void set(char v, bool isUpperByte) {
+    void set(char v, bool isUpperByte) {
         if(isUpperByte) {
             up = v;
         }else{
             low = v;
         }
-	}
+    }
     
     bool update() {
         if(up < 0 || low < 0) {
             return false;
-        } 
+        }
         else {
-        	value = (float)((up << 7) | (low & 0b1111111)) / 16384.0f;
+            value = (float)((up << 7) | (low & 0b1111111)) / 16384.0f;
             up = -1;
             low = -1;
-        	return true;
+            return true;
         }
     }
     
     float get() {
-    	return value;
+        return value;
     }
     
 private:

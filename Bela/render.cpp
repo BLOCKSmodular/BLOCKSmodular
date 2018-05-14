@@ -1,5 +1,9 @@
-//  BLOCKSmodular
-//  ver0.7 alpha1
+/*
+ BLOCKSmodular ver0.7.0
+ render.cpp for BLOCKSmodular
+ Created by Akiyuki Okayasu
+ License: GPLv3
+ */
 #include <Bela.h>
 #include <Midi.h>
 #include <stdlib.h>

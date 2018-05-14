@@ -1,5 +1,9 @@
-//  SampleBuffer.h
-//  Created by Akiyuki Okayasu
+/*
+ SampleBuffer.h for BLOCKSmodular
+ Created by Akiyuki Okayasu
+ License: GPLv3
+ */
+
 #ifndef SAMPLEBUFFER_H_
 #define SAMPLEBUFFER_H_
 
@@ -252,7 +256,7 @@ public:
     }
     
     bool isBufferEnd() {
-    	return readIter >= bufferSize;
+        return readIter >= bufferSize;
     }
     
     void writeNext(const float& leftCh, const float& rightCh)
@@ -289,12 +293,12 @@ public:
     }
     
     void setReadIter(const unsigned int itr) {
-    	if(itr < bufferSize) {
-    		readIter = itr;
-    	}
-    	else{
-    		std::cout<<"StereoBuffer-setReadIter(): Invalid iterater"<<std::endl;
-    	}
+        if(itr < bufferSize) {
+            readIter = itr;
+        }
+        else{
+            std::cout<<"StereoBuffer-setReadIter(): Invalid iterater"<<std::endl;
+        }
     }
     
     void loadSampleFile(std::string file)

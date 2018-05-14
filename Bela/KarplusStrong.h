@@ -1,5 +1,8 @@
-//  KarplusStrong.h
-//  Created by Akiyuki Okayasu
+/*
+ KarplusStrong.h.h for BLOCKSmodular
+ Created by Akiyuki Okayasu
+ License: GPLv3
+ */
 #ifndef KarplusStrong_h
 #define KarplusStrong_h
 
@@ -12,14 +15,14 @@
 class KarplusStrong {
 public:
     KarplusStrong(){
-    	source = std::make_unique<MonoBuffer>(4410, false, false);
-    	source->loadSampleFile("KarplusStrongSource.wav");
+        source = std::make_unique<MonoBuffer>(4410, false, false);
+        source->loadSampleFile("KarplusStrongSource.wav");
         source->setReadIter(source->getSize() - 1);//起動時になって1発鳴ってしまうのを防止する
     };
     ~KarplusStrong(){};
     
     void trigger(){
-    	sample = 0.0f;
+        sample = 0.0f;
         source->setReadIter(0);
     }
     
@@ -37,7 +40,7 @@ public:
     }
     
     void setDecay(const float decay) {
-    	lowpass.setDecay(decay);
+        lowpass.setDecay(decay);
     }
     
 private:

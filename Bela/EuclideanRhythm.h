@@ -21,10 +21,6 @@ public:
             return "0";
         }
         
-        if(StepSize > numSteps){
-            
-        }
-        
         std::string x = "1";
         int numX = numBeats;
         std::string y = "0";
@@ -58,6 +54,8 @@ public:
                 rhythmPattern.reset(i);
             }
         }
+        
+        StepSize = numSteps;
     }
     
     int getStepSize(){

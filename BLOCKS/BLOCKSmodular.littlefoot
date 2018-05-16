@@ -1,16 +1,6 @@
 /*
 <metadata description="BLOCKSmodular" details="" target="Lightpad" tags="MIDI;Controller;">
 <modes>
-<mode name="Default">
-  <variable name="AudioColor1" value="0xFFFF0000"/>
-  <variable name="AudioColor2" value="0xFFFFA000"/>
-  <variable name="AudioColor3" value="0xFFE6F000"/>
-  <variable name="AudioColor4" value="0xFF80FF55"/>
-  <variable name="CVColor1" value="0xFF1500FF"/>
-  <variable name="CVColor2" value="0xFF03ABFF"/>
-  <variable name="CVColor3" value="0xFF00FF6C"/>
-  <variable name="CVColor4" value="0xFFB13FE8"/>
-</mode>
 
 </modes>
     <groups>
@@ -28,9 +18,16 @@
 
 //==============================================================================
 int mode;
+/*
+Mode list
+0: Microtone
+1: Euclid
+2: Chaotic noise
+3: Physical drum
+4: Granular
+*/
 
-void initialise()
-{
+void initialise() {
     mode = 0;
 	for (int i = 0; i < 32; ++i) {
         setLocalConfigActiveState (i, false, false);
@@ -39,19 +36,14 @@ void initialise()
 
 //==============================================================================
 //Graphics
-void repaint()
-{   
+void repaint() {
     clearDisplay();
-    if(mode == 2) {
-        drawSamplePlaybackPad();
-    }
     drawNumber(mode,0xFFFFFFFF, 0, 0);
     fadePressureMap();
     drawPressureMap();
 }
 
-int getColor(int index)
-{
+int getColor(int index) {
     if(index == 1) return Color1;
     if(index == 2) return Color2;
     if(index == 3) return Color3;
@@ -59,74 +51,42 @@ int getColor(int index)
     return 0xFFFFFFFF
 }
 
-void drawSamplePlaybackPad()
-{
-    int w = 7;
-    int h = 7;
-    for(int i = 0; i < 4; ++i)
-    {
-        int cl = getColor(i + 1);
-        if(i == 0){
-            blendRect(cl, 0, 0, w, h);
-        }
-        if(i == 1){
-            blendRect(cl, 8, 0, w, h);
-        }
-        if(i == 2){
-            blendRect(cl, 0, 8, w, h);
-        }
-        if(i == 3){
-            blendRect(cl, 8, 8, w, h);
-        }
-    }
-}
-
 //==============================================================================
 //Touch event
-void touchStart (int touchIndex, float x, float y, float z, float vz)
-{
-    if(mode == 1) sendGranularCC(touchIndex, true, x, y, z);
-    if(mode == 2) sendSamplePlaybackCC(true, x, y);
-    if(mode == 3) sendKarplusStrongCC(touchIndex, true, x, y, z);
-    if(mode == 4) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Logistic map
-    if(mode == 5) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Sine circle map
-    if(mode == 6) {}//Morph looper
-    if(mode == 7) sendMicrotonalCC(touchIndex, true, x, y, z);
-    if(mode == 8) {}//Euclid
+void touchStart (int touchIndex, float x, float y, float z, float vz) {
+    int midiChannel = touchIndex - 1;
+    if(mode == 0) sendMicrotoneCC(midiChannel, true, x, y, z);
+    if(mode == 1) sendEuclidCC(midiChannel, true, x, y, z);
+    if(mode == 2) sendChaoticNoiseCC(midiChannel, true, x, y, z);
+    if(mode == 3) sendPhysicalDrumCC(midiChannel, true, x, y, z);
+    if(mode == 4) sendGranularCC(midiChannel, true, x, y, z);
     addPressurePoint (getColor(touchIndex), x, y, z * 60.0);
 }
 
-void touchMove (int touchIndex, float x, float y, float z, float vz)
-{
-    if(mode == 1) sendGranularCC(touchIndex, true, x, y, z);
-    if(mode == 2) {}//SamplePlaybackはtouchMoveを使わない    
-    if(mode == 3) sendKarplusStrongCC(touchIndex, false, x, y, z);
-    if(mode == 4) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Logistic map
-    if(mode == 5) sendChaoticOscillatorCC(touchIndex, true, x, y, z);//Sine circle map
-    if(mode == 6) {}//Morph looper
-    if(mode == 7) sendMicrotonalCC(touchIndex, true, x, y, z);
-    if(mode == 8) {}//Euclid
+void touchMove (int touchIndex, float x, float y, float z, float vz) {
+    int midiChannel = touchIndex - 1;
+    if(mode == 0) sendMicrotoneCC(midiChannel, true, x, y, z);
+    if(mode == 1) sendEuclidCC(midiChannel, true, x, y, z);
+    if(mode == 2) sendChaoticNoiseCC(midiChannel, true, x, y, z);
+    if(mode == 3) sendPhysicalDrumCC(midiChannel, false, x, y, z);
+    if(mode == 4) sendGranularCC(midiChannel, true, x, y, z);
     addPressurePoint (getColor(touchIndex), x, y, z * 30.0);
 }
 
-void touchEnd (int touchIndex, float x, float y, float z, float vz)
-{
-    if(mode == 1) sendGranularCC(touchIndex, false, x, y, z);
-    if(mode == 2) sendSamplePlaybackCC(false, x, y);
-    if(mode == 3) sendKarplusStrongCC(touchIndex, false, x, y, z);
-    if(mode == 4) sendChaoticOscillatorCC(touchIndex, false, x, y, z);//Logistic map
-    if(mode == 5) sendChaoticOscillatorCC(touchIndex, false, x, y, z);//Sine circle map
-    if(mode == 6) {}//Morph looper
-    if(mode == 7) sendMicrotonalCC(touchIndex, false, x, y, z);
-    if(mode == 8) {}//Euclid
+void touchEnd (int touchIndex, float x, float y, float z, float vz) {
+    int midiChannel = touchIndex - 1;
+    if(mode == 0) sendMicrotoneCC(midiChannel, false, x, y, z);
+    if(mode == 1) sendEuclidCC(midiChannel, false, x, y, z);
+    if(mode == 2) sendChaoticNoiseCC(midiChannel, false, x, y, z);
+    if(mode == 3) sendPhysicalDrumCC(midiChannel, false, x, y, z);
+    if(mode == 4) sendGranularCC(midiChannel, false, x, y, z);
     addPressurePoint (getColor(touchIndex), x, y, z * 1.0);
 }
  
 
 //==============================================================================
 //MIDI
-void handleMIDI (int byte0, int byte1, int byte2)
-{
+void handleMIDI (int byte0, int byte1, int byte2) {
     /*
     MIDIchannel: byte0 - 175
     CCnumber: byte1
@@ -138,19 +98,123 @@ void handleMIDI (int byte0, int byte1, int byte2)
             mode = byte2;
         }
     }
+
+    //TODO
+    //Euclid Trigger receive
 }
 
-void sendGranularCC(int index, bool isNoteOn, float x, float y, float z)
-{
+
+void sendMicrotoneCC(int midiChannel, bool isTouching, float x, float y, float z) {
     /*
-    x:1,2
-    y:3,4
-    z:5,6
+    CV Odd: Distance from center - CC1,2
+    CV Even: Z - CC3,4
+    */
+    if (isTouching) {
+        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+        int upperDistValue = (distance >> 7) & 127;
+        int lowerDistValue = distance & 127;
+        sendCC(midiChannel, 1, upperDistValue);
+        sendCC(midiChannel, 2, lowerDistValue);   
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+        int upperPressureValue = (pressure >> 7) & 127;
+        int lowerPressureValue = pressure & 127;
+        sendCC(midiChannel, 3, upperPressureValue);
+        sendCC(midiChannel, 4, lowerPressureValue);
+    }
+    else {
+        sendCC(midiChannel, 1, 0);
+        sendCC(midiChannel, 2, 0);
+        sendCC(midiChannel, 3, 0);
+        sendCC(midiChannel, 4, 0);
+    }
+}
+
+void sendEuclidCC(int midiChannel, bool isTouching, float x, float y, float z) {
+    /*
+    Steps: X - CC1
+    Amounts of beats: Y - CC2
+    Tempo: pressure - CC3,4
+    */
+    if (isTouching) {
+        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+        int upperDistValue = (distance >> 7) & 127;
+        int lowerDistValue = distance & 127;
+        sendCC(midiChannel, 1, upperDistValue);
+        sendCC(midiChannel, 2, lowerDistValue);   
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+        int upperPressureValue = (pressure >> 7) & 127;
+        int lowerPressureValue = pressure & 127;
+        sendCC(midiChannel, 3, upperPressureValue);
+        sendCC(midiChannel, 4, lowerPressureValue);
+    }
+    else {
+        sendCC(midiChannel, 1, 0);
+        sendCC(midiChannel, 2, 0);
+        sendCC(midiChannel, 3, 0);
+        sendCC(midiChannel, 4, 0);
+    }
+}
+
+void sendChaoticNoiseCC(int midiChannel, bool isTouching, float x, float y, float z) {
+    /*
+    Chaotic parameter: distance from center - CC1,2
+    Amp: pressure - CC3,4
+    */
+
+    if (isTouching) {
+        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+        int upperDistValue = (distance >> 7) & 127;
+        int lowerDistValue = distance & 127;
+        sendCC(midiChannel, 1, upperDistValue);
+        sendCC(midiChannel, 2, lowerDistValue);   
+        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+        int upperPressureValue = (pressure >> 7) & 127;
+        int lowerPressureValue = pressure & 127;
+        sendCC(midiChannel, 3, upperPressureValue);
+        sendCC(midiChannel, 4, lowerPressureValue);
+    }
+    else {
+        sendCC(midiChannel, 1, 0);
+        sendCC(midiChannel, 2, 0);
+        sendCC(midiChannel, 3, 0);
+        sendCC(midiChannel, 4, 0);
+    }
+}
+
+void sendPhysicalDrumCC(int midiChannel, bool isTouchStart, float x, float y, float z) {
+    /*
+    Pitch: distance from center - CC1,2
+    Decay: pressure -- CC3,4
+    Trigger: touch start -- CC5
+    */
+
+    int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
+    int upperDistValue = (distance >> 7) & 127;
+    int lowerDistValue = distance & 127;
+    sendCC(midiChannel, 1, upperDistValue);
+    sendCC(midiChannel, 2, lowerDistValue);   
+    int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
+    int upperPressureValue = (pressure >> 7) & 127;
+    int lowerPressureValue = pressure & 127;
+    sendCC(midiChannel, 3, upperPressureValue);
+    sendCC(midiChannel, 4, lowerPressureValue);
+    
+    if (isTouchStart) {
+        sendCC(midiChannel, 5, 127);
+    }
+    else {
+        sendCC(midiChannel, 5, 0);
+    }
+}
+
+void sendGranularCC(int midiChannel, bool isTouching, float x, float y, float z){
+    /*
+    Sample position: X - CC1,2
+    Grain size: Y - CC3,4
+    Loudness: pressure - CC5,6
     */
     
-    int midiChannel = index - 1;
-    
-    if(isNoteOn) {
+    if(isTouching) {
         int scaledX = int(map(x, 0.07, 1.93, 0.0, 16383.0));
         int upperX = (scaledX >> 7) & 127;
         int lowerX = scaledX & 127;
@@ -174,97 +238,5 @@ void sendGranularCC(int index, bool isNoteOn, float x, float y, float z)
         sendCC (midiChannel, 4, 0);
         sendCC (midiChannel, 5, 0);
         sendCC (midiChannel, 6, 0);
-    }
-}
-
-void sendSamplePlaybackCC(bool isNoteOn, float x, float y) {
-    /*
-    MIDI channel: 9~12
-    CC Number:1
-    */
-    if(isNoteOn)
-    {
-        int bx = x < 1.0 ? 0 : 1;
-        int by = y < 1.0 ? 0 : 1;
-        int midiChannel = ((by << 1) | bx);
-        sendCC(midiChannel, 1, 127);
-    }else{
-        sendCC(0, 1, 0);
-        sendCC(1, 1, 0);
-        sendCC(2, 1, 0);
-        sendCC(3, 1, 0);
-    }
-}
-
-void sendKarplusStrongCC(int index, bool trigger, float x, float y, float z) {
-    int midiChannel = index - 1;
-    int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
-    int upperDistValue = (distance >> 7) & 127;
-    int lowerDistValue = distance & 127;
-    sendCC(midiChannel, 1, upperDistValue);
-    sendCC(midiChannel, 2, lowerDistValue);   
-    int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
-    int upperPressureValue = (pressure >> 7) & 127;
-    int lowerPressureValue = pressure & 127;
-    sendCC(midiChannel, 3, upperPressureValue);
-    sendCC(midiChannel, 4, lowerPressureValue);
-    
-    if (trigger) {
-        sendCC(midiChannel, 5, 127);
-    }
-    else {
-        sendCC(midiChannel, 5, 0);
-    }
-}
-
-void sendChaoticOscillatorCC(int index, bool isNoteOn, float x, float y, float z) {
-    /*
-    distanse 1,2
-    Z(pressure) 3,4
-    */
-    int midiChannel = index - 1;
-    if (isNoteOn) {
-        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
-        int upperDistValue = (distance >> 7) & 127;
-        int lowerDistValue = distance & 127;
-        sendCC(midiChannel, 1, upperDistValue);
-        sendCC(midiChannel, 2, lowerDistValue);   
-        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
-        int upperPressureValue = (pressure >> 7) & 127;
-        int lowerPressureValue = pressure & 127;
-        sendCC(midiChannel, 3, upperPressureValue);
-        sendCC(midiChannel, 4, lowerPressureValue);
-    }
-    else {
-        sendCC(midiChannel, 1, 0);
-        sendCC(midiChannel, 2, 0);
-        sendCC(midiChannel, 3, 0);
-        sendCC(midiChannel, 4, 0);
-    }
-}
-
-void sendMicrotonalCC(int index, bool isNoteOn, float x, float y, float z) {
-    /*
-    distanse 1,2
-    Z(pressure) 3,4
-    */
-    int midiChannel = index - 1;
-    if (isNoteOn) {
-        int distance = int(map(abs(1.0 - x) + abs(1.0 - y), 0.0, 2.0, 0.0, 16383.0));
-        int upperDistValue = (distance >> 7) & 127;
-        int lowerDistValue = distance & 127;
-        sendCC(midiChannel, 1, upperDistValue);
-        sendCC(midiChannel, 2, lowerDistValue);   
-        int pressure = int(map(z, 0.0, 1.0, 0.0, 16383.0));
-        int upperPressureValue = (pressure >> 7) & 127;
-        int lowerPressureValue = pressure & 127;
-        sendCC(midiChannel, 3, upperPressureValue);
-        sendCC(midiChannel, 4, lowerPressureValue);
-    }
-    else {
-        sendCC(midiChannel, 1, 0);
-        sendCC(midiChannel, 2, 0);
-        sendCC(midiChannel, 3, 0);
-        sendCC(midiChannel, 4, 0);
     }
 }

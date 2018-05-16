@@ -224,17 +224,18 @@ bool setup(BelaContext *context, void *userData)
     sleep(2);
     std::cout<<"End sleep"<<std::endl;
     
-    //Digital pins setup
-    pinMode(context, 0, P8_07, INPUT);//Granular
-    pinMode(context, 0, P8_08, INPUT);//Sample playback
-    pinMode(context, 0, P8_09, INPUT);//Karplus strong
-    pinMode(context, 0, P8_10, INPUT);//Logistic
-    pinMode(context, 0, P8_11, INPUT);//Sine circle
-    pinMode(context, 0, P8_12, INPUT);//Morph looper
-    pinMode(context, 0, P8_15, INPUT);//Microtonal
-    pinMode(context, 0, P8_16, INPUT);//Euclid
-    pinMode(context, 0, P8_18, INPUT);//blank...
-    pinMode(context, 0, P8_27, INPUT);//blank...
+    //Mode change pin setup
+    pinMode(context, 0, pin_microtone, INPUT);//Microtone
+    pinMode(context, 0, pin_euclid, INPUT);//Euclid
+    pinMode(context, 0, pin_chaoticNoise, INPUT);//ChaoticNoise
+    pinMode(context, 0, pin_physicalDrum, INPUT);//PhysicalDrum
+    pinMode(context, 0, pin_granular, INPUT);//Granular
+    
+    //Gate output setup
+    pinMode(context, 0, pin_gate1, OUTPUT);//Gate1
+    pinMode(context, 0, pin_gate2, OUTPUT);//Gate2
+    pinMode(context, 0, pin_gate3, OUTPUT);//Gate3
+    pinMode(context, 0, pin_gate4, OUTPUT);//Gate4
     
     //MIDI
     midi.readFrom(gMidiPort0);
@@ -270,17 +271,12 @@ void render(BelaContext *context, void *userData)
      Digital IN: Mode change
      =============================================*/
     int modeFlag = 0;
-    if(digitalRead(context, 0, P8_07)) modeFlag = 1;//Granular
-    if(digitalRead(context, 0, P8_08)) modeFlag = 2;//Sample playback
-    if(digitalRead(context, 0, P8_09)) modeFlag = 3;//Karplus strong
-    if(digitalRead(context, 0, P8_10)) modeFlag = 4;//Logistic
-    if(digitalRead(context, 0, P8_11)) modeFlag = 5;//Sine circle
-    if(digitalRead(context, 0, P8_12)) modeFlag = 6;//Morph looper
-    if(digitalRead(context, 0, P8_15)) modeFlag = 7;//Microtonal
-    if(digitalRead(context, 0, P8_16)) modeFlag = 8;//Euclid
-    if(digitalRead(context, 0, P8_18)) modeFlag = 9;
-    if(digitalRead(context, 0, P8_27)) modeFlag = 10;
-    if(mode != static_cast<ModeList>(modeFlag) && modeFlag != 0) {
+    int* modeFlag = nullptr;
+    if(digitalRead(context, 0, pin_microtone)) modeFlag = static_cast<int*>ModeList::Microtone;
+    if(digitalRead(context, 0, pin_euclid)) modeFlag = static_cast<int*>ModeList::Euclid;
+    if(digitalRead(context, 0, pin_chaoticNoise)) modeFlag = static_cast<int*>ModeList::ChaoticNoise;
+    if(digitalRead(context, 0, pin_physicalDrum)) modeFlag = static_cast<int*>ModeList::PhysicalDrum;
+    if(digitalRead(context, 0, pin_granular)) modeFlag = static_cast<int*>ModeList::Granular;
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1
         bytes[2] = modeFlag;
         midi.writeOutput(bytes, 3);

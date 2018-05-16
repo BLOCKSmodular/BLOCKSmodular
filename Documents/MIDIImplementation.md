@@ -14,13 +14,16 @@
 - #### Microtone
 | Description                  | MIDI CC | Value |       MIDI Channel       |
 | :--------------------------- | :-----: | :---: | :----------------------: |
-| CV Odd: Distance from center |  1, 2   | 14bit | 1~4(MIDI Hex: 0xB0~0xB3) |
-| CV Even: Z                   |  3, 4   | 14bit | 1~4(MIDI Hex: 0xB0~0xB3) |
+| CV Odd: distance from center |  1, 2   | 14bit | 1~4(MIDI Hex: 0xB0~0xB3) |
+| CV Even: pressure            |  3, 4   | 14bit | 1~4(MIDI Hex: 0xB0~0xB3) |
 
 - #### Euclid
-| Description            | MIDI CC |  Value  |       MIDI Channel       |
-| :--------------------- | :-----: | :-----: | :----------------------: |
-| Gate: Sequence trigger |    1    | 0 or127 | 1~4(MIDI Hex: 0xB0~0xB3) |
+| Description         | MIDI CC |  Value  |       MIDI Channel       |
+| :------------------ | :-----: | :-----: | :----------------------: |
+| Steps: X            |    1    |  2~64   | 1~4(MIDI Hex: 0xB0~0xB3) |
+| Amounts of beats: Y |    2    |  0~127  | 1~4(MIDI Hex: 0xB0~0xB3) |
+| Tempo: pressure     |  3, 4   |  14bit  | 1~4(MIDI Hex: 0xB0~0xB3) |
+| Triggered:  gate    |    5    | 0 or127 | 1~4(MIDI Hex: 0xB0~0xB3) |
 
 - #### Chaotic noise
 | Description                             | MIDI CC | Value |       MIDI Channel       |
@@ -33,7 +36,7 @@
 | :-------------------------- | :-----: | :------: | :----------------------: |
 | Pitch: distance from center |  1, 2   |  14bit   | 1~4(MIDI Hex: 0xB0~0xB3) |
 | Decay: pressure             |  3, 4   |  14bit   | 1~4(MIDI Hex: 0xB0~0xB3) |
-| Trigger: Touch start        |    5    | 0 or 127 | 1~4(MIDI Hex: 0xB0~0xB3) |
+| Trigger: touch start        |    5    | 0 or 127 | 1~4(MIDI Hex: 0xB0~0xB3) |
 
 - #### Granular
 | Description        | MIDI CC | Value |       MIDI Channel       |

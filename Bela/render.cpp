@@ -18,6 +18,15 @@
 #include <SineCircleMap.h>
 #include <KarplusStrong.h>
 
+#define pin_microtone P8_27
+#define pin_euclid P9_12
+#define pin_chaoticNoise P9_14
+#define pin_physicalDrum P9_16
+#define pin_granular P8_29
+#define pin_gate1 P8_08
+#define pin_gate2 P8_10
+#define pin_gate3 P8_12
+#define pin_gate4 P8_16
 enum class ModeList{
     init = 0,
     Granular,

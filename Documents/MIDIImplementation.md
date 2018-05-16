@@ -3,11 +3,11 @@
 
 | Mode          | MIDI CC | Value |    MIDI Channel    |
 | :------------ | :-----: | :---: | :----------------: |
-| Microtone     |    1    |   0   | 16(MIDI Hex: 0xBF) |
-| Euclid        |    1    |   1   | 16(MIDI Hex: 0xBF) |
-| Chaotic noise |    1    |   2   | 16(MIDI Hex: 0xBF) |
-| Physical drum |    1    |   3   | 16(MIDI Hex: 0xBF) |
-| Granular      |    1    |   4   | 16(MIDI Hex: 0xBF) |
+| Microtone     |    1    |   1   | 16(MIDI Hex: 0xBF) |
+| Euclid        |    1    |   2   | 16(MIDI Hex: 0xBF) |
+| Chaotic noise |    1    |   3   | 16(MIDI Hex: 0xBF) |
+| Physical drum |    1    |   4   | 16(MIDI Hex: 0xBF) |
+| Granular      |    1    |   5   | 16(MIDI Hex: 0xBF) |
 
 <br>
 ## Detail of each modes

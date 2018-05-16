@@ -30,6 +30,7 @@ static constexpr int NumOutput_CV = 8;
 static constexpr int NumOutput_Gate = 4;
 static constexpr int NumVoice_PhysicalDrum = 4;
 static constexpr int NumVoice_Microtone = 4;
+static constexpr int NumVoice_ChaoticNoise = 4;
 
 enum class ModeList{
     init = 0,
@@ -44,18 +45,18 @@ Midi midi;
 ModeList mode;
 const char *gMidiPort0 = "hw:1,0,0";
 
-LogisticMap logisticOsc;
-HighResolutionControlChange	lgst_alpha;
-HighResolutionControlChange lgst_gain;
+LogisticMap logisticOsc[NumVoice_ChaoticNoise];
+HighResolutionControlChange	logistic_Alpha[NumVoice_ChaoticNoise];
+HighResolutionControlChange logistic_Gain[NumVoice_ChaoticNoise];
 GranularSynth granular;
-HighResolutionControlChange gr_Position[2];
-HighResolutionControlChange gr_GrainSize[2];
-HighResolutionControlChange gr_WindowShape[2];
+HighResolutionControlChange granular_Position[2];
+HighResolutionControlChange granular_GrainSize[2];
+HighResolutionControlChange granular_Density[2];
 HighResolutionControlChange microtone_Distance[NumVoice_Microtone];
 HighResolutionControlChange microtone_Pressure[NumVoice_Microtone];
-KarplusStrong karplus[NumVoice_PhysicalDrum];
-HighResolutionControlChange kp_pitch[NumVoice_PhysicalDrum];
-HighResolutionControlChange kp_decay[NumVoice_PhysicalDrum];
+KarplusStrong physicalDrum[NumVoice_PhysicalDrum];
+HighResolutionControlChange physicalDrum_Pitch[NumVoice_PhysicalDrum];
+HighResolutionControlChange physicalDrum_Decay[NumVoice_PhysicalDrum];
 Smoothing CVSmooth[NumOutput_CV];
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
@@ -92,21 +93,23 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 break;
             }
                 
-                
             case ModeList::ChaoticNoise: {
-                if(channel == 0) {//TODO MIDIchを1~4まで対応
-                    if(controlNum == 1 || controlNum == 2) {
-                        bool isUpeerByte{controlNum == 1};
-                        lgst_alpha.set(value, isUpeerByte);
-                        if(lgst_alpha.update()) logisticOsc.setAlpha(lgst_alpha.get() * 0.5f + 3.490f);
-                    }
-                    
-                    if(controlNum == 3 || controlNum == 4) {
-                        bool isUpeerByte{controlNum == 3};
-                        lgst_gain.set(value, isUpeerByte);
-                        if(lgst_gain.update()) logisticOsc.setGain(lgst_gain.get());
-                    }
+                if(channel >= NumVoice_ChaoticNoise) {
+                    std::cout<<"MIDI: Invalid voice number"<<std::endl;
+                    break;
                 }
+                if(controlNum == 1 || controlNum == 2) {
+                    bool isUpeerByte{controlNum == 1};
+                    logistic_Alpha.set(value, isUpeerByte);
+                    if(logistic_Alpha.update()) logisticOsc[channel].setAlpha(logistic_Alpha.get() * 0.5f + 3.490f);
+                }
+                
+                if(controlNum == 3 || controlNum == 4) {
+                    bool isUpeerByte{controlNum == 3};
+                    logistic_Gain.set(value, isUpeerByte);
+                    if(logistic_Gain.update()) logisticOsc[channel].setGain(logistic_Gain.get());
+                }
+                
                 break;
             }
                 
@@ -117,21 +120,21 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 
                 if(controlNum == 1 || controlNum == 2) {
                     bool isUpeerByte{controlNum == 1};
-                    kp_pitch[channel].set(value, isUpeerByte);
-                    if(kp_pitch[channel].update()) {
-                        const float p = kp_pitch[channel].get() * 40.0f + 40.0f;//40Hz~80Hz
-                        karplus[channel].setFreq(p);
+                    physicalDrum_Pitch[channel].set(value, isUpeerByte);
+                    if(physicalDrum_Pitch[channel].update()) {
+                        const float p = physicalDrum_Pitch[channel].get() * 40.0f + 40.0f;//40Hz~80Hz
+                        physicalDrum[channel].setFreq(p);
                     }
                 }
                 
                 if(controlNum == 3 || controlNum == 4) {
                     bool isUpeerByte{controlNum == 3};
-                    kp_decay[channel].set(value, isUpeerByte);
-                    if(kp_decay[channel].update()) karplus[channel].setDecay(kp_decay[channel].get());
+                    physicalDrum_Decay[channel].set(value, isUpeerByte);
+                    if(physicalDrum_Decay[channel].update()) physicalDrum[channel].setDecay(physicalDrum_Decay[channel].get());
                 }
                 
                 if(controlNum == 5 && value == 127) {
-                    karplus[channel].trigger();
+                    physicalDrum[channel].trigger();
                 }
                 
                 break;
@@ -145,21 +148,21 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 
                 if(controlNum == 1 || controlNum == 2) {
                     bool isUpeerByte{controlNum == 1};
-                    gr_Position[channel].set(value, isUpeerByte);
-                    if(gr_Position[channel].update()) granular.setBufferPosition(gr_Position[channel].get(), channel);
+                    granular_Position[channel].set(value, isUpeerByte);
+                    if(granular_Position[channel].update()) granular.setBufferPosition(granular_Position[channel].get(), channel);
                 }
                 
                 if(controlNum == 3 || controlNum == 4) {
                     bool isUpeerByte{controlNum == 3};
-                    gr_GrainSize[channel].set(value, isUpeerByte);
-                    if(gr_GrainSize[channel].update()) granular.setGrainSize(gr_GrainSize[channel].get(), channel);
+                    granular_GrainSize[channel].set(value, isUpeerByte);
+                    if(granular_GrainSize[channel].update()) granular.setGrainSize(granular_GrainSize[channel].get(), channel);
                 }
                 
                 if(controlNum == 5 || controlNum == 6) {
                     bool isUpeerByte{controlNum == 5};
-                    gr_WindowShape[channel].set(value, isUpeerByte);
-                    if(gr_WindowShape[channel].update()) {
-                        float v = gr_WindowShape[channel].get() * 2.0f;
+                    granular_Density[channel].set(value, isUpeerByte);
+                    if(granular_Density[channel].update()) {
+                        float v = granular_Density[channel].get() * 2.0f;
                         granular.setWindowShape(v * 4.0f, channel);
                         granular.setDensity((v * v * v), channel);
                     }
@@ -260,7 +263,7 @@ void render(BelaContext *context, void *userData)
     
     granular.nextBlock(grBuf, numAudioFrames);//granular
     for(unsigned int i = 0; i < NumVoice_PhysicalDrum; ++i) {//Karplus Strong
-        karplus[i].nextBlock(kpBuf, numAudioFrames);
+        physicalDrum[i].nextBlock(kpBuf, numAudioFrames);
     }
     for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {//Logistic map
         noiseBuf[sample] += logisticOsc.update();

@@ -15,7 +15,6 @@
 #include <Util.h>
 #include <GranularSynth.h>
 #include <LogisticMap.h>
-#include <SineCircleMap.h>
 #include <KarplusStrong.h>
 
 #define pin_microtone P8_27

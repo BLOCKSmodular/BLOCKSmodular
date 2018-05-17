@@ -36,7 +36,7 @@ static constexpr int NumVoice_PhysicalDrum = 4;
 
 enum class ModeList{
     init = 0,
-    Microtone
+    Microtone,
     Euclid,
     ChaoticNoise,
     PhysicalDrum,
@@ -101,7 +101,7 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 if (controlNum == 1) euclid[channel].setnumSteps((int)(value * 0.5));//0~63ステップ
                 if (controlNum == 2) euclid[channel].setBeatRatio((float)value / 127.0f);//0.0f~1.0f
                 if (controlNum == 3 || controlNum == 4) {
-                    bool isUpeerByte{controlNum == 3};
+                    bool isUpperByte{controlNum == 3};
                     euclid_Tempo[channel].set(value, isUpperByte);
                     if(euclid_Tempo[channel].update()) euclid[channel].setBPM(euclid_Tempo[channel].get() * 100.0f + 60.0f);//BPM60~160
                 }
@@ -116,15 +116,15 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                     break;
                 }
                 if(controlNum == 1 || controlNum == 2) {
-                    bool isUpeerByte{controlNum == 1};
-                    logistic_Alpha.set(value, isUpeerByte);
-                    if(logistic_Alpha.update()) logisticOsc[channel].setAlpha(logistic_Alpha.get() * 0.5f + 3.490f);
+                    bool isUpperByte{controlNum == 1};
+                    logistic_Alpha[channel].set(value, isUpperByte);
+                    if(logistic_Alpha[channel].update()) logisticOsc[channel].setAlpha(logistic_Alpha[channel].get() * 0.5f + 3.490f);
                 }
                 
                 if(controlNum == 3 || controlNum == 4) {
                     bool isUpeerByte{controlNum == 3};
-                    logistic_Gain.set(value, isUpeerByte);
-                    if(logistic_Gain.update()) logisticOsc[channel].setGain(logistic_Gain.get());
+                    logistic_Gain[channel].set(value, isUpeerByte);
+                    if(logistic_Gain[channel].update()) logisticOsc[channel].setGain(logistic_Gain[channel].get());
                 }
                 
                 break;
@@ -251,7 +251,7 @@ void render(BelaContext *context, void *userData)
     if(mode == ModeList::Euclid) {
         for(int sample = 0; sample < context->digitalFrames; ++sample) {
             for(int channel = 0; channel < NumOutput_Gate; ++channel) {
-                ditiralWriteOnce(context, sample, channel, Euclid.update());
+                digitalWriteOnce(context, sample, channel, euclid[channel].update());
             }
         }
     }
@@ -262,7 +262,7 @@ void render(BelaContext *context, void *userData)
     if(mode == ModeList::Microtone) {
         for(int sample = 0; sample < context->analogFrames; ++sample) {
             for(int channel = 0; channel < NumOutput_CV; ++channel) {
-                analogWrite(context, sample, channel, CVSmooth[ch].getNextValue());
+                analogWrite(context, sample, channel, CVSmooth[channel].getNextValue());
             }
         }
     }
@@ -281,15 +281,17 @@ void render(BelaContext *context, void *userData)
     }
     
     for(int sample = 0; sample < NumAudioFrames; ++sample) {//Chaotic Noise
-        buf_ChaoticNoise[sample] += logisticOsc.update();
+    	for(int channel = 0; channel < NumVoice_ChaoticNoise; ++channel) {
+    		buf_ChaoticNoise[sample] += logisticOsc[channel].update();	
+    	}
     }
     for(int i = 0; i < NumVoice_PhysicalDrum; ++i) {//Physical Drum
-        physicalDrum[i].nextBlock(kpBuf, NumAudioFrames);
+        physicalDrum[i].nextBlock(buf_PhysicalDrum, NumAudioFrames);
     }
-    granular.nextBlock(grBuf, NumAudioFrames);//Granular
-    for(unsigned int i = 0; i < NumAudioFrames; ++i) {//Mixer
-        audioWrite(context, i, 0, grBuf[i] * 0.4f + kpBuf[i] * 0.3f + noiseBuf[i] * 0.5f);
-        audioWrite(context, i, 1, grBuf[i] * 0.4f + kpBuf[i] * 0.3f + noiseBuf[i] * 0.5f);
+    granular.nextBlock(buf_Granular, NumAudioFrames);//Granular
+    for(int i = 0; i < NumAudioFrames; ++i) {//Mixer
+        audioWrite(context, i, 0, buf_Granular[i] * 0.4f + buf_PhysicalDrum[i] * 0.3f + buf_ChaoticNoise[i] * 0.5f);
+        audioWrite(context, i, 1, buf_Granular[i] * 0.4f + buf_PhysicalDrum[i] * 0.3f + buf_ChaoticNoise[i] * 0.5f);
     }
 }
 

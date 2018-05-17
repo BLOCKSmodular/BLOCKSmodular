@@ -10,7 +10,7 @@
 #include <bitset>
 #include <atomic>
 
-class EuclideanRhythm(){
+class EuclideanRhythm {
 public:
     EuclideanRhythm();
     ~EuclideanRhythm();
@@ -49,7 +49,7 @@ public:
         for (int i = 0; i < numY; ++i) seq += y;
         
         for(unsigned int i = 0; i < std::min(numSteps, MaxNumSteps); ++i) {
-            if(seq[i] == "1") {
+            if(seq[i] == '1') {
                 rhythmPattern.set(i);
             }else{
                 rhythmPattern.reset(i);
@@ -63,8 +63,8 @@ public:
             stepPosition++;
             if(stepPosition > numSteps) stepPosition = 0;
             sampleCounter = 0;
-            return rhythmPattern.test(currentStep);
-        } else if(sampleCounter < gateWidthInSamples) {
+            return rhythmPattern.test(stepPosition);
+        } else if(sampleCounter < GateWidthInSamples) {
             return rhythmPattern.test(stepPosition);
         } else {
             return false;

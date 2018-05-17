@@ -13,9 +13,6 @@
 
 class EuclideanRhythm {
 public:
-    EuclideanRhythm();
-    ~EuclideanRhythm();
-    
     void init(const int digitalSampleRate)
     {
         sampleRate = digitalSampleRate;

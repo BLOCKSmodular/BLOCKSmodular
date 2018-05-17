@@ -9,6 +9,7 @@
 #include <string>
 #include <bitset>
 #include <atomic>
+#include <algorithm>
 
 class EuclideanRhythm {
 public:
@@ -47,8 +48,7 @@ public:
         std::string seq;
         for (int i = 0; i < numX; ++i) seq += x;
         for (int i = 0; i < numY; ++i) seq += y;
-        
-        for(unsigned int i = 0; i < std::min(numSteps, MaxNumSteps); ++i) {
+        for(int i = 0; i < numSteps; ++i) {
             if(seq[i] == '1') {
                 rhythmPattern.set(i);
             }else{

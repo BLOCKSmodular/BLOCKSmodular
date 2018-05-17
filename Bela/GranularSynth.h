@@ -21,8 +21,8 @@ public:
     {
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
         const float s = twoPi / (float)numGrains;
-        for(int i = 0; i < numVoice; ++i) {
-            for (int k = 0; k < numGrains; ++k) {
+        for(int i = 0; i < NumVoice; ++i) {
+            for (int k = 0; k < NumGrains; ++k) {
                 grains[i][k] = new Grain(i, *this);
                 float ph = (float)i * s;
                 grains[i][k]->init(ph);
@@ -31,8 +31,8 @@ public:
     };
     
     ~GranularSynth(){
-        for(int i = numVoice - 1; i >= 0; --i) {
-            for(int k = numGrains - 1; k >= 0; --k) {
+        for(int i = NumVoice - 1; i >= 0; --i) {
+            for(int k = NumGrains - 1; k >= 0; --k) {
                 delete grains[i][k];
             }
         }
@@ -78,7 +78,7 @@ public:
     
     void setWindowShape(const float intensity, const int voiceIndex)// intensity 0.0f~1.0f, voiceIndex 0~(numVoice-1)
     {
-        if(voiceIndex >= numVoice) {
+        if(voiceIndex >= NumVoice) {
             std::cout<<"Error GranularSynth-setWindowShape(): Invalid voiceIndex"<<std::endl;
             return;
         }
@@ -87,7 +87,7 @@ public:
     
     void setDensity(const float denst, const int voiceIndex)
     {
-        if(voiceIndex >= numVoice) {
+        if(voiceIndex >= NumVoice) {
             std::cout<<"Error GranularSynth-setDensity(): Invalid voiceIndex"<<std::endl;
             return;
         }

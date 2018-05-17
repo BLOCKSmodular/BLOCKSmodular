@@ -29,10 +29,10 @@
 #define pin_gate4 P8_16
 static constexpr int NumOutput_CV = 8;
 static constexpr int NumOutput_Gate = 4;
-static constexpr int NumVoice_PhysicalDrum = 4;
 static constexpr int NumVoice_Microtone = 4;
 static constexpr int NumVoice_Euclid = 4;
 static constexpr int NumVoice_ChaoticNoise = 4;
+static constexpr int NumVoice_PhysicalDrum = 4;
 
 enum class ModeList{
     init = 0,
@@ -46,7 +46,8 @@ enum class ModeList{
 Midi midi;
 ModeList mode;
 const char *gMidiPort0 = "hw:1,0,0";
-
+HighResolutionControlChange microtone_Distance[NumVoice_Microtone];
+HighResolutionControlChange microtone_Pressure[NumVoice_Microtone];
 EuclideanRhythm euclid[NumVoice_Euclid];
 HighResolutionControlChange euclid_Tempo[NumVoice_Euclid];
 LogisticMap logisticOsc[NumVoice_ChaoticNoise];
@@ -56,8 +57,6 @@ GranularSynth granular;
 HighResolutionControlChange granular_Position[2];
 HighResolutionControlChange granular_GrainSize[2];
 HighResolutionControlChange granular_Density[2];
-HighResolutionControlChange microtone_Distance[NumVoice_Microtone];
-HighResolutionControlChange microtone_Pressure[NumVoice_Microtone];
 KarplusStrong physicalDrum[NumVoice_PhysicalDrum];
 HighResolutionControlChange physicalDrum_Pitch[NumVoice_PhysicalDrum];
 HighResolutionControlChange physicalDrum_Decay[NumVoice_PhysicalDrum];
@@ -247,57 +246,50 @@ void render(BelaContext *context, void *userData)
     }
     
     /*===========================================
-     CV Output
      Gate Output
      =============================================*/
-    const int numAnalogueFrames = context->analogFrames;
-    switch(mode) {
-        case ModeList:: Microtone: {
-            for(unsigned int n = 0; n < numAnalogueFrames; n++) {
-                for(unsigned ch = 0; ch < NumOutput_CV; ch++) {
-                    analogWrite(context, n, ch, CVSmooth[ch].getNextValue());
-                }
     if(mode == ModeList::Euclid) {
         for(int sample = 0; sample < context->digitalFrames; ++sample) {
             for(int channel = 0; channel < NumOutput_Gate; ++channel) {
                 ditiralWriteOnce(context, sample, channel, Euclid.update());
             }
-            break;
         }
-        default: {
-            //rt_printf("CVOut Switch: default...\n");
-            break;
+    }
+    
+    /*===========================================
+     CV Output
+     =============================================*/
+    if(mode == ModeList::Microtone) {
+        for(int sample = 0; sample < context->analogFrames; ++sample) {
+            for(int channel = 0; channel < NumOutput_CV; ++channel) {
+                analogWrite(context, sample, channel, CVSmooth[ch].getNextValue());
+            }
         }
     }
     
     /*===========================================
      Audio
      =============================================*/
-    const int numAudioFrames = context->audioFrames;
-    float grBuf[numAudioFrames];
-    float sampLeftBuf[numAudioFrames];
-    float sampRightBuf[numAudioFrames];
-    float kpBuf[numAudioFrames];
-    float noiseBuf[numAudioFrames];
-    for(unsigned int i = 0; i < numAudioFrames; ++i) {
-        grBuf[i] = 0.0f;
-        sampLeftBuf[i] = 0.0f;
-        sampRightBuf[i] = 0.0f;
-        kpBuf[i] = 0.0f;
-        noiseBuf[i] = 0.0f;
+    const int NumAudioFrames = context->audioFrames;
+    float buf_ChaoticNoise[NumAudioFrames]{};
+    float buf_PhysicalDrum[NumAudioFrames]{};
+    float buf_Granular[NumAudioFrames]{};
+    for(int sample = 0; sample < NumAudioFrames; ++sample) {//TODO 配列の0初期化の高速化
+        buf_ChaoticNoise[sample] = 0.0f;
+        buf_PhysicalDrum[sample] = 0.0f;
+        buf_Granular[sample] = 0.0f;
     }
     
-    granular.nextBlock(grBuf, numAudioFrames);//granular
-    for(unsigned int i = 0; i < NumVoice_PhysicalDrum; ++i) {//Karplus Strong
-        physicalDrum[i].nextBlock(kpBuf, numAudioFrames);
+    for(int sample = 0; sample < NumAudioFrames; ++sample) {//Chaotic Noise
+        buf_ChaoticNoise[sample] += logisticOsc.update();
     }
-    for(unsigned int sample = 0; sample < numAudioFrames; ++sample) {//Logistic map
-        noiseBuf[sample] += logisticOsc.update();
-        noiseBuf[sample] += sineCircleOsc.update();
+    for(int i = 0; i < NumVoice_PhysicalDrum; ++i) {//Physical Drum
+        physicalDrum[i].nextBlock(kpBuf, NumAudioFrames);
     }
-    for(unsigned int i = 0; i < numAudioFrames; ++i) {//mixer
-        audioWrite(context, i, 0, grBuf[i] * 0.4f + sampLeftBuf[i] + kpBuf[i] * 0.3f + noiseBuf[i] * 0.5f);
-        audioWrite(context, i, 1, grBuf[i] * 0.4f + sampRightBuf[i] + kpBuf[i] * 0.3f + noiseBuf[i] * 0.5f);
+    granular.nextBlock(grBuf, NumAudioFrames);//Granular
+    for(unsigned int i = 0; i < NumAudioFrames; ++i) {//Mixer
+        audioWrite(context, i, 0, grBuf[i] * 0.4f + kpBuf[i] * 0.3f + noiseBuf[i] * 0.5f);
+        audioWrite(context, i, 1, grBuf[i] * 0.4f + kpBuf[i] * 0.3f + noiseBuf[i] * 0.5f);
     }
 }
 

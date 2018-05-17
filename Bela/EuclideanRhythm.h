@@ -14,6 +14,12 @@ class EuclideanRhythm(){
 public:
     EuclideanRhythm();
     ~EuclideanRhythm();
+    
+    void init(const int digitalSampleRate)
+    {
+        sampleRate = digitalSampleRate;
+    }
+    
     void generateRhythm()
     {
         const int numBeats = numSteps * beatRatio;
@@ -81,8 +87,8 @@ public:
         beatRatio.store(ratio);
     }
     
-    void setBPM(const float bpm, const int digitalSampleRate) {
-        stepWidthInSamples = bpm / (digitalSampleRate * 60.0f);
+    void setBPM(const float bpm) {
+        stepWidthInSamples = bpm / (float)(sampleRate * 60.0f);
     }
     
 private:
@@ -94,6 +100,7 @@ private:
     std::atomic<float> beatRatio{0.0f};//シーケンス内のトリガーする割合(0.0f~1.0f)
     std::atomic<int> stepWidthInSamples{100};//1ステップの長さ（サンプル数）
     int sampleCounter = 0;//1ステップの長さのカウンター
+    std::atomic<int> sampleRate;
 };
 
 #endif /* EuclideanRhythm_h */

@@ -16,6 +16,7 @@
 #include <GranularSynth.h>
 #include <LogisticMap.h>
 #include <KarplusStrong.h>
+#include <EuclideanRhythm.h>
 
 #define pin_microtone P8_27
 #define pin_euclid P9_12
@@ -30,6 +31,7 @@ static constexpr int NumOutput_CV = 8;
 static constexpr int NumOutput_Gate = 4;
 static constexpr int NumVoice_PhysicalDrum = 4;
 static constexpr int NumVoice_Microtone = 4;
+static constexpr int NumVoice_Euclid = 4;
 static constexpr int NumVoice_ChaoticNoise = 4;
 
 enum class ModeList{
@@ -45,6 +47,8 @@ Midi midi;
 ModeList mode;
 const char *gMidiPort0 = "hw:1,0,0";
 
+EuclideanRhythm euclid[NumVoice_Euclid];
+HighResolutionControlChange euclid_Tempo[NumVoice_Euclid];
 LogisticMap logisticOsc[NumVoice_ChaoticNoise];
 HighResolutionControlChange	logistic_Alpha[NumVoice_ChaoticNoise];
 HighResolutionControlChange logistic_Gain[NumVoice_ChaoticNoise];
@@ -90,6 +94,20 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
             }
                 
             case ModeList::Euclid: {
+                if(channel >= NumVoice_Euclid) {
+                    std::cout<<"MIDI: Invalid voice number"<<std::endl;
+                    break;
+                }
+                
+                if (controlNum == 1) euclid[channel].setnumSteps((int)(value * 0.5));//0~63ステップ
+                if (controlNum == 2) euclid[channel].setBeatRatio((float)value / 127.0f);//0.0f~1.0f
+                if (controlNum == 3 || controlNum == 4) {
+                    bool isUpeerByte{controlNum == 3};
+                    euclid_Tempo[channel].set(value, isUpperByte);
+                    if(euclid_Tempo[channel].update()) euclid[channel].setBPM(euclid_Tempo[channel].get() * 100.0f + 60.0f);//BPM60~160
+                }
+                
+                if(controlNum == 1 || controlNum == 2) euclid[channel].generateRhythm();
                 break;
             }
                 
@@ -181,6 +199,9 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 bool setup(BelaContext *context, void *userData)
 {
     mode = ModeList::init;
+    for(int i = 0; i < NumOutput_Gate; ++i) {
+        euclid[i].init(context->digitalSampleRate);
+    }
     
     //Mode change pin setup
     pinMode(context, 0, pin_microtone, INPUT);//Microtone
@@ -227,6 +248,7 @@ void render(BelaContext *context, void *userData)
     
     /*===========================================
      CV Output
+     Gate Output
      =============================================*/
     const int numAnalogueFrames = context->analogFrames;
     switch(mode) {
@@ -235,6 +257,10 @@ void render(BelaContext *context, void *userData)
                 for(unsigned ch = 0; ch < NumOutput_CV; ch++) {
                     analogWrite(context, n, ch, CVSmooth[ch].getNextValue());
                 }
+    if(mode == ModeList::Euclid) {
+        for(int sample = 0; sample < context->digitalFrames; ++sample) {
+            for(int channel = 0; channel < NumOutput_Gate; ++channel) {
+                ditiralWriteOnce(context, sample, channel, Euclid.update());
             }
             break;
         }

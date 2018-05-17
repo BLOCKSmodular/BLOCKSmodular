@@ -136,54 +136,40 @@ private:
         
         void init(const float phase)
         {
-            if(phase < 0.0f || twoPi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
-            windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
+            if(phase < 0.0f || Pi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
+             windowStep = Pi / (float)granular_.grainSize[voiceIndex];
             windowPhase = phase;
         }
         
         void update(const float* bufferToRead, float* bufferToWrite, const int length){
-            if(windowPhase < twoPi) {
-                for(int i = 0; i < length; ++i) {
-                    bufferToWrite[i] += bufferToRead[bufferPos] * variableWindow();
-                    bufferPos++;
-                    windowPhase += windowStep;
-                    if(windowPhase >= twoPi) {
-                        parameterUpdate();
-                        return;
-                    }
-                }
-            }
-            else{
-                parameterUpdate();
+        	if(windowPhase > Pi) parameterUpdate();
+        	for(int i = 0; i < length; ++i) {
+        		bufferToWrite[i] += bufferToRead[bufferPos] * sinWindow();
+                bufferPos++;
+                windowPhase += phaseStep;
             }
         }
         
     private:
-        inline float variableWindow()
-        {
-            /*
-             windowShape<=1.0: 0~(Pi * windowShape)の範囲のハン窓
-             windowShape>1,0: windowShapeが大きいほど矩形窓に近づいていく
-             */
-            //TODO: あとで窓関数をグラフにして確認確認する
-            return tanhf_neon((halfPi - halfPi * cosf_neon(windowPhase)) * windowShape);
-        }
+    	inline float sinWindow()
+    	{
+    		return sinf_neon(windowPhase);
+    	}
         
         void parameterUpdate()
         {
             if(granular_.dice(voiceIndex)) {
                 bufferPos = granular_.bufferPosition[voiceIndex];
                 windowShape = granular_.windowShape[voiceIndex];
-                windowStep = twoPi / (float)granular_.grainSize[voiceIndex];
+                phaseStep = Pi / (float)granular_.grainSize[voiceIndex];
                 windowPhase = 0.0f;
             }
         }
         
         int voiceIndex;
         int bufferPos = 0;
-        float windowShape = 0.0f;
-        float windowStep = 0.05f;
-        float windowPhase = 0.0f;//0.0f~2pi
+        float phaseStep = 0.01f;
+        float windowPhase = 0.0f;//0.0f~Pi
         GranularSynth& granular_;
     };
     

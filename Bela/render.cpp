@@ -272,9 +272,9 @@ void render(BelaContext *context, void *userData)
      Audio
      =============================================*/
     const int NumAudioFrames = context->audioFrames;
-    float buf_ChaoticNoise[NumAudioFrames]{};
-    float buf_PhysicalDrum[NumAudioFrames]{};
-    float buf_Granular[NumAudioFrames]{};
+    float buf_ChaoticNoise[NumAudioFrames];
+    float buf_PhysicalDrum[NumAudioFrames];
+    float buf_Granular[NumAudioFrames];
     for(int sample = 0; sample < NumAudioFrames; ++sample) {//TODO 配列の0初期化の高速化
         buf_ChaoticNoise[sample] = 0.0f;
         buf_PhysicalDrum[sample] = 0.0f;

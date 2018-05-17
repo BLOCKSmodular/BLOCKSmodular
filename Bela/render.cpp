@@ -232,17 +232,18 @@ void render(BelaContext *context, void *userData)
     /*===========================================
      Mode change
      =============================================*/
-    int* modeFlag = nullptr;
-    if(digitalRead(context, 0, pin_microtone)) modeFlag = static_cast<int*>ModeList::Microtone;
-    if(digitalRead(context, 0, pin_euclid)) modeFlag = static_cast<int*>ModeList::Euclid;
-    if(digitalRead(context, 0, pin_chaoticNoise)) modeFlag = static_cast<int*>ModeList::ChaoticNoise;
-    if(digitalRead(context, 0, pin_physicalDrum)) modeFlag = static_cast<int*>ModeList::PhysicalDrum;
-    if(digitalRead(context, 0, pin_granular)) modeFlag = static_cast<int*>ModeList::Granular;
-    if(mode != static_cast<ModeList>(modeFlag) && modeFlag != nullptr) {
+    // int* modeFlag = nullptr;
+    ModeList modeFlag = ModeList::init;
+    if(digitalRead(context, 0, pin_microtone)) modeFlag = ModeList::Microtone;
+    if(digitalRead(context, 0, pin_euclid)) modeFlag = ModeList::Euclid;
+    if(digitalRead(context, 0, pin_chaoticNoise)) modeFlag = ModeList::ChaoticNoise;
+    if(digitalRead(context, 0, pin_physicalDrum)) modeFlag = ModeList::PhysicalDrum;
+    if(digitalRead(context, 0, pin_granular)) modeFlag = ModeList::Granular;
+    if(mode != modeFlag && modeFlag != ModeList::init) {
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1
-        bytes[2] = modeFlag;
+        bytes[2] = static_cast<int>(modeFlag);
         midi.writeOutput(bytes, 3);
-        mode = static_cast<ModeList>(modeFlag);
+        mode = modeFlag;
     }
     
     /*===========================================

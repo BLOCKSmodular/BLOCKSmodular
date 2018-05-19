@@ -55,31 +55,31 @@ int getColor(int index) {
 //Touch event
 void touchStart (int touchIndex, float x, float y, float z, float vz) {
     int midiChannel = touchIndex - 1;
-    if(mode == 0) sendMicrotoneCC(midiChannel, true, x, y, z);
-    if(mode == 1) sendEuclidCC(midiChannel, true, x, y, z);
-    if(mode == 2) sendChaoticNoiseCC(midiChannel, true, x, y, z);
-    if(mode == 3) sendPhysicalDrumCC(midiChannel, true, x, y, z);
-    if(mode == 4) sendGranularCC(midiChannel, true, x, y, z);
-    addPressurePoint (getColor(touchIndex), x, y, z * 60.0);
+    if(mode == 1) sendMicrotoneCC(midiChannel, true, x, y, z);
+    if(mode == 2) sendEuclidCC(midiChannel, true, x, y, z);
+    if(mode == 3) sendChaoticNoiseCC(midiChannel, true, x, y, z);
+    if(mode == 4) sendPhysicalDrumCC(midiChannel, true, x, y, z);
+    if(mode == 5) sendGranularCC(midiChannel, true, x, y, z);
+    addPressurePoint (getColor(touchIndex), x, y, z * 20.0);
 }
 
 void touchMove (int touchIndex, float x, float y, float z, float vz) {
     int midiChannel = touchIndex - 1;
-    if(mode == 0) sendMicrotoneCC(midiChannel, true, x, y, z);
-    if(mode == 1) sendEuclidCC(midiChannel, true, x, y, z);
-    if(mode == 2) sendChaoticNoiseCC(midiChannel, true, x, y, z);
-    if(mode == 3) sendPhysicalDrumCC(midiChannel, false, x, y, z);
-    if(mode == 4) sendGranularCC(midiChannel, true, x, y, z);
-    addPressurePoint (getColor(touchIndex), x, y, z * 30.0);
+    if(mode == 1) sendMicrotoneCC(midiChannel, true, x, y, z);
+    if(mode == 2) sendEuclidCC(midiChannel, true, x, y, z);
+    if(mode == 3) sendChaoticNoiseCC(midiChannel, true, x, y, z);
+    if(mode == 4) sendPhysicalDrumCC(midiChannel, false, x, y, z);
+    if(mode == 5) sendGranularCC(midiChannel, true, x, y, z);
+    addPressurePoint (getColor(touchIndex), x, y, z * 10.0);
 }
 
 void touchEnd (int touchIndex, float x, float y, float z, float vz) {
     int midiChannel = touchIndex - 1;
-    if(mode == 0) sendMicrotoneCC(midiChannel, false, x, y, z);
-    if(mode == 1) sendEuclidCC(midiChannel, false, x, y, z);
-    if(mode == 2) sendChaoticNoiseCC(midiChannel, false, x, y, z);
-    if(mode == 3) sendPhysicalDrumCC(midiChannel, false, x, y, z);
-    if(mode == 4) sendGranularCC(midiChannel, false, x, y, z);
+    if(mode == 1) sendMicrotoneCC(midiChannel, false, x, y, z);
+    if(mode == 2) sendEuclidCC(midiChannel, false, x, y, z);
+    if(mode == 3) sendChaoticNoiseCC(midiChannel, false, x, y, z);
+    if(mode == 4) sendPhysicalDrumCC(midiChannel, false, x, y, z);
+    if(mode == 5) sendGranularCC(midiChannel, false, x, y, z);
     addPressurePoint (getColor(touchIndex), x, y, z * 1.0);
 }
  

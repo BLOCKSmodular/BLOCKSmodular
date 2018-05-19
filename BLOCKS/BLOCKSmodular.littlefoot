@@ -9,9 +9,9 @@
 
     <variables>
     <variable name="Color1"  displayName="Audio 1 Colour" group="colours" type="colour" value="0xFFFF0000"/>
-    <variable name="Color2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFFFFA000"/>
-    <variable name="Color3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFFE6F000"/>
-    <variable name="Color4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFF80FF55"/>
+    <variable name="Color2"  displayName="Audio 2 Colour" group="colours" type="colour" value="0xFF00FF00"/>
+    <variable name="Color3"  displayName="Audio 3 Colour" group="colours" type="colour" value="0xFF0000FF"/>
+    <variable name="Color4"  displayName="Audio 4 Colour" group="colours" type="colour" value="0xFFFFFFFF"/>
     </variables>
 </metadata>
 */

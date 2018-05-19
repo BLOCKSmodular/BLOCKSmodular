@@ -7,11 +7,13 @@
 #define GranularSynth_H_
 
 #include <math_neon.h>//Fast math function
+#include <cmath>
 #include <memory>
 #include <array>
 #include <vector>
 #include <random>
 #include <string>
+#include <atomic>
 #include "SampleBuffer.h"
 #include "Util.h"
 
@@ -20,37 +22,48 @@ public:
     GranularSynth()
     {
         buffer = std::make_unique<MonoBuffer>(44100, false, false);
-        const float s = twoPi / (float)numGrains;
         for(int i = 0; i < NumVoice; ++i) {
-            for (int k = 0; k < NumGrains; ++k) {
-                grains[i][k] = new Grain(i, *this);
-                float ph = (float)i * s;
-                grains[i][k]->init(ph);
-            }
+        	bufferOnset[i] = 0;
+        	grainSize[i] = MaxGrainSizeInSamples;
+        	grainIndex[i] = 0;
+        	grainOverlap[i].store(0.0f);
         }
     };
     
     ~GranularSynth(){
-        for(int i = NumVoice - 1; i >= 0; --i) {
-            for(int k = NumGrains - 1; k >= 0; --k) {
-                delete grains[i][k];
-            }
-        }
     };
     
     void nextBlock(float* bufferToWrite, const int blockSize)
     {
-        const float* ptr = buffer->getReadPtr();
-        for(int i = 0; i < numVoice; ++i) {
-            for (int k = 0; k < numGrains; ++k) {
-                grains[i][k]->update(ptr, bufferToWrite, blockSize);
-            }
+        //TODO granularボイス管理再設計
+//        const float* ptr = buffer->getReadPtr();
+//        for(int sample = 0; sample < blockSize; ++sample) {
+//            for(int voice = 0; voice < NumVoice; ++voice) {
+//                for(int g = 0; g < NumGrains; ++g) {
+//                    if(grains[voice][g].isPlaying) {
+//                        //TODO panning
+//                        bufferToWrite[sample] += grains[voice][g].processNextSample(ptr);
+//                    }
+//                    counterSinceLastTrigger[voice]++;
+//                    if(counterSinceLastTrigger >= ){}
+//                }
+//            }
+//        }
+    }
+    
+    void triggerNextGrain(const int voiceIndex) 
+    {
+    	if(voiceIndex >= NumVoice) {
+            std::cout<<"Error GranularSynth-triggerNextGrain(): Invalid voiceIndex"<<std::endl;
+            return;
         }
+        
+        
     }
     
     void setGrainSize(const float size, const int voiceIndex)// size 0.0f~1.0f, voiceIndex 0~(numVoice-1)
     {
-        if(voiceIndex >= numVoice) {
+        if(voiceIndex >= NumVoice) {
             std::cout<<"Error GranularSynth-setGrainSize(): Invalid voiceIndex"<<std::endl;
             return;
         }
@@ -59,121 +72,109 @@ public:
             std::cout<<"Error GranularSynth-setGrainSize(): Invalid grain size"<<std::endl;
             return;
         }
-        grainSize[voiceIndex] = (float)maxGrainSize * size;
+        grainSize[voiceIndex] = (float)MaxGrainSizeInSamples * size;
     }
     
-    void setBufferPosition(const float position, const int voiceIndex)// position 0.0f~1.0f, voiceIndex 0~(numVoice-1)
+    void setBufferOnset(const float onset, const int voiceIndex)//onset:0~1
     {
-        if(voiceIndex >= numVoice) {
-            std::cout<<"Error GranularSynth-setBufferPosition(): Invalid voiceIndex"<<std::endl;
+        if(voiceIndex >= NumVoice) {
+            std::cout<<"Error GranularSynth-setBufferOnset(): Invalid voiceIndex"<<std::endl;
             return;
         }
         
-        if(position < 0.0 || 1.0 < position) {
-            std::cout<<"Error GranularSynth-setBufferPosition(): Invalid buffer position"<<std::endl;
+        if(onset < 0.0 || 1.0 < onset) {
+            std::cout<<"Error GranularSynth-setBufferOnset(): Invalid buffer onset"<<std::endl;
             return;
         }
-        bufferPosition[voiceIndex] = (float)(buffer->getSize() - maxGrainSize - 1) * position;
+        bufferOnset[voiceIndex] = (float)(buffer->getSize() - MaxGrainSizeInSamples - 1) * onset;
     }
     
-    void setWindowShape(const float intensity, const int voiceIndex)// intensity 0.0f~1.0f, voiceIndex 0~(numVoice-1)
+    void setOverlap(const float overlap, const int voiceIndex)//overlap:0~1
     {
         if(voiceIndex >= NumVoice) {
-            std::cout<<"Error GranularSynth-setWindowShape(): Invalid voiceIndex"<<std::endl;
-            return;
-        }
-        windowShape[voiceIndex] = intensity;
-    }
-    
-    void setDensity(const float denst, const int voiceIndex)
-    {
-        if(voiceIndex >= NumVoice) {
-            std::cout<<"Error GranularSynth-setDensity(): Invalid voiceIndex"<<std::endl;
+            std::cout<<"Error GranularSynth-setOverlap(): Invalid voiceIndex"<<std::endl;
             return;
         }
         
-        density[voiceIndex] = denst;
+        if(overlap < 0.0 || 1.0 < overlap) {
+            std::cout<<"Error GranularSynth-setOverlap(): Invalid buffer position"<<std::endl;
+            return;
+        }
+        
+        grainOverlap[voiceIndex] = overlap * (Pi - MinOverlapInPhase) + MinOverlapInPhase;//MinOverlapInPhase~Pi
     }
     
     void loadFile(const std::string audioFileName)
     {
         const int numSamples = getNumFrames(audioFileName);
-        if(numSamples < minSampleLength) {
+        if(numSamples < MinBufferLengthInSamples) {
             std::cout<<"Error GranularSynth-loadFile(): Too short sample length"<<std::endl;
+            return;
         }
-        else {
-            buffer->loadSampleFile(audioFileName);
-            const float s = Pi / (float)numGrains;
-            for(int i = 0; i < numVoice; ++i) {
-                bufferPosition[i] = 0;
-                for (int k = 0; k < numGrains; ++k) {
-                    float ph = (float)i * s;
-                    grains[i][k]->init(ph);
-                }
-            }
+        
+        buffer->loadSampleFile(audioFileName);
+        for(int i = 0; i < NumVoice; ++i) {
+        	bufferOnset[i] = 0;
         }
     }
     
     std::unique_ptr<MonoBuffer> buffer;
-    static constexpr int maxGrainSize = 22050;//500mS
-    static constexpr int minSampleLength = 35280;//800mS
+    static constexpr int MaxGrainSizeInSamples = 22050;//500mS
+    static constexpr int MinBufferLengthInSamples = 35280;//800mS
     
 private:
-    static constexpr int NumGrains = 15;
+    static constexpr int NumGrains = 16;
     static constexpr int NumVoice = 2;
-    int bufferPosition[NumVoice]{0, 0};//TODO: atomic
-    int grainSize[NumVoice]{10000, 10000};//TODO: atomic
-    float windowShape[NumVoice]{0.0f, 0.0f};//TODO: atomic
-    
+    static constexpr float MinOverlapInPhase = Pi / NumGrains;
+    std::array<std::atomic<int>, NumVoice> bufferOnset;
+    std::array<std::atomic<int>, NumVoice> grainSize;
+    int grainIndex[NumVoice];
+    std::array<std::atomic<float>, NumVoice> grainOverlap;//0~Pi
+    int counterSinceLastTrigger[NumVoice];
     
     class Grain
     {
     public:
-        Grain(const int voiceIndex, GranularSynth& g)
-        : voiceIndex(voiceIndex), granular_(g)
-        {};
+        Grain(){};
         ~Grain(){};
         
-        void init(const float phase)
+        void trigger(const int bufferOnset, const int grainSize)
         {
-            if(phase < 0.0f || Pi < phase) std::cout<<"Error Grain-init(): Invalid phase"<<std::endl;
-             windowStep = Pi / (float)granular_.grainSize[voiceIndex];
-            windowPhase = phase;
+        	onset = bufferOnset;
+        	phaseStep.store(Pi / (float)grainSize);
+        	phase.store(0.0f);
+        	isPlaying = true;
         }
         
-        void update(const float* bufferToRead, float* bufferToWrite, const int length){
-        	if(windowPhase > Pi) parameterUpdate();
-        	for(int i = 0; i < length; ++i) {
-        		bufferToWrite[i] += bufferToRead[bufferPos] * sinWindow();
-                bufferPos++;
-                windowPhase += phaseStep;
-            }
+        float processNextSample(const float* bufferToRead){
+        	if(isPlaying == false){
+        		return 0.0f;
+        	}
+        	
+        	float ph = phase.load();
+        	const float phStep = phaseStep.load();
+        	const float output = bufferToRead[onset] * sinWindow(ph);
+            onset++;
+            ph += phStep;
+            phase.store(ph);
+            if(ph >= Pi) isPlaying = false;
+            return output;
         }
+        
+        std::atomic<bool> isPlaying{false};
         
     private:
-    	inline float sinWindow()
+    	inline float sinWindow(float p)//0~Pi
     	{
-    		return sinf_neon(windowPhase);
+    		return sinf_neon(p);
     	}
         
-        void parameterUpdate()
-        {
-            if(granular_.dice(voiceIndex)) {
-                bufferPos = granular_.bufferPosition[voiceIndex];
-                windowShape = granular_.windowShape[voiceIndex];
-                phaseStep = Pi / (float)granular_.grainSize[voiceIndex];
-                windowPhase = 0.0f;
-            }
-        }
-        
-        int voiceIndex;
-        int bufferPos = 0;
-        float phaseStep = 0.01f;
-        float windowPhase = 0.0f;//0.0f~Pi
-        GranularSynth& granular_;
+        std::atomic<int> onset{0};
+        std::atomic<float> phase{0.0f};
+        std::atomic<float> phaseStep{0.0f};
     };
     
-    Grain* grains[numVoice][numGrains];
+    Grain grains[NumVoice][NumGrains];
 };
 
 #endif /* GranularSynth_H_ */

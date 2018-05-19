@@ -1,5 +1,5 @@
 /*
- BLOCKSmodular ver0.7.0
+ BLOCKSmodular ver0.8.0 Beta1
  render.cpp for BLOCKSmodular
  Created by Akiyuki Okayasu
  License: GPLv3
@@ -10,7 +10,6 @@
 #include <cmath>
 #include <atomic>
 #include <vector>
-#include <random>
 #include <SampleBuffer.h>
 #include <Util.h>
 #include <GranularSynth.h>
@@ -54,9 +53,9 @@ LogisticMap logisticOsc[NumVoice_ChaoticNoise];
 HighResolutionControlChange	logistic_Alpha[NumVoice_ChaoticNoise];
 HighResolutionControlChange logistic_Gain[NumVoice_ChaoticNoise];
 GranularSynth granular;
-HighResolutionControlChange granular_Position[2];
+HighResolutionControlChange granular_Onset[2];
 HighResolutionControlChange granular_GrainSize[2];
-HighResolutionControlChange granular_Density[2];
+HighResolutionControlChange granular_Overlap[2];
 KarplusStrong physicalDrum[NumVoice_PhysicalDrum];
 HighResolutionControlChange physicalDrum_Pitch[NumVoice_PhysicalDrum];
 HighResolutionControlChange physicalDrum_Decay[NumVoice_PhysicalDrum];
@@ -165,8 +164,8 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 
                 if(controlNum == 1 || controlNum == 2) {
                     bool isUpeerByte{controlNum == 1};
-                    granular_Position[channel].set(value, isUpeerByte);
-                    if(granular_Position[channel].update()) granular.setBufferPosition(granular_Position[channel].get(), channel);
+                    granular_Onset[channel].set(value, isUpeerByte);
+                    if(granular_Onset[channel].update()) granular.setBufferOnset(granular_Onset[channel].get(), channel);
                 }
                 
                 if(controlNum == 3 || controlNum == 4) {
@@ -177,14 +176,9 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
                 
                 if(controlNum == 5 || controlNum == 6) {
                     bool isUpeerByte{controlNum == 5};
-                    granular_Density[channel].set(value, isUpeerByte);
-                    if(granular_Density[channel].update()) {
-                        float v = granular_Density[channel].get() * 2.0f;
-                        granular.setWindowShape(v * 4.0f, channel);
-                        granular.setDensity((v * v * v), channel);
-                    }
+                    granular_Overlap[channel].set(value, isUpeerByte);
+                    if(granular_Overlap[channel].update()) granular.setOverlap(granular_Overlap[channel].get(), channel);
                 }
-                
                 break;
             }
                 

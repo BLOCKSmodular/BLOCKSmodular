@@ -1,5 +1,5 @@
 /*
- BLOCKSmodular ver0.8.0 RC2
+ BLOCKSmodular ver1.0.0 Beta1
  render.cpp for BLOCKSmodular
  Created by Akiyuki Okayasu
  License: GPLv3
@@ -17,15 +17,15 @@
 #include <KarplusStrong.h>
 #include <EuclideanRhythm.h>
 
-// #define pin_microtone P8_27
+// #define pin_microtone P8_28
 // #define pin_euclid P9_12
 // #define pin_chaoticNoise P9_14
 // #define pin_physicalDrum P9_16
-// #define pin_granular P8_29
-// #define pin_gate1 P8_08
-// #define pin_gate2 P8_10
-// #define pin_gate3 P8_12
-// #define pin_gate4 P8_16
+// #define pin_granular P8_30
+// #define pin_gate1 P8_07
+// #define pin_gate2 P8_09
+// #define pin_gate3 P8_11
+// #define pin_gate4 P8_15
 static constexpr int NumOutput_CV = 8;
 static constexpr int NumOutput_Gate = 4;
 static constexpr int NumVoice_Microtone = 4;
@@ -60,6 +60,10 @@ KarplusStrong physicalDrum[NumVoice_PhysicalDrum];
 HighResolutionControlChange physicalDrum_Pitch[NumVoice_PhysicalDrum];
 HighResolutionControlChange physicalDrum_Decay[NumVoice_PhysicalDrum];
 Smoothing CVSmooth[NumOutput_CV];
+
+float gFrequency = 100.0;
+float gPhase;
+float gInverseSampleRate;
 
 void midiMessageCallback(MidiChannelMessage message, void *arg)
 {
@@ -191,23 +195,28 @@ void midiMessageCallback(MidiChannelMessage message, void *arg)
 
 bool setup(BelaContext *context, void *userData)
 {
+	gInverseSampleRate = 1.0 / context->audioSampleRate;
+	gPhase = 0.0;
+	
+	
+	
     mode = ModeList::init;
     for(int i = 0; i < NumOutput_Gate; ++i) {
         euclid[i].init(context->digitalSampleRate);
     }
 
     //Mode change pin setup
-    pinMode(context, 0, P8_27, INPUT);//Microtone
+    pinMode(context, 0, P8_28, INPUT);//Microtone
     pinMode(context, 0, P9_12, INPUT);//Euclid
     pinMode(context, 0, P9_14, INPUT);//ChaoticNoise
     pinMode(context, 0, P9_16, INPUT);//PhysicalDrum
-    pinMode(context, 0, P8_29, INPUT);//Granular
+    pinMode(context, 0, P8_30, INPUT);//Granular
     
     //Gate output setup
-    pinMode(context, 0, P8_08, OUTPUT);//Gate1
-    pinMode(context, 0, P8_10, OUTPUT);//Gate2
-    pinMode(context, 0, P8_12, OUTPUT);//Gate3
-    pinMode(context, 0, P8_16, OUTPUT);//Gate4
+    pinMode(context, 0, P8_07, OUTPUT);//Gate1
+    pinMode(context, 0, P8_09, OUTPUT);//Gate2
+    pinMode(context, 0, P8_11, OUTPUT);//Gate3
+    pinMode(context, 0, P8_15, OUTPUT);//Gate4
     
     //MIDI
     midi.readFrom(gMidiPort0);
@@ -226,18 +235,12 @@ void render(BelaContext *context, void *userData)
     /*===========================================
      Mode change
      =============================================*/
-// #define pin_microtone P8_27
-// #define pin_euclid P9_12
-// #define pin_chaoticNoise P9_14
-// #define pin_physicalDrum P9_16
-// #define pin_granular P8_29
-     
     int modeFlag = 0;
-    if(digitalRead(context, 0, P8_27)) modeFlag = 1;
+    if(digitalRead(context, 0, P8_28)) modeFlag = 1;
     if(digitalRead(context, 0, P9_12)) modeFlag = 2;
     if(digitalRead(context, 0, P9_14)) modeFlag = 3;
     if(digitalRead(context, 0, P9_16)) modeFlag = 4;
-    if(digitalRead(context, 0, P8_29)) modeFlag = 5;
+    if(digitalRead(context, 0, P8_30)) modeFlag = 5;
     if(mode != static_cast<ModeList>(modeFlag) && modeFlag != 0) {
         midi_byte_t bytes[3] = {0xBF, (midi_byte_t)(1), 0};//Channel:16, CC Number:1
         bytes[2] = modeFlag;
@@ -248,77 +251,79 @@ void render(BelaContext *context, void *userData)
     /*===========================================
      Gate Output
      =============================================*/
-// #define pin_gate1 P8_08
-// #define pin_gate2 P8_10
-// #define pin_gate3 P8_12
-// #define pin_gate4 P8_16
-    // if(mode == ModeList::Euclid) {
-    //     for(int sample = 0; sample < context->digitalFrames; ++sample) {
-    //         digitalWrite(context, sample, P8_08, euclid[0].update());
-    //         digitalWrite(context, sample, P8_10, euclid[1].update());
-    //         digitalWrite(context, sample, P8_12, euclid[2].update());
-    //         digitalWrite(context, sample, P8_16, euclid[3].update());
-    //     }
-    // }
-    
-    //Test Gate
-    for(int i = 0; i < context->digitalFrames; ++i) {
-    	digitalWrite(context, i, P8_08, HIGH);
-    	digitalWrite(context, i, P8_10, HIGH);
-    	digitalWrite(context, i, P8_12, HIGH);
-    	digitalWrite(context, i, P8_16, HIGH);
+    if(mode == ModeList::Euclid) {
+        for(int sample = 0; sample < context->digitalFrames; ++sample) {
+            digitalWrite(context, sample, P8_07, euclid[0].update());
+            digitalWrite(context, sample, P8_09, euclid[1].update());
+            digitalWrite(context, sample, P8_11, euclid[2].update());
+            digitalWrite(context, sample, P8_15, euclid[3].update());
+        }
     }
+    
+    // //Test Gate
+    // for(int i = 0; i < context->digitalFrames; ++i) {
+    // 	digitalWrite(context, i, P8_07, HIGH);
+    // 	digitalWrite(context, i, P8_09, HIGH);
+    // 	digitalWrite(context, i, P8_11, HIGH);
+    // 	digitalWrite(context, i, P8_15, HIGH);
+    // }
     
     /*===========================================
      CV Output
      =============================================*/
-    // if(mode == ModeList::Microtone) {
-    //     for(int sample = 0; sample < context->analogFrames; ++sample) {
-    //         for(int channel = 0; channel < NumOutput_CV; ++channel) {
-    //             analogWrite(context, sample, channel, CVSmooth[channel].getNextValue());
-    //         }
-    //     }
-    // }
-    
-    //Test CV
-    for(int i = 0; i < context->analogFrames; ++i) {
-    	for(int channel = 0; channel < NumOutput_CV; ++channel) {
-    		analogWrite(context, i, channel, 1.0f);
-    	}
+    if(mode == ModeList::Microtone) {
+        for(int sample = 0; sample < context->analogFrames; ++sample) {
+            for(int channel = 0; channel < NumOutput_CV; ++channel) {
+                analogWrite(context, sample, channel, CVSmooth[channel].getNextValue());
+            }
+        }
     }
+    
+    // //Test CV
+    // for(int i = 0; i < context->analogFrames; ++i) {
+    // 	for(int channel = 0; channel < NumOutput_CV; ++channel) {
+    // 		analogWrite(context, i, channel, 1.0f);
+    // 	}
+    // }
     
     /*===========================================
      Audio
      =============================================*/
     const int NumAudioFrames = context->audioFrames;
-    // float buf_ChaoticNoise[NumAudioFrames];
-    // float buf_PhysicalDrum[NumAudioFrames];
-    // float buf_Granular[NumAudioFrames];
-    // for(int sample = 0; sample < NumAudioFrames; ++sample) {//TODO 配列の0初期化の高速化
-    //     buf_ChaoticNoise[sample] = 0.0f;
-    //     buf_PhysicalDrum[sample] = 0.0f;
-    //     buf_Granular[sample] = 0.0f;
-    // }
-    
-    // for(int sample = 0; sample < NumAudioFrames; ++sample) {//Chaotic Noise
-    // 	for(int channel = 0; channel < NumVoice_ChaoticNoise; ++channel) {
-    // 		buf_ChaoticNoise[sample] += logisticOsc[channel].update();	
-    // 	}
-    // }
-    // for(int i = 0; i < NumVoice_PhysicalDrum; ++i) {//Physical Drum
-    //     physicalDrum[i].nextBlock(buf_PhysicalDrum, NumAudioFrames);
-    // }
-    // granular.nextBlock(buf_Granular, NumAudioFrames);//Granular
-    // for(int i = 0; i < NumAudioFrames; ++i) {//Mixer
-    //     audioWrite(context, i, 0, buf_Granular[i] * 0.4f + buf_PhysicalDrum[i] * 0.3f + buf_ChaoticNoise[i] * 0.5f);
-    //     audioWrite(context, i, 1, buf_Granular[i] * 0.4f + buf_PhysicalDrum[i] * 0.3f + buf_ChaoticNoise[i] * 0.5f);
-    // }
-    
-    //Test audio
-    for(int i = 0; i < NumAudioFrames; ++i) {
-    	audioWrite(context, i, 0, 1.0f);
-    	audioWrite(context, i, 1, 1.0f);
+    float buf_ChaoticNoise[NumAudioFrames];
+    float buf_PhysicalDrum[NumAudioFrames];
+    float buf_Granular[NumAudioFrames];
+    for(int sample = 0; sample < NumAudioFrames; ++sample) {//TODO 配列の0初期化の高速化
+        buf_ChaoticNoise[sample] = 0.0f;
+        buf_PhysicalDrum[sample] = 0.0f;
+        buf_Granular[sample] = 0.0f;
     }
+    
+    for(int sample = 0; sample < NumAudioFrames; ++sample) {//Chaotic Noise
+    	for(int channel = 0; channel < NumVoice_ChaoticNoise; ++channel) {
+    		buf_ChaoticNoise[sample] += logisticOsc[channel].update();	
+    	}
+    }
+    for(int i = 0; i < NumVoice_PhysicalDrum; ++i) {//Physical Drum
+        physicalDrum[i].nextBlock(buf_PhysicalDrum, NumAudioFrames);
+    }
+    granular.nextBlock(buf_Granular, NumAudioFrames);//Granular
+    for(int i = 0; i < NumAudioFrames; ++i) {//Mixer
+        audioWrite(context, i, 0, buf_Granular[i] * 0.4f + buf_PhysicalDrum[i] * 0.3f + buf_ChaoticNoise[i] * 0.5f);
+        audioWrite(context, i, 1, buf_Granular[i] * 0.4f + buf_PhysicalDrum[i] * 0.3f + buf_ChaoticNoise[i] * 0.5f);
+    }
+    
+ //   //Test audio
+ //   for(unsigned int n = 0; n < context->audioFrames; n++) {
+	// 	float out = sinf(gPhase);
+	// 	gPhase += 2.0f * (float)M_PI * gFrequency * gInverseSampleRate;
+	// 	if(gPhase > M_PI)
+	// 		gPhase -= 2.0f * (float)M_PI;
+
+	// 	for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
+	// 		audioWrite(context, n, channel, out);
+	// 	}
+	// }
 }
 
 void cleanup(BelaContext *context, void *userData)
